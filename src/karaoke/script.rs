@@ -18,7 +18,7 @@ impl Default for Timing {
 
 /// Map a spoken word onto figure part ids.
 pub trait PartsMap {
-    fn parts(&self, word: &str) -> Vec<&'static str>;
+    fn parts(&self, word: &str) -> Vec<String>;
 }
 
 #[derive(Clone, Debug)]
@@ -26,12 +26,13 @@ pub struct Token {
     pub text: String,
     pub italic: bool,
     pub cite: bool,
-    pub parts: Vec<&'static str>,
+    pub parts: Vec<String>,
     pub dur_ms: u32,
 }
 
 #[derive(Clone, Debug)]
 pub struct Line {
+    pub para: u8,
     pub tokens: Vec<Token>,
 }
 
@@ -45,7 +46,7 @@ impl Script {
         token_at(&self.lines, n)
     }
 
-    pub fn parts_at(&self, n: usize) -> &[&'static str] {
+    pub fn parts_at(&self, n: usize) -> &[String] {
         for i in (0..=n).rev() {
             if let Some((_, _, t)) = self.get(i) {
                 if !t.parts.is_empty() {
@@ -57,12 +58,17 @@ impl Script {
     }
 }
 
-pub fn compile(phrases: &[&str], map: &impl PartsMap, timing: Timing) -> Script {
+pub fn compile(
+    phrases: &[crate::content::Phrase],
+    map: &impl PartsMap,
+    timing: Timing,
+) -> Script {
     Script {
         lines: phrases
             .iter()
             .map(|p| Line {
-                tokens: tokenize(p, map, &timing),
+                para: p.para,
+                tokens: tokenize(p.text, map, &timing),
             })
             .collect(),
     }
@@ -169,7 +175,11 @@ fn push_words(
         return;
     }
     for word in chunk.split_whitespace() {
-        let parts = map.parts(word);
+        let parts = if italic {
+            map.parts(word)
+        } else {
+            Vec::new()
+        };
         let dur = if parts.is_empty() {
             timing.word_ms
         } else {
