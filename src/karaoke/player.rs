@@ -23,9 +23,12 @@ impl Player {
         let start = next_playable(0, &skip, n).unwrap_or(0);
         let p = Self {
             cursor: RwSignal::new(start),
-            playing: RwSignal::new(autoplay),
+            playing: RwSignal::new(false),
             n,
         };
+        if autoplay {
+            later(400, move || p.playing.set(true));
+        }
         let durs: Vec<u32> = script
             .lines
             .iter()

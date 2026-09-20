@@ -31,19 +31,22 @@
   margin: 0.5rem 0 0;
   font-size: 1.28rem;
   line-height: 1.5;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.stage.record .karaoke {
+  min-height: 0;
 }
 
 .karaoke .line {
   display: none;
-  margin: 0;
-  padding-right: 6.8rem;
-  position: relative;
   line-height: 1.5;
 }
 
 .karaoke .line.now,
 .karaoke .line.prev {
-  display: block;
+  display: grid;
 }
 
 .karaoke .line.prev {
@@ -69,17 +72,7 @@
   background: #ffe58a;
 }
 
-.karaoke .word.cite,
-.karaoke .word.cite.sing,
-.karaoke .word.cite.sung {
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin: 0;
-  width: 6.5rem;
-  text-align: right;
-  font-size: 0.92rem;
-  white-space: nowrap;
+.karaoke .word.cite {
   color: #333;
   background: none;
 }

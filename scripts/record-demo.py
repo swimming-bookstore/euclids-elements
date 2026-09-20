@@ -46,8 +46,11 @@ def main() -> None:
     title = f"euclid-book{args.book}-{args.slug}"
     port = free_port()
     httpd = serve(port)
-    url = f"http://127.0.0.1:{port}/index.html?record=1&autoplay=1"
-    with RecordSession(
+    url = (
+        f"http://127.0.0.1:{port}/index.html"
+        f"?record=1&autoplay=1#/{args.book}/{args.prop}"
+    )
+    rec = RecordSession(
         url=url,
         out=out,
         title=title,
@@ -56,10 +59,19 @@ def main() -> None:
         fps=15,
         max_sec=args.hold + 20,
         cdp_port=9331,
-    ) as rec:
-        rec.wait_js("!!document.querySelector('[data-karaoke]')", 25, "karaoke")
+    )
+    rec.attach_chrome()
+    try:
+        rec.wait_js(
+            "!!document.querySelector('.stage.record[data-ready=\"1\"] .figure-frame')",
+            25,
+            "ready",
+        )
+        rec.start_capture()
         rec.hold(args.hold)
-    httpd.shutdown()
+    finally:
+        rec.__exit__(None, None, None)
+        httpd.shutdown()
     print(out)
 
 
