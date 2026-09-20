@@ -24,10 +24,6 @@
   color: #111;
 }
 
-.karaoke-play .mode.on {
-  background: #ddd;
-}
-
 .karaoke {
   flex: 0 0 auto;
   position: relative;

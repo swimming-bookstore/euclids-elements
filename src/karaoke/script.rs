@@ -41,14 +41,6 @@ pub struct Script {
 }
 
 impl Script {
-    pub fn len(&self) -> usize {
-        self.lines.iter().map(|l| l.tokens.len()).sum()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
     pub fn get(&self, n: usize) -> Option<(usize, usize, &Token)> {
         token_at(&self.lines, n)
     }
@@ -76,11 +68,7 @@ pub fn compile(phrases: &[&str], map: &impl PartsMap, timing: Timing) -> Script 
     }
 }
 
-pub fn total_tokens(script: &Script) -> usize {
-    script.len()
-}
-
-pub fn token_at(lines: &[Line], mut n: usize) -> Option<(usize, usize, &Token)> {
+fn token_at(lines: &[Line], mut n: usize) -> Option<(usize, usize, &Token)> {
     for (li, line) in lines.iter().enumerate() {
         if n < line.tokens.len() {
             return Some((li, n, &line.tokens[n]));

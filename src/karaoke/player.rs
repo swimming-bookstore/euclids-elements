@@ -39,17 +39,6 @@ impl Player {
         self.cursor.set(0);
     }
 
-    pub fn toggle(self) {
-        if self.playing.get() {
-            self.playing.set(false);
-        } else {
-            if self.cursor.get() + 1 >= self.n {
-                self.restart();
-            }
-            self.playing.set(true);
-        }
-    }
-
     fn tick(self, durs: Vec<u32>, skip: Vec<bool>) {
         let n = self.n;
         Effect::new(move |_| {

@@ -1,26 +1,6 @@
 pub mod book1;
 
-#[derive(Clone, Copy, Debug)]
-pub struct Book {
-    pub number: u8,
-    pub title: &'static str,
-}
-
-pub const BOOKS: [Book; 13] = [
-    Book { number: 1, title: "Fundamentals of plane geometry" },
-    Book { number: 2, title: "Geometric algebra" },
-    Book { number: 3, title: "Circles" },
-    Book { number: 4, title: "Inscription and circumscription" },
-    Book { number: 5, title: "Proportion" },
-    Book { number: 6, title: "Similar figures" },
-    Book { number: 7, title: "Elementary number theory" },
-    Book { number: 8, title: "Continued proportion" },
-    Book { number: 9, title: "Applications of number theory" },
-    Book { number: 10, title: "Incommensurables" },
-    Book { number: 11, title: "Spatial geometry" },
-    Book { number: 12, title: "Method of exhaustion" },
-    Book { number: 13, title: "Regular solids" },
-];
+pub const BOOKS: [u8; 13] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 
 /// One proof line. `*AB*` italic, `{[Post. 3]}` right-margin citation.
 #[derive(Clone, Copy, Debug)]
@@ -30,7 +10,6 @@ pub struct Phrase {
 
 #[derive(Clone, Copy, Debug)]
 pub struct Proposition {
-    #[allow(dead_code)]
     pub book: u8,
     pub number: u8,
     pub enunciation: &'static str,

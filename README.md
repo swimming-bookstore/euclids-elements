@@ -8,6 +8,8 @@ trunk serve
 
 http://127.0.0.1:8080/
 
+Live: https://swimming-bookstore.github.io/euclids-elements/
+
 ## Karaoke
 
 Word-by-word player in `src/karaoke/`:

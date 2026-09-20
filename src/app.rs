@@ -1,6 +1,6 @@
-use crate::content::{get, propositions_in, Book, Proposition, BOOKS};
+use crate::content::{get, propositions_in, Proposition, BOOKS};
 use crate::karaoke::{
-    compile, EuclidParts, KaraokeLyrics, KaraokePlay, KaraokeRead, Player, Script, Timing,
+    compile, EuclidParts, KaraokeLyrics, KaraokePlay, KaraokeRead, Player, Timing,
 };
 use leptos::prelude::*;
 
@@ -30,8 +30,7 @@ pub fn App() -> impl IntoView {
             <footer>
                 <nav class="books" aria-label="Books">
                     <span class="lab">"Books"</span>
-                    {BOOKS.into_iter().map(|b| {
-                        let n = b.number;
+                    {BOOKS.into_iter().map(|n| {
                         view! {
                             <button
                                 class:active=move || book.get() == n
@@ -121,14 +120,4 @@ fn wants_record() -> bool {
         .and_then(|w| w.location().search().ok())
         .map(|s| s.contains("record") || s.contains("autoplay"))
         .unwrap_or(false)
-}
-
-#[allow(dead_code)]
-fn _book_title(b: Book) -> &'static str {
-    b.title
-}
-
-#[allow(dead_code)]
-fn _script_len(s: &Script) -> usize {
-    s.len()
 }

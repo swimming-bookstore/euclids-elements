@@ -23,7 +23,6 @@ pub enum Place {
     Left,
     Right,
     Above,
-    Below,
 }
 
 enum Mark {
@@ -53,7 +52,6 @@ struct Lab {
 pub struct Figure {
     marks: Vec<Mark>,
     labels: Vec<Lab>,
-    label_gap: f64,
 }
 
 impl Figure {
@@ -61,7 +59,6 @@ impl Figure {
         Self {
             marks: Vec::new(),
             labels: Vec::new(),
-            label_gap: LABEL_GAP,
         }
     }
 
@@ -180,12 +177,10 @@ impl Figure {
     }
 
     fn placed(&self, lab: &Lab) -> (f64, f64, &'static str) {
-        let g = self.label_gap;
         match lab.place {
-            Place::Left => (lab.at.x - g, lab.at.y, "end"),
-            Place::Right => (lab.at.x + g, lab.at.y, "start"),
-            Place::Above => (lab.at.x, lab.at.y + g, "middle"),
-            Place::Below => (lab.at.x, lab.at.y - g, "middle"),
+            Place::Left => (lab.at.x - LABEL_GAP, lab.at.y, "end"),
+            Place::Right => (lab.at.x + LABEL_GAP, lab.at.y, "start"),
+            Place::Above => (lab.at.x, lab.at.y + LABEL_GAP, "middle"),
         }
     }
 
