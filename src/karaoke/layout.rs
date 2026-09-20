@@ -1,5 +1,6 @@
 //! Read-mode layout: Fitzpatrick paragraphs.
-//! Each spoken sentence is its own line; citations hang in the margin.
+//! Citations hang in the margin. A cited clause breaks so the next
+//! sentence starts on a new line; a full stop with no cite does not.
 
 use super::script::{Line, Script};
 
@@ -37,7 +38,7 @@ pub fn read_layout_lines(lines: &[Line]) -> Vec<Vec<Atom>> {
                         });
                     }
                 }
-                if i + 1 < ls.len() {
+                if i + 1 < ls.len() && line.tokens.iter().any(|t| t.cite) {
                     atoms.push(Atom::Break);
                 }
             }
@@ -119,7 +120,7 @@ mod tests {
     }
 
     #[test]
-    fn i1_construction_breaks_after_each_sentence() {
+    fn i1_construction_breaks_after_cites() {
         let i1 = layout_of(1, 1);
         assert_eq!(i1.len(), 5);
         let construction = para_text(&i1[2]);
@@ -142,14 +143,10 @@ mod tests {
     }
 
     #[test]
-    fn i2_argument_breaks_sentences_in_one_paragraph() {
+    fn i2_argument_breaks_after_cites_only() {
         let i2 = layout_of(1, 2);
         assert_eq!(i2.len(), 4, "I.2 has four Fitzpatrick paragraphs");
         let argument = &i2[2];
-        assert!(
-            argument.iter().any(|a| matches!(a, Atom::Break)),
-            "sentences in the argument start on new lines"
-        );
         assert_eq!(
             cites(argument),
             vec!["[Def. 1.15]", "[Def. 1.15]", "[C.N. 3]", "[C.N. 1]"]
@@ -160,13 +157,19 @@ mod tests {
         assert!(text.contains("BG. [C.N. 3] \nBut BC was also shown"));
         assert!(text.contains("another. [C.N. 1] \nThus, AL is also equal to BC."));
         assert!(
-            !text.contains("[Def. 1.15] Again") && !text.contains("[C.N. 1] Thus"),
-            "cite must not stay on the same line as the next sentence: {text}"
+            text.contains("DB. Thus, the remainder")
+                && text.contains("BG. Thus, AL and BC")
+                && text.contains("BG. But things equal"),
+            "plain full stops stay in the paragraph: {text}"
+        );
+        assert!(
+            !text.contains("DB. \n") && !text.contains("BG. \nThus, AL and"),
+            "plain full stop must not break: {text}"
         );
     }
 
     #[test]
-    fn i2_construction_breaks_after_each_sentence() {
+    fn i2_construction_breaks_after_cites() {
         let i2 = layout_of(1, 2);
         let construction = para_text(&i2[1]);
         assert!(

@@ -54,7 +54,7 @@ pub fn KaraokePlay(player: Player, record: RwSignal<bool>) -> impl IntoView {
 }
 
 /// Full proof: Fitzpatrick paragraphs. Cites hang in the margin;
-/// a comma-cite breaks so the next clause starts on a new line.
+/// a cited clause breaks so the next sentence starts on a new line.
 #[component]
 pub fn KaraokeRead(script: Script) -> impl IntoView {
     view! {
