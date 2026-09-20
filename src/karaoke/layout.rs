@@ -1,6 +1,7 @@
-//! Read-mode layout: Fitzpatrick paragraphs, margin cites, break after a comma-cite.
+//! Read-mode layout: Fitzpatrick paragraphs.
+//! Each spoken sentence is its own line; citations hang in the margin.
 
-use super::script::{Line, Script, Token};
+use super::script::{Line, Script};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Atom {
@@ -14,43 +15,35 @@ pub fn read_layout(script: &Script) -> Vec<Vec<Atom>> {
 }
 
 pub fn read_layout_lines(lines: &[Line]) -> Vec<Vec<Atom>> {
-    let mut out: Vec<(u8, Vec<Atom>)> = Vec::new();
+    let mut groups: Vec<(u8, Vec<&Line>)> = Vec::new();
     for line in lines {
-        let mut chunk = Vec::new();
-        let mut comma_cite = false;
-        for t in &line.tokens {
-            if t.cite {
-                chunk.push(Atom::Cite(t.text.clone()));
-            } else {
-                chunk.push(Atom::Word {
-                    text: t.text.clone(),
-                    italic: t.italic,
-                });
-                comma_cite = t.text.ends_with(',');
+        match groups.last_mut() {
+            Some((p, ls)) if *p == line.para => ls.push(line),
+            _ => groups.push((line.para, vec![line])),
+        }
+    }
+    groups
+        .into_iter()
+        .map(|(_, ls)| {
+            let mut atoms = Vec::new();
+            for (i, line) in ls.iter().enumerate() {
+                for t in &line.tokens {
+                    if t.cite {
+                        atoms.push(Atom::Cite(t.text.clone()));
+                    } else {
+                        atoms.push(Atom::Word {
+                            text: t.text.clone(),
+                            italic: t.italic,
+                        });
+                    }
+                }
+                if i + 1 < ls.len() {
+                    atoms.push(Atom::Break);
+                }
             }
-        }
-        if comma_cite {
-            chunk.push(Atom::Break);
-        }
-        match out.last_mut() {
-            Some((p, atoms)) if *p == line.para => atoms.extend(chunk),
-            _ => out.push((line.para, chunk)),
-        }
-    }
-    out.into_iter().map(|(_, a)| a).collect()
-}
-
-pub fn split_cites(tokens: &[Token]) -> (Vec<Token>, Vec<Token>) {
-    let mut body = Vec::new();
-    let mut cites = Vec::new();
-    for t in tokens {
-        if t.cite {
-            cites.push(t.clone());
-        } else {
-            body.push(t.clone());
-        }
-    }
-    (body, cites)
+            atoms
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -65,19 +58,18 @@ mod tests {
         read_layout(&script)
     }
 
+    /// Same order and spaces as `KaraokeRead`: word, space, cite, space, break.
     fn para_text(para: &[Atom]) -> String {
         let mut s = String::new();
         for a in para {
             match a {
                 Atom::Word { text, .. } => {
-                    if !s.is_empty() && !s.ends_with('\n') {
-                        s.push(' ');
-                    }
                     s.push_str(text);
+                    s.push(' ');
                 }
                 Atom::Cite(c) => {
-                    s.push(' ');
                     s.push_str(c);
+                    s.push(' ');
                 }
                 Atom::Break => s.push('\n'),
             }
@@ -127,15 +119,22 @@ mod tests {
     }
 
     #[test]
-    fn comma_cite_breaks_next_clause() {
+    fn i1_construction_breaks_after_each_sentence() {
         let i1 = layout_of(1, 1);
         assert_eq!(i1.len(), 5);
         let construction = para_text(&i1[2]);
         assert!(
-            construction.contains("drawn,\n"),
-            "comma-cite must break: {construction}"
+            construction.contains("drawn, [Post. 3] \nand again"),
+            "comma-cite must break after the margin cite: {construction}"
         );
-        assert!(construction.contains("[Post. 3]\nand again"));
+        assert!(
+            construction.contains("drawn. [Post. 3] \nAnd let the straight-lines"),
+            "period-cite must start the next sentence on a new line: {construction}"
+        );
+        assert!(
+            !construction.contains("[Post. 3] And let"),
+            "must not stay on the same line: {construction}"
+        );
         assert_eq!(
             cites(&i1[2]),
             vec!["[Post. 3]", "[Post. 3]", "[Post. 1]"]
@@ -143,31 +142,41 @@ mod tests {
     }
 
     #[test]
-    fn period_cite_does_not_break_paragraph() {
+    fn i2_argument_breaks_sentences_in_one_paragraph() {
         let i2 = layout_of(1, 2);
         assert_eq!(i2.len(), 4, "I.2 has four Fitzpatrick paragraphs");
         let argument = &i2[2];
         assert!(
-            !argument.iter().any(|a| matches!(a, Atom::Break)),
-            "argument is running text, not one block per sentence"
+            argument.iter().any(|a| matches!(a, Atom::Break)),
+            "sentences in the argument start on new lines"
         );
         assert_eq!(
             cites(argument),
             vec!["[Def. 1.15]", "[Def. 1.15]", "[C.N. 3]", "[C.N. 1]"]
         );
         let text = para_text(argument);
-        assert!(text.contains("BG. [Def. 1.15] Again,"));
-        assert!(text.contains("DG. [Def. 1.15] And within these,"));
-        assert!(text.contains("BG. [C.N. 3] But BC was also shown"));
-        assert!(text.contains("another. [C.N. 1] Thus, AL is also equal to BC."));
+        assert!(text.contains("BG. [Def. 1.15] \nAgain,"));
+        assert!(text.contains("DG. [Def. 1.15] \nAnd within these,"));
+        assert!(text.contains("BG. [C.N. 3] \nBut BC was also shown"));
+        assert!(text.contains("another. [C.N. 1] \nThus, AL is also equal to BC."));
+        assert!(
+            !text.contains("[Def. 1.15] Again") && !text.contains("[C.N. 1] Thus"),
+            "cite must not stay on the same line as the next sentence: {text}"
+        );
     }
 
     #[test]
-    fn i2_construction_breaks_after_post_three() {
+    fn i2_construction_breaks_after_each_sentence() {
         let i2 = layout_of(1, 2);
         let construction = para_text(&i2[1]);
-        assert!(construction.contains("drawn,\n"));
-        assert!(construction.contains("[Post. 3]\nand again let"));
-        assert!(construction.contains("[Post. 1]\nand let the equilateral"));
+        assert!(
+            construction.contains("drawn, [Post. 3] \nand again let"),
+            "comma-cite must break after the margin cite: {construction}"
+        );
+        assert!(construction.contains("[Post. 1] \nand let the equilateral"));
+        assert!(
+            construction.contains("upon it. [Prop. 1.1] \nAnd let the straight-lines"),
+            "period-cite must break: {construction}"
+        );
     }
 }

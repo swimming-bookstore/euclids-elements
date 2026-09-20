@@ -23,6 +23,6 @@ Word-by-word player in `src/karaoke/`:
 
 A new proposition is a `Proposition` in `src/content/bookN.rs` plus a `Diagram` in `src/figure/bookN.rs` (`put` / `join` / `circle` / `ray`). Karaoke lighting is derived from that graph.
 
-Read mode flows Fitzpatrick paragraphs (`src/karaoke/layout.rs`): citations hang in the right margin; a comma-cite (`drawn,{[Post. 3]}`) breaks so the next clause starts on a new line. Record mode still steps one sentence at a time.
+Read mode flows Fitzpatrick paragraphs (`src/karaoke/layout.rs`): citations hang in the right margin; each sentence (and a comma-cite) starts on a new line. Record mode still steps one sentence at a time.
 
 Figures are fitted to a 1000×1000 plate (`src/figure/plate.rs`). Point letters (`src/figure/labels.rs`) sit with their **center** at a fixed radius from the mark; type is CSS (`clamp` + `cqmin`) so it stays readable when the diagram resizes.

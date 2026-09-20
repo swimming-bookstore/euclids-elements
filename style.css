@@ -103,9 +103,19 @@ h1 {
 
 .proof .word.em { font-style: italic; }
 
-.proof .cite {
+/* Zero-size float at the cite point so the note hangs on that line,
+   not stacked at the top of the paragraph. */
+.proof .sidenote {
   float: right;
   clear: right;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.proof .cite {
+  display: block;
   width: 6.5rem;
   margin: 0 -7.2rem 0 0;
   padding: 0;
@@ -118,7 +128,7 @@ h1 {
 
 .proof .after-cite {
   display: block;
-  clear: right;
+  clear: both;
 }
 
 .karaoke .line {
