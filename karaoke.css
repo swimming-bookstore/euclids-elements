@@ -1,0 +1,89 @@
+/* Karaoke framework: wrapping current line, previous fades, margin cites. */
+
+.karaoke-play {
+  margin: 0 0 0.45rem;
+  display: flex;
+  gap: 0.4rem;
+}
+
+.karaoke-play .play,
+.karaoke-play .mode {
+  font: 13px/1.2 system-ui, sans-serif;
+  border: 0;
+  padding: 0.3rem 0.75rem;
+  cursor: pointer;
+}
+
+.karaoke-play .play {
+  background: #111;
+  color: #fff;
+}
+
+.karaoke-play .mode {
+  background: #eee;
+  color: #111;
+}
+
+.karaoke-play .mode.on {
+  background: #ddd;
+}
+
+.karaoke {
+  flex: 0 0 auto;
+  position: relative;
+  min-height: 5.6rem;
+  margin: 0.5rem 0 0;
+  font-size: 1.28rem;
+  line-height: 1.5;
+}
+
+.karaoke .line {
+  display: none;
+  margin: 0;
+  padding-right: 6.8rem;
+  position: relative;
+  line-height: 1.5;
+}
+
+.karaoke .line.now,
+.karaoke .line.prev {
+  display: block;
+}
+
+.karaoke .line.prev {
+  color: #888;
+  margin-bottom: 0.35rem;
+  opacity: 0.7;
+}
+
+.karaoke .line.gone {
+  display: none;
+}
+
+.karaoke .word {
+  color: #c8c8c8;
+  margin-right: 0.32em;
+}
+
+.karaoke .word.em { font-style: italic; }
+.karaoke .word.sung { color: #111; }
+
+.karaoke .word.sing {
+  color: #111;
+  background: #ffe58a;
+}
+
+.karaoke .word.cite,
+.karaoke .word.cite.sing,
+.karaoke .word.cite.sung {
+  position: absolute;
+  right: 0;
+  top: 0;
+  margin: 0;
+  width: 6.5rem;
+  text-align: right;
+  font-size: 0.92rem;
+  white-space: nowrap;
+  color: #333;
+  background: none;
+}
