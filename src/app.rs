@@ -119,8 +119,11 @@ fn PropositionPage(prop: Proposition) -> impl IntoView {
             <KaraokePlay player=player record=record />
             <div class="figure-wrap" inner_html=move || {
                 let fig = (prop.figure)();
-                if record.get() {
-                    fig.svg(script_fig.parts_at(player.cursor.get()))
+                let cursor = player.cursor.get();
+                let lighting = record.get()
+                    && (player.playing.get() || cursor != player.start_at);
+                if lighting {
+                    fig.svg(script_fig.parts_at(cursor))
                 } else {
                     fig.svg(&[] as &[String])
                 }

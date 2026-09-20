@@ -9,6 +9,7 @@ use wasm_bindgen::JsCast;
 pub struct Player {
     pub cursor: RwSignal<usize>,
     pub playing: RwSignal<bool>,
+    pub start_at: usize,
     n: usize,
 }
 
@@ -24,10 +25,12 @@ impl Player {
         let p = Self {
             cursor: RwSignal::new(start),
             playing: RwSignal::new(false),
+            start_at: start,
             n,
         };
         if autoplay {
-            later(400, move || p.playing.set(true));
+            // Let the finished plate sit in solid black before karaoke.
+            later(2500, move || p.playing.set(true));
         }
         let durs: Vec<u32> = script
             .lines
@@ -39,7 +42,7 @@ impl Player {
     }
 
     pub fn restart(self) {
-        self.cursor.set(0);
+        self.cursor.set(self.start_at);
     }
 
     fn tick(self, durs: Vec<u32>, skip: Vec<bool>) {

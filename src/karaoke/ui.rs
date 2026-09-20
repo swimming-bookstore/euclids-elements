@@ -101,14 +101,23 @@ pub fn KaraokeLyrics(script: Script, player: Player) -> impl IntoView {
                     <p
                         class="line"
                         class:prev=move || {
+                            if !player.playing.get() && player.cursor.get() == player.start_at {
+                                return false;
+                            }
                             let cur = prev_script.get(player.cursor.get()).map(|(i, _, _)| i).unwrap_or(0);
                             li + 1 == cur
                         }
                         class:now=move || {
+                            if !player.playing.get() && player.cursor.get() == player.start_at {
+                                return false;
+                            }
                             let cur = now_script.get(player.cursor.get()).map(|(i, _, _)| i).unwrap_or(0);
                             li == cur
                         }
                         class:gone=move || {
+                            if !player.playing.get() && player.cursor.get() == player.start_at {
+                                return false;
+                            }
                             let cur = gone_script.get(player.cursor.get()).map(|(i, _, _)| i).unwrap_or(0);
                             li + 1 < cur
                         }
@@ -124,11 +133,17 @@ pub fn KaraokeLyrics(script: Script, player: Player) -> impl IntoView {
                                         class="word"
                                         class:em=italic
                                         class:sing=move || {
+                                            if !player.playing.get() && player.cursor.get() == player.start_at {
+                                                return false;
+                                            }
                                             sing_script.get(player.cursor.get())
                                                 .map(|(a, b, _)| a == li && b == ti)
                                                 .unwrap_or(false)
                                         }
                                         class:sung=move || {
+                                            if !player.playing.get() && player.cursor.get() == player.start_at {
+                                                return false;
+                                            }
                                             match sung_script.get(player.cursor.get()) {
                                                 Some((a, b, _)) if a > li || (a == li && b > ti) => true,
                                                 _ => false,
