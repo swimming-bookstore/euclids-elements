@@ -9,4 +9,3 @@ mod plate;
 
 pub use book1::{book1_prop1, book1_prop2};
 pub use diagram::Diagram;
-pub use geom::{Place, V2};

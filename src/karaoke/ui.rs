@@ -1,6 +1,6 @@
-use super::layout::{read_layout, split_cites, Atom};
+use super::layout::{read_layout, Atom};
 use super::player::Player;
-use super::script::{Script, Token};
+use super::script::Script;
 use leptos::prelude::*;
 
 #[component]
@@ -67,7 +67,12 @@ pub fn KaraokeRead(script: Script) -> impl IntoView {
                                 <span class="word" class:em=italic>{text}" "</span>
                             }.into_any(),
                             Atom::Cite(text) => view! {
-                                <span class="cite">{text}</span>
+                                <>
+                                    <span class="sidenote">
+                                        <span class="cite">{text}</span>
+                                    </span>
+                                    " "
+                                </>
                             }.into_any(),
                             Atom::Break => view! { <br class="after-cite"/> }.into_any(),
                         }).collect_view()}

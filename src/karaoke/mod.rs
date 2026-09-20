@@ -12,7 +12,7 @@ mod script;
 mod ui;
 
 pub use player::Player;
-pub use script::{compile, PartsMap, Script, Timing};
+pub use script::{compile, PartsMap, Timing};
 pub use ui::{KaraokeLyrics, KaraokePlay, KaraokeRead};
 
 use crate::figure::Diagram;
