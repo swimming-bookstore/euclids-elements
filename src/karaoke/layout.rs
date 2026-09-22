@@ -182,4 +182,27 @@ mod tests {
             "period-cite must break: {construction}"
         );
     }
+
+    #[test]
+    fn i3_fitzpatrick_paragraphs() {
+        let i3 = layout_of(1, 3);
+        assert_eq!(i3.len(), 4, "I.3 has four Fitzpatrick paragraphs");
+        assert_eq!(cites(&i3[1]), vec!["[Prop. 1.2]", "[Post. 3]"]);
+        assert_eq!(cites(&i3[2]), vec!["[Def. 1.15]", "[C.N. 1]"]);
+        let given = para_text(&i3[0]);
+        assert!(given.contains("Let AB and C be the two given unequal straight-lines"));
+        assert!(given.contains("AB. So it is required"), "plain full stop stays: {given}");
+        let construction = para_text(&i3[1]);
+        assert!(
+            construction.contains("point A. [Prop. 1.2] \nAnd let the circle"),
+            "period-cite must break: {construction}"
+        );
+        let argument = para_text(&i3[2]);
+        assert!(argument.contains("AD. [Def. 1.15] \nBut, C is also equal"));
+        assert!(
+            argument.contains("AD. Thus, AE and C") && argument.contains("AD. So AE is also"),
+            "plain full stops stay: {argument}"
+        );
+        assert!(argument.contains("C. [C.N. 1]"));
+    }
 }

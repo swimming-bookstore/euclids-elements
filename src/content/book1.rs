@@ -1,5 +1,5 @@
 use super::{s, Proposition};
-use crate::figure::{book1_prop1, book1_prop2};
+use crate::figure::{book1_prop1, book1_prop2, book1_prop3};
 
 pub const PROP_1: Proposition = Proposition {
     book: 1,
@@ -50,4 +50,23 @@ pub const PROP_2: Proposition = Proposition {
     ],
 };
 
-pub const PROPOSITIONS: &[Proposition] = &[PROP_1, PROP_2];
+pub const PROP_3: Proposition = Proposition {
+    book: 1,
+    number: 3,
+    enunciation: "For two given unequal straight-lines, to cut off from the greater a straight-line equal to the lesser.",
+    figure: book1_prop3,
+    phrases: &[
+        s(1, "Let *AB* and *C* be the two given unequal straight-lines, of which let the greater be *AB*."),
+        s(1, "So it is required to cut off a straight-line equal to the lesser *C* from the greater *AB*."),
+        s(2, "Let the line *AD*, equal to the straight-line *C*, have been placed at point *A*.{[Prop. 1.2]}"),
+        s(2, "And let the circle *DEF* have been drawn with center *A* and radius *AD*.{[Post. 3]}"),
+        s(3, "And since point *A* is the center of circle *DEF*, *AE* is equal to *AD*.{[Def. 1.15]}"),
+        s(3, "But, *C* is also equal to *AD*."),
+        s(3, "Thus, *AE* and *C* are each equal to *AD*."),
+        s(3, "So *AE* is also equal to *C*.{[C.N. 1]}"),
+        s(4, "Thus, for two given unequal straight-lines, *AB* and *C*, the (straight-line) *AE*, equal to the lesser *C*, has been cut off from the greater *AB*."),
+        s(4, "(Which is) the very thing it was required to do."),
+    ],
+};
+
+pub const PROPOSITIONS: &[Proposition] = &[PROP_1, PROP_2, PROP_3];
