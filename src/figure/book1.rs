@@ -58,3 +58,32 @@ pub fn book1_prop2() -> Diagram {
     );
     d
 }
+
+/// I.3 — Fitzpatrick plate: AB the greater; C a short given line
+/// drawn horizontally above the left of the circle; AD = C at A
+/// (angle DAE ≈ 140°); circle DEF.
+pub fn book1_prop3() -> Diagram {
+    let r = 180.0;
+    let ab = r * 2.35;
+    let mut d = Diagram::new();
+    d.put("A", V2::new(0.0, 0.0), Place::Left);
+    d.put("B", V2::new(ab, 0.0), Place::Right);
+    d.put("E", V2::new(r, 0.0), Place::Above);
+    d.polar("D", "A", r, 140.0, Place::Left);
+    d.polar("F", "A", r, 270.0, Place::Below);
+    let c_y = r * 1.28;
+    let c_x0 = -r * 0.28;
+    d.pin("Cleft", V2::new(c_x0, c_y));
+    d.pin("Cright", V2::new(c_x0 + r, c_y));
+    d.put("C", V2::new(c_x0 + r / 2.0, c_y), Place::Above);
+    d.named_line("C", "Cleft", "Cright");
+    d.circle("DEF", "A", "D")
+        .join("A", "D")
+        .chain(&["A", "E", "B"])
+        .dots(&["A", "B", "D", "E"]);
+    d.clip(
+        V2::new((-r).min(c_x0) - 40.0, d.at("F").y - 52.0),
+        V2::new(ab + 52.0, c_y + 48.0),
+    );
+    d
+}

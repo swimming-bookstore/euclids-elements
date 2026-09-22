@@ -20,6 +20,7 @@ pub struct Diagram {
     pts: HashMap<&'static str, V2>,
     adj: HashMap<&'static str, Vec<Edge>>,
     circles: Vec<Circ>,
+    named: Vec<Circ>,
 }
 
 impl Diagram {
@@ -29,6 +30,7 @@ impl Diagram {
             pts: HashMap::new(),
             adj: HashMap::new(),
             circles: Vec::new(),
+            named: Vec::new(),
         }
     }
 
@@ -39,9 +41,15 @@ impl Diagram {
             .unwrap_or_else(|| panic!("unknown point {name}"))
     }
 
+    /// Name a point (no letter).
+    pub fn pin(&mut self, name: &'static str, p: V2) -> V2 {
+        self.pts.insert(name, p);
+        p
+    }
+
     /// Name a point and place its letter.
     pub fn put(&mut self, name: &'static str, p: V2, place: Place) -> V2 {
-        self.pts.insert(name, p);
+        self.pin(name, p);
         self.fig.label_at(name, p, place);
         p
     }
@@ -80,9 +88,23 @@ impl Diagram {
     }
 
     pub fn join(&mut self, a: &'static str, b: &'static str) -> &mut Self {
+        let id = format!("{}{}", a.to_ascii_lowercase(), b.to_ascii_lowercase());
+        self.stroke(a, b, id)
+    }
+
+    /// Spoken name for a segment (`C` in I.3).
+    pub fn named_line(&mut self, letters: &'static str, a: &'static str, b: &'static str) -> &mut Self {
+        let id = format!("seg-{}", letters.to_ascii_lowercase());
+        self.named.push(Circ {
+            id: id.clone(),
+            letters: letters.to_ascii_uppercase(),
+        });
+        self.stroke(a, b, id)
+    }
+
+    fn stroke(&mut self, a: &'static str, b: &'static str, id: String) -> &mut Self {
         let pa = self.at(a);
         let pb = self.at(b);
-        let id = format!("{}{}", a.to_ascii_lowercase(), b.to_ascii_lowercase());
         self.fig.seg(&id, pa, pb);
         self.adj.entry(a).or_default().push(Edge {
             to: b,
@@ -137,8 +159,8 @@ impl Diagram {
             return Vec::new();
         }
         match letters.len() {
-            1 => vec![letters[0].to_string()],
-            2 => self.stroke(letters[0], letters[1]),
+            1 => self.single(letters[0], &key),
+            2 => self.pair(letters[0], letters[1]),
             3 => self.triple(letters[0], letters[1], letters[2], &key),
             _ => Vec::new(),
         }
@@ -152,7 +174,22 @@ impl Diagram {
             .find(|n| n.len() == 1 && n.starts_with(u))
     }
 
-    fn stroke(&self, a: &'static str, b: &'static str) -> Vec<String> {
+    fn single(&self, a: &'static str, key: &str) -> Vec<String> {
+        let mut out = vec![a.to_string()];
+        if let Some(id) = self.named_id(key) {
+            out.push(id);
+            if let Some(edges) = self.adj.get(a) {
+                for e in edges {
+                    if e.id == out[1] {
+                        out.push(e.to.to_string());
+                    }
+                }
+            }
+        }
+        out
+    }
+
+    fn pair(&self, a: &'static str, b: &'static str) -> Vec<String> {
         let mut out = vec![a.to_string(), b.to_string()];
         out.extend(self.path(a, b));
         out
@@ -167,19 +204,26 @@ impl Diagram {
                 c.to_string(),
             ];
         }
-        let mut out = self.stroke(a, b);
-        out.extend(self.stroke(b, c));
-        out.extend(self.stroke(c, a));
+        let mut out = self.pair(a, b);
+        out.extend(self.pair(b, c));
+        out.extend(self.pair(c, a));
         out.sort();
         out.dedup();
         out
     }
 
     fn named_circle(&self, key: &str) -> Option<String> {
+        self.named_in(&self.circles, key)
+    }
+
+    fn named_id(&self, key: &str) -> Option<String> {
+        self.named_in(&self.named, key)
+    }
+
+    fn named_in(&self, xs: &[Circ], key: &str) -> Option<String> {
         let want = sorted_letters(key);
-        self.circles.iter().find_map(|c| {
-            (sorted_letters(&c.letters) == want).then_some(c.id.clone())
-        })
+        xs.iter()
+            .find_map(|c| (sorted_letters(&c.letters) == want).then_some(c.id.clone()))
     }
 
     fn path(&self, start: &'static str, goal: &'static str) -> Vec<String> {
@@ -226,7 +270,7 @@ fn sorted_letters(s: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::figure::book1_prop2;
+    use crate::figure::{book1_prop2, book1_prop3};
 
     fn has(v: &[String], id: &str) -> bool {
         v.iter().any(|s| s == id)
@@ -245,6 +289,39 @@ mod tests {
         assert!(has(&cgh, "C") && has(&cgh, "G") && has(&cgh, "H"));
         let dab = d.highlight("DAB");
         assert!(has(&dab, "da") && has(&dab, "ab") && has(&dab, "db"));
+    }
+
+    #[test]
+    fn prop3_paths() {
+        let d = book1_prop3();
+        let c = d.highlight("C");
+        assert!(has(&c, "C") && has(&c, "seg-c"));
+        let ae = d.highlight("AE");
+        assert!(has(&ae, "ae") && has(&ae, "A") && has(&ae, "E"));
+        let def = d.highlight("DEF");
+        assert!(has(&def, "circ-def"));
+        assert!(has(&def, "D") && has(&def, "E") && has(&def, "F"));
+        let ad = d.highlight("AD");
+        assert!(has(&ad, "ad"));
+        let a = d.at("A");
+        let b = d.at("B");
+        let e = d.at("E");
+        let left = d.at("Cleft");
+        let right = d.at("Cright");
+        let c = d.at("C");
+        assert!((left.y - right.y).abs() < 1e-9, "C is horizontal");
+        assert!((left.dist(right) - a.dist(e)).abs() < 1e-6, "C equals AD");
+        assert!(left.y > d.at("D").y, "C sits above the circle");
+        assert!(c.y == left.y && c.x > left.x && c.x < right.x);
+        assert!(left.x < a.x, "C starts left of A");
+        assert!(right.x < e.x, "C stays over the left of the circle");
+        assert!(right.x < b.x, "C is not past B");
+        let dd = d.at("D");
+        let ang = (dd.y - a.y).atan2(dd.x - a.x).to_degrees();
+        assert!(
+            (ang - 140.0).abs() < 0.5,
+            "angle DAE (AD from AE) should be 140°, got {ang}"
+        );
     }
 
     fn has_layer(html: &str) -> bool {
