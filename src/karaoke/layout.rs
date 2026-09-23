@@ -205,4 +205,34 @@ mod tests {
         );
         assert!(argument.contains("C. [C.N. 1]"));
     }
+
+    #[test]
+    fn i4_fitzpatrick_paragraphs() {
+        let i4 = layout_of(1, 4);
+        assert_eq!(i4.len(), 3, "I.4 has three Fitzpatrick paragraphs");
+        assert!(cites(&i4[0]).is_empty());
+        assert_eq!(
+            cites(&i4[1]),
+            vec!["[Post. 1]", "[C.N. 4]", "[C.N. 4]", "[C.N. 4]", "[C.N. 4]"]
+        );
+        assert!(cites(&i4[2]).is_empty());
+        let given = para_text(&i4[0]);
+        assert!(given.contains("Let ABC and DEF be two triangles"));
+        assert!(given.contains("respectively. (That is) AB to DE"));
+        assert!(given.contains("angle BAC (be) equal to the angle EDF"));
+        assert!(given.contains("corresponding remaining angles. (That is) ABC to DEF"));
+        let proof = para_text(&i4[1]);
+        assert!(proof.contains("For if triangle ABC is applied"));
+        assert!(proof.contains("encompass an area. The very thing is impossible. [Post. 1]"));
+        assert!(proof.contains("impossible. [Post. 1] \nThus, the base BC"));
+        assert!(proof.contains("equal to it. [C.N. 4] \nSo the whole triangle"));
+        assert!(proof.contains("equal to them. [C.N. 4] \n(That is) ABC to DEF"));
+        assert!(
+            proof.contains("DE. So (because of)") && proof.contains("DF. But, point B"),
+            "plain full stops stay: {proof}"
+        );
+        let qed = para_text(&i4[2]);
+        assert!(qed.contains("equal straight-line equal"));
+        assert!(qed.contains("corresponding remaining angles. (Which is) the very thing it was required to show."));
+    }
 }

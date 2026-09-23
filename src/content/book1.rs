@@ -1,5 +1,5 @@
 use super::{s, Proposition};
-use crate::figure::{book1_prop1, book1_prop2, book1_prop3};
+use crate::figure::{book1_prop1, book1_prop2, book1_prop3, book1_prop4};
 
 pub const PROP_1: Proposition = Proposition {
     book: 1,
@@ -69,4 +69,41 @@ pub const PROP_3: Proposition = Proposition {
     ],
 };
 
-pub const PROPOSITIONS: &[Proposition] = &[PROP_1, PROP_2, PROP_3];
+pub const PROP_4: Proposition = Proposition {
+    book: 1,
+    number: 4,
+    enunciation: "If two triangles have two sides equal to two sides, respectively, and have the angle(s) enclosed by the equal straight-lines equal, then they will also have the base equal to the base, and the triangle will be equal to the triangle, and the remaining angles subtended by the equal sides will be equal to the corresponding remaining angles.",
+    figure: book1_prop4,
+    phrases: &[
+        s(1, "Let *ABC* and *DEF* be two triangles having the two sides *AB* and *AC* equal to the two sides *DE* and *DF*, respectively."),
+        s(1, "(That is) *AB* to *DE*, and *AC* to *DF*."),
+        s(1, "And (let) the angle *BAC* (be) equal to the angle *EDF*."),
+        s(1, "I say that the base *BC* is also equal to the base *EF*,"),
+        s(1, "and triangle *ABC* will be equal to triangle *DEF*,"),
+        s(1, "and the remaining angles subtended by the equal sides will be equal to the corresponding remaining angles."),
+        s(1, "(That is) *ABC* to *DEF*, and *ACB* to *DFE*."),
+        s(2, "For if triangle *ABC* is applied to triangle *DEF*,"),
+        s(2, "the point *A* being placed on the point *D*, and the straight-line *AB* on *DE*,"),
+        s(2, "then the point *B* will also coincide with *E*, on account of *AB* being equal to *DE*."),
+        s(2, "So (because of) *AB* coinciding with *DE*,"),
+        s(2, "the straight-line *AC* will also coincide with *DF*, on account of the angle *BAC* being equal to *EDF*."),
+        s(2, "So the point *C* will also coincide with the point *F*, again on account of *AC* being equal to *DF*."),
+        s(2, "But, point *B* certainly also coincided with point *E*,"),
+        s(2, "so that the base *BC* will coincide with the base *EF*."),
+        s(2, "For if *B* coincides with *E*, and *C* with *F*,"),
+        s(2, "and the base *BC* does not coincide with *EF*, then two straight-lines will encompass an area."),
+        s(2, "The very thing is impossible.{[Post. 1]}"),
+        s(2, "Thus, the base *BC* will coincide with *EF*, and will be equal to it.{[C.N. 4]}"),
+        s(2, "So the whole triangle *ABC* will coincide with the whole triangle *DEF*, and will be equal to it.{[C.N. 4]}"),
+        s(2, "And the remaining angles will coincide with the remaining angles, and will be equal to them.{[C.N. 4]}"),
+        s(2, "(That is) *ABC* to *DEF*, and *ACB* to *DFE*.{[C.N. 4]}"),
+        s(3, "Thus, if two triangles have two sides equal to two sides, respectively,"),
+        s(3, "and have the angle(s) enclosed by the equal straight-line equal,"),
+        s(3, "then they will also have the base equal to the base,"),
+        s(3, "and the triangle will be equal to the triangle,"),
+        s(3, "and the remaining angles subtended by the equal sides will be equal to the corresponding remaining angles."),
+        s(3, "(Which is) the very thing it was required to show."),
+    ],
+};
+
+pub const PROPOSITIONS: &[Proposition] = &[PROP_1, PROP_2, PROP_3, PROP_4];

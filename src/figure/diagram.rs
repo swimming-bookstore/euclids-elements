@@ -135,6 +135,13 @@ impl Diagram {
         self
     }
 
+    /// Decorative circular arc `a` → `b` through `via` (not a spoken name).
+    pub fn arc(&mut self, a: &str, b: &str, via: V2) -> &mut Self {
+        let id = format!("arc-{}{}", a.to_ascii_lowercase(), b.to_ascii_lowercase());
+        self.fig.arc(&id, self.at(a), self.at(b), via);
+        self
+    }
+
     pub fn clip(&mut self, min: V2, max: V2) -> &mut Self {
         self.fig.clip_box(min, max);
         self
@@ -146,6 +153,15 @@ impl Diagram {
 
     /// Figure ids to light for a spoken geometry word (`A`, `AL`, `DAB`, `CGH`).
     pub fn highlight(&self, word: &str) -> Vec<String> {
+        self.hit(word, false)
+    }
+
+    /// ∠BAC lights rays BA and AC at vertex A — not the opposite side.
+    pub fn highlight_angle(&self, word: &str) -> Vec<String> {
+        self.hit(word, true)
+    }
+
+    fn hit(&self, word: &str, angle: bool) -> Vec<String> {
         let key: String = word
             .chars()
             .filter(|c| c.is_ascii_alphabetic())
@@ -161,6 +177,7 @@ impl Diagram {
         match letters.len() {
             1 => self.single(letters[0], &key),
             2 => self.pair(letters[0], letters[1]),
+            3 if angle => self.angle(letters[0], letters[1], letters[2], &key),
             3 => self.triple(letters[0], letters[1], letters[2], &key),
             _ => Vec::new(),
         }
@@ -207,6 +224,17 @@ impl Diagram {
         let mut out = self.pair(a, b);
         out.extend(self.pair(b, c));
         out.extend(self.pair(c, a));
+        out.sort();
+        out.dedup();
+        out
+    }
+
+    fn angle(&self, a: &'static str, v: &'static str, c: &'static str, key: &str) -> Vec<String> {
+        if let Some(circ) = self.named_circle(key) {
+            return vec![circ, a.to_string(), v.to_string(), c.to_string()];
+        }
+        let mut out = self.pair(v, a);
+        out.extend(self.pair(v, c));
         out.sort();
         out.dedup();
         out
@@ -270,7 +298,7 @@ fn sorted_letters(s: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::figure::{book1_prop2, book1_prop3};
+    use crate::figure::{book1_prop2, book1_prop3, book1_prop4};
 
     fn has(v: &[String], id: &str) -> bool {
         v.iter().any(|s| s == id)
@@ -322,6 +350,65 @@ mod tests {
             (ang - 140.0).abs() < 0.5,
             "angle DAE (AD from AE) should be 140°, got {ang}"
         );
+    }
+
+    fn angle_at(d: &crate::figure::Diagram, p: &str, v: &str, q: &str) -> f64 {
+        let a = d.at(p).sub(d.at(v)).unit();
+        let b = d.at(q).sub(d.at(v)).unit();
+        a.dot(b).clamp(-1.0, 1.0).acos()
+    }
+
+    #[test]
+    fn prop4_paths() {
+        let d = book1_prop4();
+        let abc = d.highlight("ABC");
+        assert!(has(&abc, "ab") && has(&abc, "bc") && has(&abc, "ca"));
+        let def = d.highlight("DEF");
+        assert!(has(&def, "de") && has(&def, "ef") && has(&def, "fd"));
+        let bac = d.highlight_angle("BAC");
+        assert!(has(&bac, "ab") && has(&bac, "ca") && has(&bac, "A"));
+        assert!(!has(&bac, "bc"), "an angle is not the whole triangle");
+        let edf = d.highlight_angle("EDF");
+        assert!(has(&edf, "de") && has(&edf, "fd"));
+        assert!(!has(&edf, "ef"));
+        let abc_ang = d.highlight_angle("ABC");
+        assert!(has(&abc_ang, "ab") && has(&abc_ang, "bc") && !has(&abc_ang, "ca"));
+        let ab = d.highlight("AB");
+        assert!(has(&ab, "ab") && has(&ab, "A") && has(&ab, "B"));
+        let a = d.at("A");
+        let b = d.at("B");
+        let c = d.at("C");
+        let e = d.at("E");
+        let f = d.at("F");
+        let dd = d.at("D");
+        assert!((a.dist(b) - dd.dist(e)).abs() < 1e-6, "AB = DE");
+        assert!((a.dist(c) - dd.dist(f)).abs() < 1e-6, "AC = DF");
+        assert!((b.dist(c) - e.dist(f)).abs() < 1e-6, "BC = EF");
+        assert!(
+            (angle_at(&d, "B", "A", "C") - angle_at(&d, "E", "D", "F")).abs() < 1e-9,
+            "∠BAC = ∠EDF"
+        );
+        assert!((b.y - e.y).abs() < 1e-9 && (c.y - f.y).abs() < 1e-9, "one baseline");
+        assert!((a.y - dd.y).abs() < 1e-9, "apexes A and D level");
+        assert!(c.x < e.x, "a gap between the triangles");
+        assert!((e.x - c.x) < (c.x - b.x) * 0.3, "CE is a small gap");
+        assert!(a.y > b.y && dd.y > e.y, "peaks A and D above the bases");
+        let bc = c.x - b.x;
+        let a_along = (a.x - b.x) / bc;
+        let d_along = (dd.x - e.x) / (f.x - e.x);
+        assert!(
+            (a_along - 0.68).abs() < 0.02 && (d_along - 0.68).abs() < 0.02,
+            "A toward C, D toward F (Fitzpatrick), got {a_along} {d_along}"
+        );
+        let h = a.y - b.y;
+        assert!(
+            h / bc > 0.7 && h / bc < 0.9,
+            "Fitzpatrick I.4 is fairly tall, got {}",
+            h / bc
+        );
+        let html = d.svg(&[] as &[String]);
+        assert!(html.contains("class=\"arc\""), "bow under EF");
+        assert!(html.contains("<path"), "arc is an SVG path");
     }
 
     fn has_layer(html: &str) -> bool {

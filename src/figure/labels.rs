@@ -21,10 +21,15 @@ pub(crate) struct Placed {
     pub y: f64,
 }
 
-pub(crate) fn place(marks: &[Mark], clip: Option<(V2, V2)>, labels: &[Label]) -> Vec<Placed> {
+pub(crate) fn place(
+    marks: &[Mark],
+    clip: Option<(V2, V2)>,
+    labels: &[Label],
+    size: plate::Size,
+) -> Vec<Placed> {
     let mut out = Vec::new();
     for lab in labels {
-        let p = best_center(marks, clip, lab, &out);
+        let p = best_center(marks, clip, lab, &out, size);
         out.push(Placed {
             id: lab.id.clone(),
             text: lab.text.clone(),
@@ -36,7 +41,12 @@ pub(crate) fn place(marks: &[Mark], clip: Option<(V2, V2)>, labels: &[Label]) ->
 }
 
 /// HTML overlay. Size comes from CSS (`cqmin` of the figure frame).
-pub(crate) fn layer<S: AsRef<str>>(placed: &[Placed], on: &[S], lighting: bool) -> String {
+pub(crate) fn layer<S: AsRef<str>>(
+    placed: &[Placed],
+    on: &[S],
+    lighting: bool,
+    size: plate::Size,
+) -> String {
     let lit = |id: &str| on.iter().any(|p| p.as_ref() == id);
     let mut out = String::from(r##"<div class="letter-layer">"##);
     for lab in placed {
@@ -47,8 +57,8 @@ pub(crate) fn layer<S: AsRef<str>>(placed: &[Placed], on: &[S], lighting: bool) 
         } else {
             " dim"
         };
-        let left = lab.x / plate::WIDTH * 100.0;
-        let top = (plate::HEIGHT - lab.y) / plate::HEIGHT * 100.0;
+        let left = lab.x / size.w * 100.0;
+        let top = (size.h - lab.y) / size.h * 100.0;
         out.push_str(&format!(
             r##"<span class="letter{state}" data-id="{}" style="left:{}%;top:{}%">{}</span>"##,
             lab.id,
@@ -61,23 +71,29 @@ pub(crate) fn layer<S: AsRef<str>>(placed: &[Placed], on: &[S], lighting: bool) 
     out
 }
 
-fn best_center(marks: &[Mark], clip: Option<(V2, V2)>, lab: &Label, taken: &[Placed]) -> V2 {
+fn best_center(
+    marks: &[Mark],
+    clip: Option<(V2, V2)>,
+    lab: &Label,
+    taken: &[Placed],
+    size: plate::Size,
+) -> V2 {
     let at = lab.at;
     let prefer = lab.place.angle();
+    if let Some(a) = prefer {
+        return at.add(V2::new(a.cos(), a.sin()).mul(plate::GAP));
+    }
     let mut cands: Vec<f64> = (0..24)
         .map(|i| i as f64 * std::f64::consts::PI / 12.0)
         .collect();
     for extra in hint_angles(marks, at) {
         cands.push(extra);
     }
-    if let Some(a) = prefer {
-        cands.push(a);
-    }
     let mut best = at.add(V2::new(plate::GAP, 0.0));
     let mut best_s = f64::INFINITY;
     for ang in cands {
         let p = at.add(V2::new(ang.cos(), ang.sin()).mul(plate::GAP));
-        let s = score(marks, clip, lab, at, p, prefer, ang, taken);
+        let s = score(marks, clip, lab, at, p, prefer, ang, taken, size);
         if s < best_s {
             best_s = s;
             best = p;
@@ -109,6 +125,7 @@ fn score(
     prefer: Option<f64>,
     ang: f64,
     taken: &[Placed],
+    size: plate::Size,
 ) -> f64 {
     let mut s = 0.0;
     let (x0, y0, x1, y1) = text_box(&lab.text, p);
@@ -129,6 +146,12 @@ fn score(
                     s += (near - d) * 8.0;
                 }
             }
+            Mark::Arc { a, b, via, .. } => {
+                let d = dist_seg(mid, *a, *via).min(dist_seg(mid, *via, *b));
+                if d < near {
+                    s += (near - d) * (near - d);
+                }
+            }
             Mark::Dot { p: q, .. } => {
                 if q.dist(mid) < plate::FONT * 0.5 {
                     s += 40.0;
@@ -147,7 +170,7 @@ fn score(
         }
     }
     let pad = plate::FONT * 0.2;
-    if x0 < pad || y0 < pad || x1 > plate::WIDTH - pad || y1 > plate::HEIGHT - pad {
+    if x0 < pad || y0 < pad || x1 > size.w - pad || y1 > size.h - pad {
         s += 40.0;
     }
     if let Some((min, max)) = clip {
@@ -229,7 +252,7 @@ mod tests {
                 place: Place::Above,
             },
         ];
-        let placed = place(&[], None, &labels);
+        let placed = place(&[], None, &labels, plate::Size { w: 1000.0, h: 1000.0 });
         for (lab, p) in labels.iter().zip(placed.iter()) {
             let d = lab.at.dist(V2::new(p.x, p.y));
             assert!(

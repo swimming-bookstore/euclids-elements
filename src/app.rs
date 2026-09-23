@@ -97,7 +97,8 @@ pub fn App() -> impl IntoView {
 #[component]
 fn PropositionPage(prop: Proposition) -> impl IntoView {
     let script = compile(prop.phrases, &(prop.figure)(), Timing::default());
-    let record = RwSignal::new(wants_record());
+    let capture = wants_record();
+    let record = RwSignal::new(capture);
     let player = Player::start(&script, record.get_untracked());
     let script_fig = script.clone();
     let script_read = script.clone();
@@ -107,6 +108,7 @@ fn PropositionPage(prop: Proposition) -> impl IntoView {
         <article
             class="stage"
             class:record=move || record.get()
+            class:capture=capture
             data-karaoke=move || if record.get() { "1" } else { "0" }
             data-ready="1"
         >

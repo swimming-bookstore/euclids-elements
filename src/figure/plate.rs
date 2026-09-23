@@ -1,8 +1,6 @@
 //! Canonical drawing plate. Geometry is fitted into this frame.
 //! Letter type is CSS on `.letter-layer` (`cqmin` of the on-screen figure).
 
-pub(crate) const WIDTH: f64 = 1000.0;
-pub(crate) const HEIGHT: f64 = 1000.0;
 /// User-unit stand-in for layout (gaps, collision).
 pub(crate) const FONT: f64 = 56.0;
 pub(crate) const GAP: f64 = FONT * 0.72;
@@ -12,10 +10,17 @@ pub(crate) const DOT: f64 = FONT * 0.12;
 pub(crate) const CHAR_W: f64 = FONT * 0.58;
 
 #[derive(Clone, Copy)]
+pub(crate) struct Size {
+    pub w: f64,
+    pub h: f64,
+}
+
+#[derive(Clone, Copy)]
 pub(crate) struct Fit {
     pub ox: f64,
     pub oy: f64,
     pub scale: f64,
+    pub size: Size,
 }
 
 impl Fit {

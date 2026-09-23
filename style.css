@@ -37,13 +37,12 @@ h1 {
   display: flex;
   justify-content: center;
   align-items: center;
-  max-width: 28rem;
+  max-width: 42rem;
 }
 
 .figure-frame {
   position: relative;
   width: 100%;
-  aspect-ratio: 1;
   container-type: size;
 }
 
@@ -84,13 +83,19 @@ h1 {
   fill: #d4d4d4;
 }
 
-.figure .circ.dim { fill: none; }
-.figure .seg.dim { fill: none; }
+.figure .circ.dim,
+.figure .seg.dim,
+.figure .arc,
+.figure .arc.dim,
+.figure .arc.on {
+  fill: none;
+}
 
 .figure .on { stroke: #c0392b; }
 
 .figure .circ.on { fill: none; stroke-width: 2.6; }
 .figure .seg.on { stroke-width: 3.2; }
+.figure .arc.on { fill: none; stroke-width: 2.6; }
 .figure .dot.on { fill: #c0392b; stroke: none; }
 .letter-layer .letter.on { color: #c0392b; }
 .letter-layer .letter.dim { color: #d4d4d4; }
@@ -240,7 +245,7 @@ footer {
   -webkit-user-select: none;
 }
 
-.stage.record .karaoke-play { display: none; }
+.stage.capture .karaoke-play { display: none; }
 
 .stage.record .record-head,
 .stage.record .enun,
@@ -296,7 +301,6 @@ footer {
   width: auto;
   height: 100%;
   max-width: 100%;
-  aspect-ratio: 1;
 }
 
 .stage.record .figure {
@@ -310,6 +314,8 @@ footer {
 .stage.record .karaoke {
   flex: 0 0 6.6rem;
   height: 6.6rem;
+  min-height: 6.6rem;
+  max-height: 6.6rem;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
