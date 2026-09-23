@@ -269,7 +269,7 @@ mod tests {
     use crate::content::Phrase;
     use crate::figure::book1_prop4;
 
-    fn parts_of(text: &str, word: &str) -> Vec<String> {
+    fn parts_of(text: &'static str, word: &str) -> Vec<String> {
         let phrases = [Phrase { para: 1, text }];
         let script = compile(&phrases, &book1_prop4(), Timing::default());
         script
