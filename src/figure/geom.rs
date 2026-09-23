@@ -55,7 +55,7 @@ impl V2 {
     }
 }
 
-/// Preferred side; the figure still keeps the letter off lines and on-plate.
+/// Preferred side of the mark. The letter center stays at a fixed radius.
 #[derive(Clone, Copy, Debug)]
 #[allow(dead_code)]
 pub enum Place {
@@ -64,16 +64,28 @@ pub enum Place {
     Right,
     Above,
     Below,
+    AboveLeft,
+    AboveRight,
+    BelowLeft,
+    BelowRight,
+    /// Degrees from +x, y-up (same as `V2::polar`).
+    Deg(f64),
 }
 
 impl Place {
     pub(crate) fn angle(self) -> Option<f64> {
+        use std::f64::consts::{FRAC_PI_2, FRAC_PI_4, PI};
         match self {
             Place::Auto => None,
             Place::Right => Some(0.0),
-            Place::Above => Some(std::f64::consts::FRAC_PI_2),
-            Place::Left => Some(std::f64::consts::PI),
-            Place::Below => Some(-std::f64::consts::FRAC_PI_2),
+            Place::AboveRight => Some(FRAC_PI_4),
+            Place::Above => Some(FRAC_PI_2),
+            Place::AboveLeft => Some(FRAC_PI_2 + FRAC_PI_4),
+            Place::Left => Some(PI),
+            Place::BelowLeft => Some(-PI + FRAC_PI_4),
+            Place::Below => Some(-FRAC_PI_2),
+            Place::BelowRight => Some(-FRAC_PI_4),
+            Place::Deg(d) => Some(d.to_radians()),
         }
     }
 }

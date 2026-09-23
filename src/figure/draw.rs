@@ -2,11 +2,13 @@
 
 use super::geom::{Place, V2};
 use super::labels::{self, Label};
-use super::plate::{self, Fit};
+use super::plate::{self, Fit, Size};
 
 pub(crate) enum Mark {
     Circle { id: String, c: V2, r: f64 },
     Seg { id: String, a: V2, b: V2 },
+    /// Circular arc `a` → `b` through `via`.
+    Arc { id: String, a: V2, b: V2, via: V2 },
     Dot { id: String, p: V2 },
 }
 
@@ -39,6 +41,15 @@ impl Figure {
             id: id.into(),
             a,
             b,
+        });
+    }
+
+    pub(crate) fn arc(&mut self, id: impl Into<String>, a: V2, b: V2, via: V2) {
+        self.marks.push(Mark::Arc {
+            id: id.into(),
+            a,
+            b,
+            via,
         });
     }
 
@@ -82,10 +93,14 @@ impl Figure {
                 place: l.place,
             })
             .collect();
-        let placed = labels::place(&marks, clip, &labels);
-        let vb = format!("0 0 {} {}", n(plate::WIDTH), n(plate::HEIGHT));
+        let placed = labels::place(&marks, clip, &labels, fit.size);
+        let vb = format!("0 0 {} {}", n(fit.size.w), n(fit.size.h));
         let mut out = String::new();
-        out.push_str(r##"<div class="figure-frame">"##);
+        out.push_str(&format!(
+            r##"<div class="figure-frame" style="aspect-ratio: {} / {}">"##,
+            n(fit.size.w),
+            n(fit.size.h)
+        ));
         out.push_str(&format!(
             r##"<svg class="figure" viewBox="{vb}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" preserveAspectRatio="xMidYMid meet">"##
         ));
@@ -93,12 +108,12 @@ impl Figure {
             out.push_str(&format!(
                 r##"<defs><clipPath id="fig-clip"><rect x="{}" y="{}" width="{}" height="{}"/></clipPath></defs>"##,
                 n(cmin.x),
-                n(plate::HEIGHT - cmax.y),
+                n(fit.size.h - cmax.y),
                 n(cmax.x - cmin.x),
                 n(cmax.y - cmin.y)
             ));
         }
-        let y = |v: f64| plate::HEIGHT - v;
+        let y = |v: f64| fit.size.h - v;
         out.push_str(&format!(
             r##"<g fill="none" stroke="#111" stroke-width="{}"{}>"##,
             n(plate::STROKE),
@@ -109,14 +124,27 @@ impl Figure {
             }
         ));
         for m in &marks {
-            if let Mark::Circle { id, c, r } = m {
-                out.push_str(&format!(
-                    r##"<circle class="{}" cx="{}" cy="{}" r="{}"/>"##,
-                    cls(id, "circ"),
-                    n(c.x),
-                    n(y(c.y)),
-                    n(*r)
-                ));
+            match m {
+                Mark::Circle { id, c, r } => {
+                    out.push_str(&format!(
+                        r##"<circle class="{}" cx="{}" cy="{}" r="{}"/>"##,
+                        cls(id, "circ"),
+                        n(c.x),
+                        n(y(c.y)),
+                        n(*r)
+                    ));
+                }
+                Mark::Arc { id, a, b, via } => {
+                    if let Some(d) = arc_d(*a, *b, *via, y) {
+                        // Decorative bows stay stroke-only; never fill, never dim.
+                        out.push_str(&format!(
+                            r##"<path class="{}" d="{}" fill="none"/>"##,
+                            cls(id, "arc"),
+                            d
+                        ));
+                    }
+                }
+                _ => {}
             }
         }
         out.push_str("</g>");
@@ -151,7 +179,7 @@ impl Figure {
         }
         out.push_str("</g>");
         out.push_str("</svg>");
-        out.push_str(&labels::layer(&placed, on, lighting));
+        out.push_str(&labels::layer(&placed, on, lighting, fit.size));
         out.push_str("</div>");
         out
     }
@@ -160,12 +188,14 @@ impl Figure {
         let (min, max) = self.geom_box();
         let gw = (max.x - min.x).max(1.0);
         let gh = (max.y - min.y).max(1.0);
-        let inner_w = plate::WIDTH - 2.0 * plate::MARGIN;
-        let inner_h = plate::HEIGHT - 2.0 * plate::MARGIN;
-        let scale = (inner_w / gw).min(inner_h / gh);
-        let ox = (plate::WIDTH - gw * scale) / 2.0 - min.x * scale;
-        let oy = (plate::HEIGHT - gh * scale) / 2.0 - min.y * scale;
-        Fit { ox, oy, scale }
+        let scale = 1000.0 / gw.max(gh);
+        let size = Size {
+            w: gw * scale + 2.0 * plate::MARGIN,
+            h: gh * scale + 2.0 * plate::MARGIN,
+        };
+        let ox = plate::MARGIN - min.x * scale;
+        let oy = plate::MARGIN - min.y * scale;
+        Fit { ox, oy, scale, size }
     }
 
     fn geom_box(&self) -> (V2, V2) {
@@ -191,6 +221,11 @@ impl Figure {
                 Mark::Seg { a, b, .. } => {
                     add(*a);
                     add(*b);
+                }
+                Mark::Arc { a, b, via, .. } => {
+                    add(*a);
+                    add(*b);
+                    add(*via);
                 }
                 Mark::Dot { p, .. } => add(*p),
             }
@@ -243,6 +278,12 @@ fn xform(m: &Mark, fit: Fit) -> Mark {
             a: fit.map(*a),
             b: fit.map(*b),
         },
+        Mark::Arc { id, a, b, via } => Mark::Arc {
+            id: id.clone(),
+            a: fit.map(*a),
+            b: fit.map(*b),
+            via: fit.map(*via),
+        },
         Mark::Dot { id, p } => Mark::Dot {
             id: id.clone(),
             p: fit.map(*p),
@@ -274,6 +315,45 @@ fn exit(inside_pt: V2, outside_pt: V2, min: V2, max: V2) -> V2 {
     }
     t = t.clamp(0.0, 1.0);
     V2::new(inside_pt.x + t * dx, inside_pt.y + t * dy)
+}
+
+fn circle3(a: V2, b: V2, c: V2) -> Option<(V2, f64)> {
+    let d = 2.0 * (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y));
+    if d.abs() < 1e-9 {
+        return None;
+    }
+    let a2 = a.x * a.x + a.y * a.y;
+    let b2 = b.x * b.x + b.y * b.y;
+    let c2 = c.x * c.x + c.y * c.y;
+    let ux = (a2 * (b.y - c.y) + b2 * (c.y - a.y) + c2 * (a.y - b.y)) / d;
+    let uy = (a2 * (c.x - b.x) + b2 * (a.x - c.x) + c2 * (b.x - a.x)) / d;
+    let o = V2::new(ux, uy);
+    Some((o, o.dist(a)))
+}
+
+fn arc_d(a: V2, b: V2, via: V2, y: impl Fn(f64) -> f64) -> Option<String> {
+    let (c, r) = circle3(a, b, via)?;
+    let ang = |p: V2| (p.y - c.y).atan2(p.x - c.x);
+    let mut sweep = (ang(b) - ang(a)).rem_euclid(std::f64::consts::TAU);
+    let via_off = (ang(via) - ang(a)).rem_euclid(std::f64::consts::TAU);
+    if via_off > sweep {
+        sweep = std::f64::consts::TAU - sweep;
+    }
+    let large = if sweep > std::f64::consts::PI { 1 } else { 0 };
+    // y-up CCW becomes clockwise in SVG (y-down).
+    let ccw = (b.x - a.x) * (via.y - a.y) - (b.y - a.y) * (via.x - a.x) > 0.0;
+    let sweep_flag = if ccw { 1 } else { 0 };
+    Some(format!(
+        "M {} {} A {} {} 0 {} {} {} {}",
+        n(a.x),
+        n(y(a.y)),
+        n(r),
+        n(r),
+        large,
+        sweep_flag,
+        n(b.x),
+        n(y(b.y))
+    ))
 }
 
 fn n(v: f64) -> String {

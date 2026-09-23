@@ -19,6 +19,9 @@ impl Default for Timing {
 /// Map a spoken word onto figure part ids.
 pub trait PartsMap {
     fn parts(&self, word: &str) -> Vec<String>;
+    fn angle_parts(&self, word: &str) -> Vec<String> {
+        self.parts(word)
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -63,12 +66,13 @@ pub fn compile(
     map: &impl PartsMap,
     timing: Timing,
 ) -> Script {
+    let mut angle = false;
     Script {
         lines: phrases
             .iter()
             .map(|p| Line {
                 para: p.para,
-                tokens: tokenize(p.text, map, &timing),
+                tokens: tokenize(p.text, map, &timing, &mut angle),
             })
             .collect(),
     }
@@ -84,7 +88,7 @@ fn token_at(lines: &[Line], mut n: usize) -> Option<(usize, usize, &Token)> {
     None
 }
 
-fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
+fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing, angle: &mut bool) -> Vec<Token> {
     let mut out = Vec::new();
     let chars: Vec<char> = src.chars().collect();
     let mut i = 0;
@@ -118,7 +122,7 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
             if i < chars.len() {
                 i += 1;
             }
-            push_words(&mut out, &inner, true, map, timing);
+            push_words(&mut out, &inner, true, map, timing, *angle);
             glue_punct(&mut out, &chars, &mut i);
             continue;
         }
@@ -134,10 +138,69 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
         if is_punct_only(&word) {
             glue_text(&mut out, &word);
         } else {
-            push_words(&mut out, &word, false, map, timing);
+            note_angle(angle, &word);
+            push_words(&mut out, &word, false, map, timing, false);
         }
     }
     out
+}
+
+fn note_angle(angle: &mut bool, word: &str) {
+    let w: String = word
+        .chars()
+        .filter(|c| c.is_ascii_alphabetic() || *c == '-')
+        .map(|c| c.to_ascii_lowercase())
+        .collect();
+    if w.starts_with("angle") {
+        *angle = true;
+        return;
+    }
+    if matches!(
+        w.as_str(),
+        "triangle"
+            | "triangles"
+            | "base"
+            | "circle"
+            | "straight-line"
+            | "straight-lines"
+            | "point"
+            | "points"
+    ) {
+        *angle = false;
+        return;
+    }
+    if !matches!(
+        w.as_str(),
+        "the"
+            | "a"
+            | "an"
+            | "to"
+            | "and"
+            | "or"
+            | "of"
+            | "equal"
+            | "being"
+            | "be"
+            | "let"
+            | "is"
+            | "that"
+            | "this"
+            | "also"
+            | "corresponding"
+            | "remaining"
+            | "enclosed"
+            | "by"
+            | "will"
+            | "are"
+            | "with"
+            | "one"
+            | "other"
+            | "another"
+            | "respectively"
+    ) && !w.is_empty()
+    {
+        // Keep angle mode across "to DEF" / "(That is) ABC".
+    }
 }
 
 fn is_punct(c: char) -> bool {
@@ -170,13 +233,18 @@ fn push_words(
     italic: bool,
     map: &impl PartsMap,
     timing: &Timing,
+    angle: bool,
 ) {
     if chunk.is_empty() {
         return;
     }
     for word in chunk.split_whitespace() {
         let parts = if italic {
-            map.parts(word)
+            if angle {
+                map.angle_parts(word)
+            } else {
+                map.parts(word)
+            }
         } else {
             Vec::new()
         };
@@ -192,5 +260,33 @@ fn push_words(
             parts,
             dur_ms: dur,
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::content::Phrase;
+    use crate::figure::book1_prop4;
+
+    fn parts_of(text: &str, word: &str) -> Vec<String> {
+        let phrases = [Phrase { para: 1, text }];
+        let script = compile(&phrases, &book1_prop4(), Timing::default());
+        script
+            .lines[0]
+            .tokens
+            .iter()
+            .find(|t| t.text.trim_matches(|c: char| !c.is_ascii_alphabetic()) == word)
+            .map(|t| t.parts.clone())
+            .unwrap_or_default()
+    }
+
+    #[test]
+    fn angle_is_not_the_triangle() {
+        let bac = parts_of("the angle *BAC*", "BAC");
+        assert!(bac.iter().any(|s| s == "ab") && bac.iter().any(|s| s == "ca"));
+        assert!(!bac.iter().any(|s| s == "bc"), "∠BAC is not triangle ABC: {bac:?}");
+        let abc = parts_of("triangle *ABC*", "ABC");
+        assert!(abc.iter().any(|s| s == "bc"), "triangle ABC includes the base: {abc:?}");
     }
 }
