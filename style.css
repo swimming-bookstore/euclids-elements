@@ -33,32 +33,43 @@ h1 {
 }
 
 .figure-wrap {
-  margin: 0 auto 1rem;
+  --cap-w: 36rem;
+  --cap-h: 40rem;
+  margin: 0 auto 1.2rem;
   display: flex;
   justify-content: center;
-  align-items: center;
-  max-width: 42rem;
+  width: 100%;
+  container-type: inline-size;
 }
 
 .figure-frame {
   position: relative;
-  width: 100%;
-  container-type: size;
-}
-
-.proof {
   display: block;
-  cursor: text;
-  user-select: text;
-  -webkit-user-select: text;
+  line-height: 0;
+  width: min(100%, var(--cap-w), calc(var(--cap-h) * var(--fw) / var(--fh)));
+  height: auto;
+  max-height: var(--cap-h);
 }
 
 .figure {
   display: block;
   width: 100%;
   height: auto;
-  margin: 0 auto;
+  margin: 0;
   overflow: visible;
+}
+
+.figure .seg,
+.figure .circ,
+.figure .arc {
+  vector-effect: non-scaling-stroke;
+  stroke-width: 1.35px;
+}
+
+.figure .circ.on,
+.figure .arc.on,
+.figure .seg.on {
+  stroke-width: 1.9px;
 }
 
 .letter-layer {
@@ -68,11 +79,12 @@ h1 {
 }
 
 .letter-layer .letter {
+  --dx: 0em;
+  --dy: 0em;
   position: absolute;
-  /* Center of the glyph is the layout point (fixed radius from the mark). */
-  transform: translate(-50%, -50%);
-  /* ~5.6% of the smaller figure side, clamped so it stays readable. */
-  font-size: clamp(22px, 5.6cqmin, 48px);
+  /* Glyph center = mark + (--dx,--dy) in em. Same radius on every plate. */
+  transform: translate(-50%, -50%) translate(var(--dx), var(--dy));
+  font-size: clamp(16px, 4.2cqw, 28px);
   line-height: 1;
   font-family: Georgia, "Times New Roman", serif;
   color: #111;
@@ -93,12 +105,18 @@ h1 {
 
 .figure .on { stroke: #c0392b; }
 
-.figure .circ.on { fill: none; stroke-width: 2.6; }
-.figure .seg.on { stroke-width: 3.2; }
-.figure .arc.on { fill: none; stroke-width: 2.6; }
+.figure .circ.on { fill: none; }
+.figure .arc.on { fill: none; }
 .figure .dot.on { fill: #c0392b; stroke: none; }
 .letter-layer .letter.on { color: #c0392b; }
 .letter-layer .letter.dim { color: #d4d4d4; }
+
+.proof {
+  display: block;
+  cursor: text;
+  user-select: text;
+  -webkit-user-select: text;
+}
 
 .proof .para {
   margin: 0 0 0.7rem;
@@ -289,6 +307,7 @@ footer {
   min-height: 0;
   width: 100%;
   max-width: none;
+  max-height: none;
   position: relative;
   margin: 0;
   display: flex;
@@ -301,14 +320,29 @@ footer {
   width: auto;
   height: 100%;
   max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: inherit;
 }
 
 .stage.record .figure {
-  position: static;
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   margin: 0;
   overflow: visible;
+}
+
+.stage.record .figure .seg,
+.stage.record .figure .circ,
+.stage.record .figure .arc {
+  stroke-width: 1.7px;
+}
+
+.stage.record .figure .seg.on,
+.stage.record .figure .circ.on,
+.stage.record .figure .arc.on {
+  stroke-width: 2.3px;
 }
 
 .stage.record .karaoke {

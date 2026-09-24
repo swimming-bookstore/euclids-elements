@@ -235,4 +235,34 @@ mod tests {
         assert!(qed.contains("equal straight-line equal"));
         assert!(qed.contains("corresponding remaining angles. (Which is) the very thing it was required to show."));
     }
+
+    #[test]
+    fn i5_fitzpatrick_paragraphs() {
+        let i5 = layout_of(1, 5);
+        assert_eq!(i5.len(), 6, "I.5 has six Fitzpatrick paragraphs");
+        assert_eq!(cites(&i5[0]), vec!["[Post. 2]"]);
+        assert_eq!(cites(&i5[1]), vec!["[Prop. 1.3]", "[Post. 1]"]);
+        assert_eq!(cites(&i5[2]), vec!["[Prop. 1.4]"]);
+        assert_eq!(cites(&i5[3]), vec!["[C.N. 3]", "[Prop. 1.4]"]);
+        assert_eq!(cites(&i5[4]), vec!["[C.N. 3]"]);
+        assert!(cites(&i5[5]).is_empty());
+        let given = para_text(&i5[0]);
+        assert!(given.contains("Let ABC be an isosceles triangle"));
+        assert!(given.contains("(respectively). [Post. 2] \nI say that the angle ABC"));
+        let construction = para_text(&i5[1]);
+        assert!(construction.contains("greater AE. [Prop. 1.3] \nAnd let the straight-lines"));
+        let first = para_text(&i5[2]);
+        assert!(first.contains("remaining angles. [Prop. 1.4] \n(That is) ACF to ABG"));
+        let second = para_text(&i5[3]);
+        assert!(second.contains("remainder CG. [C.N. 3] \nBut FC was also shown"));
+        assert!(
+            second.contains("GB. So the two") && second.contains("CGB. Thus, the base BC"),
+            "plain full stops stay: {second}"
+        );
+        let remainders = para_text(&i5[4]);
+        assert!(remainders.contains("remainder ACB. [C.N. 3] \nAnd they are at the base"));
+        assert!(remainders.contains("ABC. And the angle FBC"));
+        let qed = para_text(&i5[5]);
+        assert!(qed.contains("under the base will be equal to one another. (Which is) the very thing it was required to show."));
+    }
 }

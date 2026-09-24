@@ -64,6 +64,24 @@ impl Figure {
             id,
             at,
             place,
+            r_em: plate::LETTER_R,
+        });
+    }
+
+    pub(crate) fn label_at_r(
+        &mut self,
+        id: impl Into<String>,
+        at: V2,
+        place: Place,
+        r_em: f64,
+    ) {
+        let id = id.into();
+        self.labels.push(Label {
+            text: id.clone(),
+            id,
+            at,
+            place,
+            r_em,
         });
     }
 
@@ -89,15 +107,18 @@ impl Figure {
             .map(|l| Label {
                 id: l.id.clone(),
                 text: l.text.clone(),
-                at: fit.map(self.anchor(l.at)),
+                at: fit.map(l.at),
                 place: l.place,
+                r_em: l.r_em,
             })
             .collect();
         let placed = labels::place(&marks, clip, &labels, fit.size);
         let vb = format!("0 0 {} {}", n(fit.size.w), n(fit.size.h));
         let mut out = String::new();
         out.push_str(&format!(
-            r##"<div class="figure-frame" style="aspect-ratio: {} / {}">"##,
+            r##"<div class="figure-frame" style="--fw:{};--fh:{};aspect-ratio: {} / {}">"##,
+            n(fit.size.w),
+            n(fit.size.h),
             n(fit.size.w),
             n(fit.size.h)
         ));
@@ -235,35 +256,6 @@ impl Figure {
         }
         (V2::new(min_x, min_y), V2::new(max_x, max_y))
     }
-
-    fn anchor(&self, at: V2) -> V2 {
-        let Some((min, max)) = self.clip else {
-            return at;
-        };
-        if inside(at, min, max) {
-            return at;
-        }
-        let mut best: Option<V2> = None;
-        let mut best_d = f64::INFINITY;
-        for m in &self.marks {
-            if let Mark::Seg { a, b, .. } = m {
-                for (p, q) in [(*a, *b), (*b, *a)] {
-                    if p.dist(at) > 1.5 {
-                        continue;
-                    }
-                    if inside(q, min, max) {
-                        let hit = exit(q, p, min, max);
-                        let d = hit.dist(q);
-                        if d < best_d {
-                            best_d = d;
-                            best = Some(hit);
-                        }
-                    }
-                }
-            }
-        }
-        best.unwrap_or_else(|| clamp(at, min, max))
-    }
 }
 
 fn xform(m: &Mark, fit: Fit) -> Mark {
@@ -289,32 +281,6 @@ fn xform(m: &Mark, fit: Fit) -> Mark {
             p: fit.map(*p),
         },
     }
-}
-
-fn inside(p: V2, min: V2, max: V2) -> bool {
-    p.x >= min.x && p.x <= max.x && p.y >= min.y && p.y <= max.y
-}
-
-fn clamp(p: V2, min: V2, max: V2) -> V2 {
-    V2::new(p.x.clamp(min.x, max.x), p.y.clamp(min.y, max.y))
-}
-
-fn exit(inside_pt: V2, outside_pt: V2, min: V2, max: V2) -> V2 {
-    let dx = outside_pt.x - inside_pt.x;
-    let dy = outside_pt.y - inside_pt.y;
-    let mut t: f64 = 1.0;
-    if dx > 1e-9 {
-        t = t.min((max.x - inside_pt.x) / dx);
-    } else if dx < -1e-9 {
-        t = t.min((min.x - inside_pt.x) / dx);
-    }
-    if dy > 1e-9 {
-        t = t.min((max.y - inside_pt.y) / dy);
-    } else if dy < -1e-9 {
-        t = t.min((min.y - inside_pt.y) / dy);
-    }
-    t = t.clamp(0.0, 1.0);
-    V2::new(inside_pt.x + t * dx, inside_pt.y + t * dy)
 }
 
 fn circle3(a: V2, b: V2, c: V2) -> Option<(V2, f64)> {

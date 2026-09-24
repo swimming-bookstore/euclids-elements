@@ -53,6 +53,16 @@ impl V2 {
         let a = deg.to_radians();
         Self::new(self.x + r * a.cos(), self.y + r * a.sin())
     }
+
+    /// `self` lies on segment `a`—`b` (inclusive), within `eps`.
+    pub fn on_seg(self, a: Self, b: Self, eps: f64) -> bool {
+        let ab = a.dist(b);
+        if ab < eps {
+            return self.dist(a) < eps;
+        }
+        let d = self.dist(a) + self.dist(b) - ab;
+        d < eps
+    }
 }
 
 /// Preferred side of the mark. The letter center stays at a fixed radius.
