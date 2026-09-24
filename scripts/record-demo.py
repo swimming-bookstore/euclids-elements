@@ -69,6 +69,24 @@ def main() -> None:
         )
         rec.start_capture()
         rec.hold(args.hold)
+        rec._stop.set()
+        if rec._cap:
+            rec._cap.join(timeout=15)
+        ff = rec._ff
+        if ff and ff.stdin:
+            try:
+                ff.stdin.close()
+            except OSError:
+                pass
+        if ff:
+            try:
+                ff.wait(timeout=120)
+            except Exception:
+                ff.send_signal(__import__("signal").SIGINT)
+                try:
+                    ff.wait(timeout=30)
+                except Exception:
+                    pass
     finally:
         rec.__exit__(None, None, None)
         httpd.shutdown()

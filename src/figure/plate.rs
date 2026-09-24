@@ -5,9 +5,12 @@
 pub(crate) const FONT: f64 = 56.0;
 pub(crate) const GAP: f64 = FONT * 0.72;
 pub(crate) const MARGIN: f64 = FONT * 1.35;
-pub(crate) const STROKE: f64 = 2.4;
-pub(crate) const DOT: f64 = FONT * 0.12;
+pub(crate) const STROKE: f64 = 1.4;
+pub(crate) const DOT: f64 = FONT * 0.08;
 pub(crate) const CHAR_W: f64 = FONT * 0.58;
+/// Letter-center radius from the mark, in `em` of the letter type.
+/// Inner edge of a ~1em glyph then clears the point (~0.28em).
+pub(crate) const LETTER_R: f64 = 0.78;
 
 #[derive(Clone, Copy)]
 pub(crate) struct Size {

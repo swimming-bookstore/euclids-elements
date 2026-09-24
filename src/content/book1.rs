@@ -1,5 +1,5 @@
 use super::{s, Proposition};
-use crate::figure::{book1_prop1, book1_prop2, book1_prop3, book1_prop4};
+use crate::figure::{book1_prop1, book1_prop2, book1_prop3, book1_prop4, book1_prop5};
 
 pub const PROP_1: Proposition = Proposition {
     book: 1,
@@ -106,4 +106,44 @@ pub const PROP_4: Proposition = Proposition {
     ],
 };
 
-pub const PROPOSITIONS: &[Proposition] = &[PROP_1, PROP_2, PROP_3, PROP_4];
+pub const PROP_5: Proposition = Proposition {
+    book: 1,
+    number: 5,
+    enunciation: "For isosceles triangles, the angles at the base are equal to one another, and if the equal sides are produced then the angles under the base will be equal to one another.",
+    figure: book1_prop5,
+    phrases: &[
+        s(1, "Let *ABC* be an isosceles triangle having the side *AB* equal to the side *AC*,"),
+        s(1, "and let the straight-lines *BD* and *CE* have been produced in a straight-line with *AB* and *AC* (respectively).{[Post. 2]}"),
+        s(1, "I say that the angle *ABC* is equal to the angle *ACB*, and (that) the angle *CBD* is equal to the angle *BCE*."),
+        s(2, "For let the point *F* have been taken at random on *BD*,"),
+        s(2, "and let the (straight-line) *AG*, equal to *AF*, have been cut off from the greater *AE*.{[Prop. 1.3]}"),
+        s(2, "And let the straight-lines *FC* and *GB* have been joined.{[Post. 1]}"),
+        s(3, "In fact, since *AF* is equal to *AG*, and *AB* to *AC*,"),
+        s(3, "the two (straight-lines) *FA*, *AC* are equal to the two (straight-lines) *GA*, *AB*, respectively."),
+        s(3, "They also encompass a common angle, *FAG*."),
+        s(3, "Thus, the base *FC* is equal to the base *GB*,"),
+        s(3, "and triangle *AFC* will be equal to triangle *AGB*,"),
+        s(3, "and the remaining angles subtended by the equal sides will be equal to the corresponding remaining angles.{[Prop. 1.4]}"),
+        s(3, "(That is) *ACF* to *ABG*, and *AFC* to *AGB*."),
+        s(4, "And since the whole of *AF* is equal to the whole of *AG*, of which *AB* is equal to *AC*,"),
+        s(4, "the remainder *BF* is thus equal to the remainder *CG*.{[C.N. 3]}"),
+        s(4, "But *FC* was also shown (to be) equal to *GB*."),
+        s(4, "So the two (straight-lines) *BF*, *FC* are equal to the two (straight-lines) *CG*, *GB*, respectively."),
+        s(4, "The angle *BFC* is also equal to the angle *CGB*."),
+        s(4, "Thus, the base *BC* is equal to the base *CB*,"),
+        s(4, "and triangle *BFC* will be equal to triangle *CGB*,"),
+        s(4, "and the remaining angles subtended by the equal sides will be equal to the corresponding remaining angles.{[Prop. 1.4]}"),
+        s(4, "Thus, the angle *FBC* is equal to the angle *GCB*, and *BCF* to *CBG*."),
+        s(5, "Therefore, since the whole angle *ABG* was shown (to be) equal to the whole angle *ACF*,"),
+        s(5, "of which *CBG* is equal to *BCF*,"),
+        s(5, "the remainder *ABC* is thus equal to the remainder *ACB*.{[C.N. 3]}"),
+        s(5, "And they are at the base of triangle *ABC*."),
+        s(5, "And the angle *FBC* was also shown (to be) equal to the angle *GCB*."),
+        s(5, "And they are under the base."),
+        s(6, "Thus, for isosceles triangles, the angles at the base are equal to one another,"),
+        s(6, "and if the equal sides are produced then the angles under the base will be equal to one another."),
+        s(6, "(Which is) the very thing it was required to show."),
+    ],
+};
+
+pub const PROPOSITIONS: &[Proposition] = &[PROP_1, PROP_2, PROP_3, PROP_4, PROP_5];
