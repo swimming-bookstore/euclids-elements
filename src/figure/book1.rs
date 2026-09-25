@@ -115,3 +115,37 @@ pub fn book1_prop5() -> Diagram {
     d.dots(&["A", "B", "C", "D", "E", "F", "G"]);
     d
 }
+
+/// I.6 — Fitzpatrick plate (Elements p. 12–13): triangle ABC with
+/// ∠ABC = ∠ACB; D on AB (AD/AB = 0.312), DC joined.
+pub fn book1_prop6() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("A", V2::new(50.0, 91.666), Place::Deg(87.0));
+    d.put("B", V2::new(0.0, 0.0), Place::Deg(179.0));
+    d.put("C", V2::new(100.0, 0.0), Place::Deg(-3.0));
+    d.put("D", V2::new(34.3795, 63.0286), Place::Deg(140.0));
+    d.chain(&["A", "D", "B"]);
+    d.join("B", "C");
+    d.join("C", "A");
+    d.join("D", "C");
+    d.dots(&["A", "B", "C", "D"]);
+    d
+}
+
+/// I.7 — Fitzpatrick plate (Elements p. 13): AB the base; C and D
+/// above on the same side; AC, CB and AD, DB; CD joined.
+pub fn book1_prop7() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("A", V2::new(0.0, 0.0), Place::Deg(180.0));
+    d.put("B", V2::new(100.0, 0.0), Place::Deg(0.0));
+    d.put("C", V2::new(63.46, 71.152), Place::Deg(90.0));
+    d.put("D", V2::new(86.538, 59.614), Place::Deg(17.0));
+    d.base("A", "B");
+    d.join("A", "C");
+    d.join("C", "B");
+    d.join("A", "D");
+    d.join("D", "B");
+    d.join("C", "D");
+    d.dots(&["A", "B", "C", "D"]);
+    d
+}

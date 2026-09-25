@@ -221,6 +221,10 @@ class Fig:
         inner = ", ".join(f'"{n}"' for n in names)
         self._add(f"    d.chain(&[{inner}]);")
 
+    def base(self, a: str, b: str) -> None:
+        """The given straight-line (drawn even if later joins share its ends)."""
+        self._add(f'    d.base("{a}", "{b}");')
+
     def circle(self, letters: str, center: str, through: str) -> None:
         self._add(f'    d.circle("{letters}", "{center}", "{through}");')
 
@@ -523,12 +527,76 @@ def book1_prop5() -> Fig:
     return f
 
 
+def book1_prop6() -> Fig:
+    # Fitzpatrick p. 12–13 English plate. Reductio on ABC:
+    # BC horizontal, A on the midline, D on AB (AD/AB = 0.312), DC joined.
+    base = 100.0
+    h = 91.666
+    s = Sketch()
+    s.put("B", 0.0, 0.0)
+    s.put("C", base, 0.0)
+    s.put("A", base / 2.0, h)
+    t = 0.31241
+    ax, ay = s.at("A")
+    bx, by = s.at("B")
+    s.put("D", ax + t * (bx - ax), ay + t * (by - ay))
+    s.require_eq("A", "B", "A", "C")
+    s.require_same_angle("A", "B", "C", "A", "C", "B")
+    s.require_ratio("A", "D", "A", "B", 0.3124, eps=0.001)
+    f = Fig(
+        "book1_prop6",
+        "I.6 — Fitzpatrick plate (Elements p. 12–13): triangle ABC with\n"
+        "∠ABC = ∠ACB; D on AB (AD/AB = 0.312), DC joined.",
+    )
+    f.put("A", *s.at("A"), ("deg", 87.0))
+    f.put("B", *s.at("B"), ("deg", 179.0))
+    f.put("C", *s.at("C"), ("deg", -3.0))
+    f.put("D", *s.at("D"), ("deg", 140.0))
+    f.chain("A", "D", "B")
+    f.join("B", "C")
+    f.join("C", "A")
+    f.join("D", "C")
+    f.dots("A", "B", "C", "D")
+    return f
+
+
+def book1_prop7() -> Fig:
+    # Fitzpatrick p. 13 English plate. AB horizontal; C and D above,
+    # C higher and left of D; AC, CB, AD, DB, CD.
+    ab = 100.0
+    s = Sketch()
+    s.put("A", 0.0, 0.0)
+    s.put("B", ab, 0.0)
+    s.put("C", 0.63460 * ab, 0.71152 * ab)
+    s.put("D", 0.86538 * ab, 0.59614 * ab)
+    s.require_ratio("C", "A", "A", "B", 0.9534, eps=0.002)
+    f = Fig(
+        "book1_prop7",
+        "I.7 — Fitzpatrick plate (Elements p. 13): AB the base; C and D\n"
+        "above on the same side; AC, CB and AD, DB; CD joined.",
+    )
+    f.put("A", *s.at("A"), ("deg", 180.0))
+    f.put("B", *s.at("B"), ("deg", 0.0))
+    f.put("C", *s.at("C"), ("deg", 90.0))
+    f.put("D", *s.at("D"), ("deg", 17.0))
+    f.base("A", "B")
+    f.join("A", "C")
+    f.join("C", "B")
+    f.join("A", "D")
+    f.join("D", "B")
+    f.join("C", "D")
+    f.dots("A", "B", "C", "D")
+    return f
+
+
 PLATES = [
     book1_prop1,
     book1_prop2,
     book1_prop3,
     book1_prop4,
     book1_prop5,
+    book1_prop6,
+    book1_prop7,
 ]
 
 
