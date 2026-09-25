@@ -7,5 +7,8 @@ mod geom;
 mod labels;
 mod plate;
 
-pub use book1::{book1_prop1, book1_prop2, book1_prop3, book1_prop4, book1_prop5};
+pub use book1::{
+    book1_prop1, book1_prop2, book1_prop3, book1_prop4, book1_prop5, book1_prop6,
+    book1_prop7,
+};
 pub use diagram::Diagram;

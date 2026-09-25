@@ -249,20 +249,74 @@ mod tests {
         let given = para_text(&i5[0]);
         assert!(given.contains("Let ABC be an isosceles triangle"));
         assert!(given.contains("(respectively). [Post. 2] \nI say that the angle ABC"));
+        assert!(given.contains("equal to ACB, and (angle) CBD to BCE."));
         let construction = para_text(&i5[1]);
-        assert!(construction.contains("greater AE. [Prop. 1.3] \nAnd let the straight-lines"));
+        assert!(construction.contains("lesser AF. [Prop. 1.3] \nAlso, let the straight-lines"));
         let first = para_text(&i5[2]);
         assert!(first.contains("remaining angles. [Prop. 1.4] \n(That is) ACF to ABG"));
         let second = para_text(&i5[3]);
+        assert!(second.contains("within which AB is equal to AC"));
         assert!(second.contains("remainder CG. [C.N. 3] \nBut FC was also shown"));
+        assert!(second.contains("common to them. Thus, the triangle BFC"));
         assert!(
-            second.contains("GB. So the two") && second.contains("CGB. Thus, the base BC"),
+            second.contains("GB. So the two") && second.contains("CGB, and the base BC"),
             "plain full stops stay: {second}"
         );
         let remainders = para_text(&i5[4]);
+        assert!(remainders.contains("within which CBG is equal to BCF"));
         assert!(remainders.contains("remainder ACB. [C.N. 3] \nAnd they are at the base"));
-        assert!(remainders.contains("ABC. And the angle FBC"));
+        assert!(remainders.contains("ABC. And FBC was also shown"));
         let qed = para_text(&i5[5]);
         assert!(qed.contains("under the base will be equal to one another. (Which is) the very thing it was required to show."));
+    }
+
+    #[test]
+    fn i6_fitzpatrick_paragraphs() {
+        let i6 = layout_of(1, 6);
+        assert_eq!(i6.len(), 4, "I.6 has four Fitzpatrick paragraphs");
+        assert!(cites(&i6[0]).is_empty());
+        assert_eq!(cites(&i6[1]), vec!["[Prop. 1.3]", "[Post. 1]"]);
+        assert_eq!(cites(&i6[2]), vec!["[Prop. 1.4]", "[C.N. 5]"]);
+        assert!(cites(&i6[3]).is_empty());
+        let given = para_text(&i6[0]);
+        assert!(given.contains("Let ABC be a triangle having the angle ABC"));
+        assert!(given.contains("I say that side AB is also equal to side AC."));
+        let construction = para_text(&i6[1]);
+        assert!(construction.contains("greater. Let AB be greater."));
+        assert!(construction.contains("greater AB. [Prop. 1.3] \nAnd let DC have been joined. [Post. 1]"));
+        let reductio = para_text(&i6[2]);
+        assert!(reductio.contains("triangle ACB, [Prop. 1.4] \nthe lesser to the greater."));
+        assert!(reductio.contains("absurd. [C.N. 5] \nThus, AB is not unequal"));
+        assert!(
+            reductio.contains("greater. The very notion") && reductio.contains("AC. Thus, (it is) equal."),
+            "plain full stops stay: {reductio}"
+        );
+        let qed = para_text(&i6[3]);
+        assert!(qed.contains("equal to one another. (Which is) the very thing it was required to show."));
+    }
+
+    #[test]
+    fn i7_fitzpatrick_paragraphs() {
+        let i7 = layout_of(1, 7);
+        assert_eq!(i7.len(), 3, "I.7 has three Fitzpatrick paragraphs");
+        assert_eq!(cites(&i7[0]), vec!["[Post. 1]"]);
+        assert_eq!(
+            cites(&i7[1]),
+            vec!["[Prop. 1.5]", "[C.N. 5]", "[C.N. 5]", "[Prop. 1.5]"]
+        );
+        assert!(cites(&i7[2]).is_empty());
+        let given = para_text(&i7[0]);
+        assert!(given.contains("For, if possible, let the two straight-lines AC, CB"));
+        assert!(given.contains("joined. [Post. 1]"));
+        let proof = para_text(&i7[1]);
+        assert!(proof.contains("angle ADC. [Prop. 1.5] \nThus, ADC (is) greater"));
+        assert!(proof.contains("DCB. [C.N. 5] \nThus, CDB is much greater"));
+        assert!(proof.contains("angle DCB. [Prop. 1.5] \nBut it was shown"));
+        assert!(
+            proof.contains("latter). The very thing is impossible."),
+            "plain full stops stay: {proof}"
+        );
+        let qed = para_text(&i7[2]);
+        assert!(qed.contains("given straight-lines. (Which is) the very thing it was required to show."));
     }
 }

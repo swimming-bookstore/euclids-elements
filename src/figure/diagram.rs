@@ -185,6 +185,12 @@ impl Diagram {
         self
     }
 
+    /// The given straight-line of the proposition (drawn even if later
+    /// construction lines share its ends).
+    pub fn base(&mut self, a: &'static str, b: &'static str) -> &mut Self {
+        self.join(a, b)
+    }
+
     /// Circle named by three letters, center `center`, through `through`.
     pub fn circle(&mut self, letters: &'static str, center: &str, through: &str) -> &mut Self {
         let c = self.at(center);
@@ -407,7 +413,10 @@ fn sorted_letters(s: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::figure::{book1_prop1, book1_prop2, book1_prop3, book1_prop4, book1_prop5};
+    use crate::figure::{
+        book1_prop1, book1_prop2, book1_prop3, book1_prop4, book1_prop5, book1_prop6,
+        book1_prop7,
+    };
 
     fn has(v: &[String], id: &str) -> bool {
         v.iter().any(|s| s == id)
@@ -613,6 +622,89 @@ mod tests {
         assert!((a.dist(d.at("D")) / ab - 1.875).abs() < 0.004, "AD/AB");
         assert!((a.dist(d.at("G")) / a.dist(c) - 1.333).abs() < 0.004, "AG/AC");
         assert!((a.dist(d.at("E")) / a.dist(c) - 1.875).abs() < 0.004, "AE/AC");
+    }
+
+    #[test]
+    fn prop6_paths() {
+        let d = book1_prop6();
+        let abc = d.highlight("ABC");
+        assert!(
+            has(&abc, "ad") && has(&abc, "db") && has(&abc, "bc") && (has(&abc, "ac") || has(&abc, "ca")),
+            "ABC is A–D–B–C: {abc:?}"
+        );
+        let ab = d.highlight("AB");
+        assert!(has(&ab, "ad") && has(&ab, "db"));
+        let abc_ang = d.highlight_angle("ABC");
+        assert!(
+            (has(&abc_ang, "db") || has(&abc_ang, "ad"))
+                && has(&abc_ang, "bc")
+                && !has(&abc_ang, "ac")
+        );
+        let acb = d.highlight_angle("ACB");
+        assert!(
+            (has(&acb, "ac") || has(&acb, "ca")) && has(&acb, "bc") && !has(&acb, "ad")
+        );
+        let dbc = d.highlight_angle("DBC");
+        assert!(has(&dbc, "db") && has(&dbc, "bc"));
+        let db = d.highlight("DB");
+        assert!(has(&db, "db") && has(&db, "D") && has(&db, "B"));
+        let dc = d.highlight("DC");
+        assert!(has(&dc, "dc"));
+        let a = d.at("A");
+        let b = d.at("B");
+        let c = d.at("C");
+        let dd = d.at("D");
+        assert!((a.dist(b) - a.dist(c)).abs() < 1e-6, "AB = AC on the plate");
+        assert!((b.y - c.y).abs() < 1e-9, "BC horizontal");
+        assert!((a.x - (b.x + c.x) / 2.0).abs() < 1e-6, "A on the midline");
+        assert!(dd.on_seg(a, b, 1e-4), "D on AB");
+        assert!((a.dist(dd) / a.dist(b) - 0.3124).abs() < 0.002, "AD/AB");
+        let abc_deg = angle_at(&d, "A", "B", "C").to_degrees();
+        let acb_deg = angle_at(&d, "A", "C", "B").to_degrees();
+        assert!((abc_deg - acb_deg).abs() < 0.05, "∠ABC = ∠ACB");
+    }
+
+    #[test]
+    fn prop7_paths() {
+        let d = book1_prop7();
+        let ac = d.highlight("AC");
+        assert!(has(&ac, "ac") || has(&ac, "ca"));
+        let ad = d.highlight("AD");
+        assert!(has(&ad, "ad") || has(&ad, "da"));
+        let cb = d.highlight("CB");
+        assert!(has(&cb, "cb") || has(&cb, "bc"));
+        let db = d.highlight("DB");
+        assert!(has(&db, "db") || has(&db, "bd"));
+        let cd = d.highlight("CD");
+        assert!(has(&cd, "cd") || has(&cd, "dc"));
+        let ab = d.highlight("AB");
+        assert!(
+            has(&ab, "ab") || has(&ab, "ba"),
+            "the given base AB is drawn: {ab:?}"
+        );
+        let acd = d.highlight_angle("ACD");
+        assert!(
+            (has(&acd, "ac") || has(&acd, "ca")) && (has(&acd, "cd") || has(&acd, "dc"))
+        );
+        let adc = d.highlight_angle("ADC");
+        assert!(
+            (has(&adc, "ad") || has(&adc, "da")) && (has(&adc, "cd") || has(&adc, "dc"))
+        );
+        let dcb = d.highlight_angle("DCB");
+        assert!(
+            (has(&dcb, "cd") || has(&dcb, "dc")) && (has(&dcb, "cb") || has(&dcb, "bc"))
+        );
+        let a = d.at("A");
+        let b = d.at("B");
+        let c = d.at("C");
+        let dd = d.at("D");
+        assert!((a.y - b.y).abs() < 1e-9, "AB horizontal");
+        assert!(c.y > a.y && dd.y > a.y, "C and D above AB");
+        assert!(c.x > a.x && c.x < b.x && dd.x > c.x && dd.x < b.x);
+        assert!(c.y > dd.y, "C higher than D on the plate");
+        let ab = a.dist(b);
+        assert!(((c.x - a.x) / ab - 0.635).abs() < 0.01, "C along AB");
+        assert!(((dd.x - a.x) / ab - 0.865).abs() < 0.01, "D along AB");
     }
 
     fn has_layer(html: &str) -> bool {
