@@ -5,8 +5,8 @@ The right-hand column is x ≳ 310 pt. A new paragraph is an indent of
 about 15 pt past the body left (314 → 329). Hyphenated line-ends are
 joined. Figure letters and running heads are dropped.
 
-    python3 scripts/fitzpatrick.py --from 11 --to 12
-    python3 scripts/fitzpatrick.py --from 11 --to 12 --json
+    python3 scripts/words.py --from 15 --to 15
+    python3 scripts/words.py --from 15 --to 15 --phrases --start 4
 """
 
 from __future__ import annotations
@@ -134,17 +134,109 @@ def paragraphs(lines: list[tuple[int, float, float, str]]) -> list[str]:
     return [" ".join(p) for p in paras if p]
 
 
+CITE_RE = re.compile(r"\[([^\]]+)\]")
+GEOM_RE = re.compile(
+    r"\b((?:straight-lines?|triangle|triangles|angle|angles|side|sides|"
+    r"base|bases|point|points|circle|circles)?\s*)"
+    r"([A-Z]{1,4}(?:\s*,\s*[A-Z]{1,4})*)\b"
+)
+
+
+def rust_escape(s: str) -> str:
+    return s.replace("\\", "\\\\").replace('"', '\\"')
+
+
+def mark_geometry(text: str) -> str:
+    """Wrap spoken figure names in *…* for karaoke lighting."""
+
+    def repl(m: re.Match) -> str:
+        prefix, names = m.group(1), m.group(2)
+        bits = re.split(r"(\s*,\s*)", names)
+        out = []
+        for b in bits:
+            if re.fullmatch(r"[A-Z]{1,4}", b) and b != "I":
+                out.append(f"*{b}*")
+            else:
+                out.append(b)
+        return prefix + "".join(out)
+
+    return GEOM_RE.sub(repl, text)
+
+
+def sentences(para: str) -> list[str]:
+    # Don't split on the period inside [Prop. 1.3].
+    held: list[str] = []
+
+    def stash(m: re.Match) -> str:
+        held.append(m.group(0))
+        return f"\x00{len(held) - 1}\x00"
+
+    tmp = CITE_RE.sub(stash, para.strip())
+    parts = re.split(r"(?<=[.!?])\s+", tmp)
+    out = []
+    for p in parts:
+        p = p.strip()
+        if not p:
+            continue
+        p = re.sub(r"\x00(\d+)\x00", lambda m: held[int(m.group(1))], p)
+        out.append(p)
+    return out
+
+
+def phrase_line(para_n: int, sent: str) -> str:
+    body = CITE_RE.sub(r"{[\1]}", sent)
+    body = re.sub(r"\s+", " ", body).strip()
+    body = re.sub(r"\s+\{", "{", body)
+    # Comma/period before a cite sits on the word, like "DE,{[Prop. 1.1]}"
+    body = re.sub(r"\{\[([^\]]+)\]\}([,.;:])", r"\2{[\1]}", body)
+    body = mark_geometry(body)
+    return f'        s({para_n}, "{rust_escape(body)}"),'
+
+
+def phrases_from_paras(paras: list[str], start: int = 1) -> list[str]:
+    """Karaoke phrases. `start` is the first body paragraph to keep
+    (skip running QED / previous prop). Stops at the next Proposition."""
+    out: list[str] = []
+    n = 0
+    for p in paras[start - 1 :]:
+        if p.startswith("Proposition ") and n:
+            break
+        if p.startswith("Proposition "):
+            continue
+        n += 1
+        for sent in sentences(p):
+            if sent in {"postulate.", "points is unique."}:
+                continue
+            out.append(phrase_line(n, sent))
+    return out
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--pdf", type=Path, default=DEFAULT_PDF)
     parser.add_argument("--from", dest="first", type=int, required=True)
     parser.add_argument("--to", dest="last", type=int, default=None)
     parser.add_argument("--json", action="store_true")
+    parser.add_argument(
+        "--phrases",
+        action="store_true",
+        help="print karaoke s(para, …) lines from English paragraphs",
+    )
+    parser.add_argument(
+        "--start",
+        type=int,
+        default=1,
+        help="1-based paragraph index to start at (after --phrases)",
+    )
     args = parser.parse_args()
     last = args.last or args.first
     html = bbox_html(args.pdf, args.first, last)
     lines = english_lines(html)
     paras = paragraphs(lines)
+    if args.phrases:
+        for line in phrases_from_paras(paras, args.start):
+            print(line)
+        return
     if args.json:
         print(json.dumps(paras, indent=2, ensure_ascii=False))
         return

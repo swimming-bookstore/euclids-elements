@@ -176,7 +176,7 @@ def rust_place(place) -> str:
 
 
 def f64(x: float) -> str:
-    s = f"{x:.6g}"
+    s = f"{x:.9g}"
     if "." not in s and "e" not in s and "E" not in s:
         s += ".0"
     return s
@@ -589,6 +589,85 @@ def book1_prop7() -> Fig:
     return f
 
 
+def book1_prop8() -> Fig:
+    # Fitzpatrick p. 14 English plate, from the PDF line art (scale BC = 100).
+    # Bases tilt ~23°. DEF is ABC translated; G is the miss of BA, CA.
+    s = Sketch()
+    s.put("B", 0.0, 0.0)
+    s.put("C", 92.0578, 39.0560)
+    s.put("A", 36.2635, 142.2726)
+    dx, dy = 127.9108, 9.3765
+    ax, ay = s.at("A")
+    bx, by = s.at("B")
+    cx, cy = s.at("C")
+    s.put("E", bx + dx, by + dy)
+    s.put("F", cx + dx, cy + dy)
+    s.put("D", ax + dx, ay + dy)
+    s.put("G", 198.0560, 142.2726)
+    s.require_eq("A", "B", "D", "E")
+    s.require_eq("A", "C", "D", "F")
+    s.require_eq("B", "C", "E", "F")
+    s.require_same_angle("B", "A", "C", "E", "D", "F")
+    f = Fig(
+        "book1_prop8",
+        "I.8 — Fitzpatrick plate (Elements p. 14): congruent ABC and DEF;\n"
+        "G the miss of BA, CA onto ED, DF (EG, GF).",
+    )
+    f.put("A", *s.at("A"), ("deg", 95.0))
+    f.put("B", *s.at("B"), ("deg", -177.0))
+    f.put("C", *s.at("C"), ("deg", 1.0))
+    f.put("D", *s.at("D"), ("deg", 96.0))
+    f.put("E", *s.at("E"), ("deg", -170.0))
+    f.put("F", *s.at("F"), ("deg", 12.0))
+    f.put("G", *s.at("G"), ("deg", 88.0))
+    f.join("A", "B")
+    f.join("B", "C")
+    f.join("C", "A")
+    f.join("D", "E")
+    f.join("E", "F")
+    f.join("F", "D")
+    f.join("E", "G")
+    f.join("G", "F")
+    f.dots("A", "B", "C", "D", "E", "F", "G")
+    return f
+
+
+def book1_prop9() -> Fig:
+    # Fitzpatrick p. 15 English plate. ∠BAC = 43.61°; AD = AE;
+    # equilateral DEF on the far side of DE; AF the bisector (vertical).
+    ad = 100.0
+    s = Sketch()
+    s.put("A", 0.0, 0.0)
+    s.polar("D", "A", ad, -111.803)
+    s.polar("E", "A", ad, -68.200)
+    s.polar("B", "A", 186.45, -111.803)
+    s.polar("C", "A", 186.45, -68.200)
+    s.turn("F", "D", "E", -60.0)  # away from A
+    s.require_eq("A", "D", "A", "E")
+    s.require_eq("D", "E", "D", "F")
+    s.require_eq("D", "F", "E", "F")
+    s.require_same_angle("D", "A", "F", "F", "A", "E")
+    f = Fig(
+        "book1_prop9",
+        "I.9 — Fitzpatrick plate (Elements p. 15): ∠BAC; D on AB, E on AC,\n"
+        "AD = AE; equilateral DEF; AF the bisector.",
+    )
+    f.put("A", *s.at("A"), ("deg", 88.0))
+    f.put("B", *s.at("B"), ("deg", -98.0))
+    f.put("C", *s.at("C"), ("deg", -76.0))
+    f.put("D", *s.at("D"), ("deg", 162.0))
+    f.put("E", *s.at("E"), ("deg", 17.0))
+    f.put("F", *s.at("F"), ("deg", -96.0))
+    f.chain("A", "D", "B")
+    f.chain("A", "E", "C")
+    f.join("D", "E")
+    f.join("D", "F")
+    f.join("E", "F")
+    f.join("A", "F")
+    f.dots("A", "B", "C", "D", "E", "F")
+    return f
+
+
 PLATES = [
     book1_prop1,
     book1_prop2,
@@ -597,6 +676,8 @@ PLATES = [
     book1_prop5,
     book1_prop6,
     book1_prop7,
+    book1_prop8,
+    book1_prop9,
 ]
 
 

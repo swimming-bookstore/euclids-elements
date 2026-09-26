@@ -1,6 +1,6 @@
 # Euclid’s Elements
 
-Leptos (WASM) shell for all 13 books. Book I Propositions 1–7 are filled in.
+Leptos (WASM) shell for all 13 books. Book I Propositions 1–9 are filled in.
 
 ```bash
 trunk serve
@@ -21,7 +21,13 @@ Word-by-word player in `src/karaoke/`:
 2. `Player::start(&script, autoplay)` — cursor + play/pause
 3. `script.parts_at(cursor)` — figure ids from the construction graph
 
-A new proposition is a `Proposition` in `src/content/bookN.rs` plus a plate in `scripts/figure.py`. Run `python3 scripts/figure.py --write` to emit `src/figure/book1.rs` (`put` / `join` / `circle` / `ray`). Karaoke lighting is derived from that graph.
+A new proposition:
+
+1. **Words** — `python3 scripts/words.py --from PAGE --to PAGE --phrases --start N`  
+   English column from Fitzpatrick’s PDF → karaoke `s(para, "…")` lines for `src/content/bookN.rs`.
+2. **Figure** — plate in `scripts/figure.py`, then `python3 scripts/figure.py --write` → `src/figure/book1.rs`.
+
+Karaoke lighting is derived from the construction graph.
 
 Read mode flows Fitzpatrick paragraphs (`src/karaoke/layout.rs`): citations hang in the right margin; a cited clause starts the next sentence on a new line. A full stop with no cite stays in the paragraph. Record mode still steps one sentence at a time.
 
