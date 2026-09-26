@@ -212,10 +212,12 @@ fn is_punct_only(s: &str) -> bool {
 }
 
 fn glue_text(out: &mut Vec<Token>, extra: &str) {
+    if extra.is_empty() {
+        return;
+    }
     if let Some(last) = out.last_mut() {
         if !last.cite {
             last.text.push_str(extra);
-            return;
         }
     }
 }

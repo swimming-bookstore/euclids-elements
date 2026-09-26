@@ -46,9 +46,11 @@ def main() -> None:
     title = f"euclid-book{args.book}-{args.slug}"
     port = free_port()
     httpd = serve(port)
+    # Hash must be in the URL Chromium navigates to. A fragment after a
+    # query on SimpleHTTP's path is dropped, so book/prop ride in the query.
     url = (
         f"http://127.0.0.1:{port}/index.html"
-        f"?record=1&autoplay=1#/{args.book}/{args.prop}"
+        f"?record=1&autoplay=1&book={args.book}&prop={args.prop}"
     )
     rec = RecordSession(
         url=url,

@@ -67,12 +67,9 @@ pub fn KaraokeRead(script: Script) -> impl IntoView {
                                 <span class="word" class:em=italic>{text}" "</span>
                             }.into_any(),
                             Atom::Cite(text) => view! {
-                                <>
-                                    <span class="sidenote">
-                                        <span class="cite">{text}</span>
-                                    </span>
-                                    " "
-                                </>
+                                <span class="sidenote">
+                                    <span class="cite">{text}</span>
+                                </span>
                             }.into_any(),
                             Atom::Break => view! { <br class="after-cite"/> }.into_any(),
                         }).collect_view()}

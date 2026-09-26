@@ -415,7 +415,7 @@ fn sorted_letters(s: &str) -> String {
 mod tests {
     use crate::figure::{
         book1_prop1, book1_prop2, book1_prop3, book1_prop4, book1_prop5, book1_prop6,
-        book1_prop7,
+        book1_prop7, book1_prop8, book1_prop9,
     };
 
     fn has(v: &[String], id: &str) -> bool {
@@ -705,6 +705,82 @@ mod tests {
         let ab = a.dist(b);
         assert!(((c.x - a.x) / ab - 0.635).abs() < 0.01, "C along AB");
         assert!(((dd.x - a.x) / ab - 0.865).abs() < 0.01, "D along AB");
+    }
+
+    #[test]
+    fn prop8_paths() {
+        let d = book1_prop8();
+        let abc = d.highlight("ABC");
+        assert!(has(&abc, "ab") && has(&abc, "bc") && (has(&abc, "ca") || has(&abc, "ac")));
+        let def = d.highlight("DEF");
+        assert!(has(&def, "de") && has(&def, "ef") && (has(&def, "fd") || has(&def, "df")));
+        let eg = d.highlight("EG");
+        assert!(has(&eg, "eg") || has(&eg, "ge"));
+        let gf = d.highlight("GF");
+        assert!(has(&gf, "gf") || has(&gf, "fg"));
+        let bac = d.highlight_angle("BAC");
+        assert!(has(&bac, "ab") && (has(&bac, "ac") || has(&bac, "ca")) && !has(&bac, "bc"));
+        let edf = d.highlight_angle("EDF");
+        assert!(has(&edf, "de") && (has(&edf, "df") || has(&edf, "fd")) && !has(&edf, "ef"));
+        let a = d.at("A");
+        let b = d.at("B");
+        let c = d.at("C");
+        let dd = d.at("D");
+        let e = d.at("E");
+        let f = d.at("F");
+        let g = d.at("G");
+        assert!((a.dist(b) - dd.dist(e)).abs() < 1e-4, "AB = DE");
+        assert!((a.dist(c) - dd.dist(f)).abs() < 1e-4, "AC = DF");
+        assert!((b.dist(c) - e.dist(f)).abs() < 1e-4, "BC = EF");
+        assert!(c.x > b.x && f.x > e.x && e.x > c.x, "ABC left of DEF");
+        assert!(a.y > b.y && dd.y > e.y && g.y > e.y, "apexes and G above the bases");
+        assert!(g.x > e.x && g.x < f.x, "G between E and F");
+        let bac_deg = angle_at(&d, "B", "A", "C").to_degrees();
+        let edf_deg = angle_at(&d, "E", "D", "F").to_degrees();
+        assert!((bac_deg - edf_deg).abs() < 0.05, "∠BAC = ∠EDF");
+        let bc_head = (c.y - b.y).atan2(c.x - b.x).to_degrees();
+        assert!((bc_head - 23.0).abs() < 0.5, "bases tilt ~23° on the plate, got {bc_head}");
+    }
+
+    #[test]
+    fn prop9_paths() {
+        let d = book1_prop9();
+        let ab = d.highlight("AB");
+        assert!(has(&ab, "ad") && has(&ab, "db"));
+        let ac = d.highlight("AC");
+        assert!(has(&ac, "ae") && has(&ac, "ec"));
+        let ad = d.highlight("AD");
+        assert!(has(&ad, "ad"));
+        let ae = d.highlight("AE");
+        assert!(has(&ae, "ae"));
+        let de = d.highlight("DE");
+        assert!(has(&de, "de") || has(&de, "ed"));
+        let def = d.highlight("DEF");
+        assert!(
+            (has(&def, "de") || has(&def, "ed"))
+                && (has(&def, "ef") || has(&def, "fe"))
+                && (has(&def, "fd") || has(&def, "df"))
+        );
+        let af = d.highlight("AF");
+        assert!(has(&af, "af") || has(&af, "fa"));
+        let daf = d.highlight_angle("DAF");
+        assert!(has(&daf, "ad") && (has(&daf, "af") || has(&daf, "fa")));
+        let eaf = d.highlight_angle("EAF");
+        assert!(has(&eaf, "ae") && (has(&eaf, "af") || has(&eaf, "fa")));
+        let a = d.at("A");
+        let b = d.at("B");
+        let c = d.at("C");
+        let dd = d.at("D");
+        let e = d.at("E");
+        let f = d.at("F");
+        assert!(dd.on_seg(a, b, 1e-3), "D on AB");
+        assert!(e.on_seg(a, c, 1e-3), "E on AC");
+        assert!((a.dist(dd) - a.dist(e)).abs() < 0.05, "AD = AE");
+        assert!((dd.dist(f) - e.dist(f)).abs() < 0.05, "DF = EF");
+        let daf_deg = angle_at(&d, "D", "A", "F").to_degrees();
+        let eaf_deg = angle_at(&d, "E", "A", "F").to_degrees();
+        assert!((daf_deg - eaf_deg).abs() < 0.05, "AF bisects ∠DAE");
+        assert!((f.x - a.x).abs() < 0.05, "AF vertical on the plate");
     }
 
     fn has_layer(html: &str) -> bool {

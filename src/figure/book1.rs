@@ -9,7 +9,7 @@ pub fn book1_prop1() -> Diagram {
     let mut d = Diagram::new();
     d.put("A", V2::new(0.0, 0.0), Place::Left);
     d.put("B", V2::new(240.0, 0.0), Place::Right);
-    d.put("C", V2::new(120.0, 207.846), Place::Above);
+    d.put("C", V2::new(120.0, 207.846097), Place::Above);
     d.circle("BCD", "A", "B");
     d.circle("ACE", "B", "A");
     d.in_circle("D", "A", "B", 180.0);
@@ -26,13 +26,13 @@ pub fn book1_prop1() -> Diagram {
 pub fn book1_prop2() -> Diagram {
     let mut d = Diagram::new();
     d.put("D", V2::new(0.0, 0.0), Place::AboveLeft);
-    d.put("A", V2::new(16.8999, -118.804), Place::Left);
-    d.put("B", V2::new(108.606, -57.7126), Place::Deg(43.0));
-    d.put("C", V2::new(108.606, 237.904), Place::Above);
-    d.put("L", V2::new(58.9528, -414.432), Place::Deg(-117.0));
-    d.put("G", V2::new(369.653, -196.432), Place::Deg(23.0));
-    d.put("E", V2::new(86.6838, -609.377), Place::Deg(-98.0));
-    d.put("F", V2::new(512.694, -272.444), Place::Deg(-10.0));
+    d.put("A", V2::new(16.8998538, -118.804019), Place::Left);
+    d.put("B", V2::new(108.605534, -57.7125513), Place::Deg(43.0));
+    d.put("C", V2::new(108.605534, 237.903729), Place::Above);
+    d.put("L", V2::new(58.9528416, -414.431663), Place::Deg(-117.0));
+    d.put("G", V2::new(369.65312, -196.432206), Place::Deg(23.0));
+    d.put("E", V2::new(86.6837778, -609.37694), Place::Deg(-98.0));
+    d.put("F", V2::new(512.69448, -272.443819), Place::Deg(-10.0));
     d.circle("CGH", "B", "C");
     d.circle("GKL", "D", "G");
     d.on_circle("H", "B", "C", 140.0);
@@ -43,8 +43,8 @@ pub fn book1_prop2() -> Diagram {
     d.join("B", "C");
     d.dots(&["A", "B", "C", "D", "G", "L"]);
     d.clip(
-        V2::new(-442.604, -665.377),
-        V2::new(568.694, 466.604),
+        V2::new(-442.60368, -665.37694),
+        V2::new(568.69448, 466.60368),
     );
     d
 }
@@ -55,21 +55,21 @@ pub fn book1_prop2() -> Diagram {
 pub fn book1_prop3() -> Diagram {
     let mut d = Diagram::new();
     d.put("A", V2::new(0.0, 0.0), Place::Deg(-136.0));
-    d.put("B", V2::new(394.071, 0.0), Place::Deg(-3.0));
+    d.put("B", V2::new(394.071414, 0.0), Place::Deg(-3.0));
     d.put("E", V2::new(180.0, 0.0), Place::Deg(56.0));
     d.pin("Cleft", V2::new(-44.4888, 241.524));
-    d.pin("Cright", V2::new(139.831, 241.524));
+    d.pin("Cright", V2::new(139.8312, 241.524));
     d.named_line("C", "Cleft", "Cright");
     d.on_line("C", "Cleft", "Cright", 0.5, Place::Above);
     d.circle("DEF", "A", "E");
-    d.put("D", V2::new(-120.763, 133.478), Place::Deg(111.0));
+    d.put("D", V2::new(-120.763013, 133.477694), Place::Deg(111.0));
     d.on_circle("F", "A", "E", -56.215);
     d.join("A", "D");
     d.chain(&["A", "E", "B"]);
     d.dots(&["A", "B", "D", "E"]);
     d.clip(
-        V2::new(-220.0, -201.603),
-        V2::new(446.071, 289.524),
+        V2::new(-220.0, -201.603414),
+        V2::new(446.071414, 289.524),
     );
     d
 }
@@ -101,12 +101,12 @@ pub fn book1_prop4() -> Diagram {
 pub fn book1_prop5() -> Diagram {
     let mut d = Diagram::new();
     d.put("A", V2::new(0.0, 0.0), Place::Deg(97.0));
-    d.put("B", V2::new(-36.999, -92.9036), Place::Deg(164.0));
-    d.put("C", V2::new(36.999, -92.9036), Place::Deg(18.0));
-    d.put("F", V2::new(-49.3197, -123.84), Place::Deg(171.0));
-    d.put("G", V2::new(49.3197, -123.84), Place::Deg(10.0));
-    d.put("D", V2::new(-69.3731, -174.194), Place::Deg(-127.0));
-    d.put("E", V2::new(69.3731, -174.194), Place::Deg(-87.0));
+    d.put("B", V2::new(-36.9989991, -92.903574), Place::Deg(164.0));
+    d.put("C", V2::new(36.9989991, -92.903574), Place::Deg(18.0));
+    d.put("F", V2::new(-49.3196658, -123.840464), Place::Deg(171.0));
+    d.put("G", V2::new(49.3196658, -123.840464), Place::Deg(10.0));
+    d.put("D", V2::new(-69.3731233, -174.194201), Place::Deg(-127.0));
+    d.put("E", V2::new(69.3731233, -174.194201), Place::Deg(-87.0));
     d.chain(&["A", "B", "F", "D"]);
     d.chain(&["A", "C", "G", "E"]);
     d.join("B", "C");
@@ -123,7 +123,7 @@ pub fn book1_prop6() -> Diagram {
     d.put("A", V2::new(50.0, 91.666), Place::Deg(87.0));
     d.put("B", V2::new(0.0, 0.0), Place::Deg(179.0));
     d.put("C", V2::new(100.0, 0.0), Place::Deg(-3.0));
-    d.put("D", V2::new(34.3795, 63.0286), Place::Deg(140.0));
+    d.put("D", V2::new(34.3795, 63.0286249), Place::Deg(140.0));
     d.chain(&["A", "D", "B"]);
     d.join("B", "C");
     d.join("C", "A");
@@ -147,5 +147,48 @@ pub fn book1_prop7() -> Diagram {
     d.join("D", "B");
     d.join("C", "D");
     d.dots(&["A", "B", "C", "D"]);
+    d
+}
+
+/// I.8 — Fitzpatrick plate (Elements p. 14): congruent ABC and DEF;
+/// G the miss of BA, CA onto ED, DF (EG, GF).
+pub fn book1_prop8() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("A", V2::new(36.2635, 142.2726), Place::Deg(95.0));
+    d.put("B", V2::new(0.0, 0.0), Place::Deg(-177.0));
+    d.put("C", V2::new(92.0578, 39.056), Place::Deg(1.0));
+    d.put("D", V2::new(164.1743, 151.6491), Place::Deg(96.0));
+    d.put("E", V2::new(127.9108, 9.3765), Place::Deg(-170.0));
+    d.put("F", V2::new(219.9686, 48.4325), Place::Deg(12.0));
+    d.put("G", V2::new(198.056, 142.2726), Place::Deg(88.0));
+    d.join("A", "B");
+    d.join("B", "C");
+    d.join("C", "A");
+    d.join("D", "E");
+    d.join("E", "F");
+    d.join("F", "D");
+    d.join("E", "G");
+    d.join("G", "F");
+    d.dots(&["A", "B", "C", "D", "E", "F", "G"]);
+    d
+}
+
+/// I.9 — Fitzpatrick plate (Elements p. 15): ∠BAC; D on AB, E on AC,
+/// AD = AE; equilateral DEF; AF the bisector.
+pub fn book1_prop9() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("A", V2::new(0.0, 0.0), Place::Deg(88.0));
+    d.put("B", V2::new(-69.2505972, -173.112557), Place::Deg(-98.0));
+    d.put("C", V2::new(69.2415329, -173.116182), Place::Deg(-76.0));
+    d.put("D", V2::new(-37.141645, -92.8466381), Place::Deg(162.0));
+    d.put("E", V2::new(37.1367836, -92.8485827), Place::Deg(17.0));
+    d.put("F", V2::new(-0.00411482184, -157.174617), Place::Deg(-96.0));
+    d.chain(&["A", "D", "B"]);
+    d.chain(&["A", "E", "C"]);
+    d.join("D", "E");
+    d.join("D", "F");
+    d.join("E", "F");
+    d.join("A", "F");
+    d.dots(&["A", "B", "C", "D", "E", "F"]);
     d
 }

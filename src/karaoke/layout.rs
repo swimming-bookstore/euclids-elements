@@ -28,18 +28,22 @@ pub fn read_layout_lines(lines: &[Line]) -> Vec<Vec<Atom>> {
         .map(|(_, ls)| {
             let mut atoms = Vec::new();
             for (i, line) in ls.iter().enumerate() {
-                for t in &line.tokens {
+                for (ti, t) in line.tokens.iter().enumerate() {
                     if t.cite {
                         atoms.push(Atom::Cite(t.text.clone()));
+                        let more_here = line.tokens[ti + 1..]
+                            .iter()
+                            .any(|u| !u.cite);
+                        let more_later = ls[i + 1..].iter().any(|l| !l.tokens.is_empty());
+                        if more_here || more_later {
+                            atoms.push(Atom::Break);
+                        }
                     } else {
                         atoms.push(Atom::Word {
                             text: t.text.clone(),
                             italic: t.italic,
                         });
                     }
-                }
-                if i + 1 < ls.len() && line.tokens.iter().any(|t| t.cite) {
-                    atoms.push(Atom::Break);
                 }
             }
             atoms
@@ -318,5 +322,50 @@ mod tests {
         );
         let qed = para_text(&i7[2]);
         assert!(qed.contains("given straight-lines. (Which is) the very thing it was required to show."));
+    }
+
+    #[test]
+    fn i8_fitzpatrick_paragraphs() {
+        let i8 = layout_of(1, 8);
+        assert_eq!(i8.len(), 3, "I.8 has three Fitzpatrick paragraphs");
+        assert!(cites(&i8[0]).is_empty());
+        assert_eq!(cites(&i8[1]), vec!["[Prop. 1.7]", "[C.N. 4]"]);
+        assert!(cites(&i8[2]).is_empty());
+        let given = para_text(&i8[0]);
+        assert!(given.contains("Let ABC and DEF be two triangles"));
+        assert!(given.contains("respectively. (That is) AB to DE"));
+        assert!(given.contains("base BC equal to the base EF"));
+        let proof = para_text(&i8[1]);
+        assert!(proof.contains("For if triangle ABC is applied to triangle DEF"));
+        assert!(proof.contains("like EG and GF (in the above figure)"));
+        assert!(proof.contains("cannot be constructed. [Prop. 1.7] \nThus, the base BC"));
+        assert!(proof.contains("equal to it. [C.N. 4]"));
+        assert!(
+            proof.contains("respectively). Thus, they will coincide."),
+            "plain full stops stay: {proof}"
+        );
+        let qed = para_text(&i8[2]);
+        assert!(qed.contains("two side, respectively"));
+        assert!(qed.contains("equal straight-lines. (Which is) the very thing it was required to show."));
+    }
+
+    #[test]
+    fn i9_fitzpatrick_paragraphs() {
+        let i9 = layout_of(1, 9);
+        assert_eq!(i9.len(), 4, "I.9 has four Fitzpatrick paragraphs");
+        assert!(cites(&i9[0]).is_empty());
+        assert_eq!(cites(&i9[1]), vec!["[Prop. 1.3]", "[Prop. 1.1]"]);
+        assert_eq!(cites(&i9[2]), vec!["[Prop. 1.8]"]);
+        assert!(cites(&i9[3]).is_empty());
+        let given = para_text(&i9[0]);
+        assert!(given.contains("Let BAC be the given rectilinear angle"));
+        let construction = para_text(&i9[1]);
+        assert!(construction.contains("cut off from AC, [Prop. 1.3] \nand let DE have been joined."));
+        assert!(construction.contains("constructed upon DE, [Prop. 1.1] \nand let AF have been joined."));
+        let proof = para_text(&i9[2]);
+        assert!(proof.contains("For since AD is equal to AE, and AF is common, the two (straight-lines) DA, AF"));
+        assert!(proof.contains("angle EAF. [Prop. 1.8]"));
+        let qed = para_text(&i9[3]);
+        assert!(qed.contains("cut in half by the straight-line AF. (Which is) the very thing it was required to do."));
     }
 }

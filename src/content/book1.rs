@@ -1,7 +1,7 @@
 use super::{s, Proposition};
 use crate::figure::{
     book1_prop1, book1_prop2, book1_prop3, book1_prop4, book1_prop5, book1_prop6,
-    book1_prop7,
+    book1_prop7, book1_prop8, book1_prop9,
 };
 
 pub const PROP_1: Proposition = Proposition {
@@ -197,6 +197,51 @@ pub const PROP_7: Proposition = Proposition {
     ],
 };
 
+pub const PROP_8: Proposition = Proposition {
+    book: 1,
+    number: 8,
+    enunciation: "If two triangles have two sides equal to two sides, respectively, and also have the base equal to the base, then they will also have equal the angles encompassed by the equal straight-lines.",
+    figure: book1_prop8,
+    phrases: &[
+        s(1, "Let *ABC* and *DEF* be two triangles having the two sides *AB* and *AC* equal to the two sides *DE* and *DF*, respectively."),
+        s(1, "(That is) *AB* to *DE*, and *AC* to *DF*."),
+        s(1, "Let them also have the base *BC* equal to the base *EF*."),
+        s(1, "I say that the angle *BAC* is also equal to the angle *EDF*."),
+        s(2, "For if triangle *ABC* is applied to triangle *DEF*, the point *B* being placed on point *E*, and the straight-line *BC* on *EF*,"),
+        s(2, "then point *C* will also coincide with *F*, on account of *BC* being equal to *EF*."),
+        s(2, "So (because of) *BC* coinciding with *EF*, (the sides) *BA* and *CA* will also coincide with *ED* and *DF* (respectively)."),
+        s(2, "For if base *BC* coincides with base *EF*, but the sides *AB* and *AC* do not coincide with *ED* and *DF* (respectively), but miss like *EG* and *GF* (in the above figure),"),
+        s(2, "then we will have constructed upon the same straight-line, two other straight-lines equal, respectively, to two (given) straight-lines,"),
+        s(2, "and (meeting) at a different point on the same side (of the straight-line), but having the same ends."),
+        s(2, "But (such straight-lines) cannot be constructed.{[Prop. 1.7]}"),
+        s(2, "Thus, the base *BC* being applied to the base *EF*, the sides *BA* and *AC* cannot not coincide with *ED* and *DF* (respectively)."),
+        s(2, "Thus, they will coincide."),
+        s(2, "So the angle *BAC* will also coincide with angle *EDF*, and will be equal to it.{[C.N. 4]}"),
+        s(3, "Thus, if two triangles have two sides equal to two side, respectively, and have the base equal to the base,"),
+        s(3, "then they will also have equal the angles encompassed by the equal straight-lines."),
+        s(3, "(Which is) the very thing it was required to show."),
+    ],
+};
+
+pub const PROP_9: Proposition = Proposition {
+    book: 1,
+    number: 9,
+    enunciation: "To cut a given rectilinear angle in half.",
+    figure: book1_prop9,
+    phrases: &[
+        s(1, "Let *BAC* be the given rectilinear angle."),
+        s(1, "So it is required to cut it in half."),
+        s(2, "Let the point *D* have been taken at random on *AB*, and let *AE*, equal to *AD*, have been cut off from *AC,*{[Prop. 1.3]} and let *DE* have been joined."),
+        s(2, "And let the equilateral triangle *DEF* have been constructed upon *DE,*{[Prop. 1.1]} and let *AF* have been joined."),
+        s(2, "I say that the angle *BAC* has been cut in half by the straight-line *AF*."),
+        s(3, "For since *AD* is equal to *AE*, and *AF* is common, the two (straight-lines) *DA*, *AF* are equal to the two (straight-lines) *EA*, *AF*, respectively."),
+        s(3, "And the base *DF* is equal to the base *EF*."),
+        s(3, "Thus, angle *DAF* is equal to angle *EAF*.{[Prop. 1.8]}"),
+        s(4, "Thus, the given rectilinear angle *BAC* has been cut in half by the straight-line *AF*."),
+        s(4, "(Which is) the very thing it was required to do."),
+    ],
+};
+
 pub const PROPOSITIONS: &[Proposition] = &[
-    PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6, PROP_7,
+    PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6, PROP_7, PROP_8, PROP_9,
 ];

@@ -126,21 +126,24 @@ h1 {
 
 .proof .word.em { font-style: italic; }
 
-/* Zero-size float at the cite point so the note hangs on that line,
-   not stacked at the top of the paragraph. */
+/* Zero-size marker on the current line; the cite hangs in the
+   padding so following words stay on the same line. */
 .proof .sidenote {
   float: right;
-  clear: right;
   width: 0;
   height: 0;
   margin: 0;
   padding: 0;
+  position: relative;
+  overflow: visible;
 }
 
 .proof .cite {
-  display: block;
+  position: absolute;
+  left: 0.45rem;
+  top: 0;
   width: 6.5rem;
-  margin: 0 -7.2rem 0 0;
+  margin: 0;
   padding: 0;
   text-align: right;
   font-size: 0.92rem;
