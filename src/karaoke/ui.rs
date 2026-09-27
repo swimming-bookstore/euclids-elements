@@ -1,7 +1,8 @@
-use super::layout::{read_layout, Atom};
+use super::layout::{last_row, read_layout, roll_shift, wrap_rows, Atom};
 use super::player::Player;
 use super::script::Script;
 use leptos::prelude::*;
+use wasm_bindgen::JsCast;
 
 #[component]
 pub fn KaraokePlay(player: Player, record: RwSignal<bool>) -> impl IntoView {
@@ -81,8 +82,24 @@ pub fn KaraokeRead(script: Script) -> impl IntoView {
 }
 
 /// Current line wraps in full. Previous line sits above, then leaves.
+///
+/// The record window stays two lines high. A wrapped sentence rolls up
+/// so the active wrap is the second line and the wrap above it remains.
+/// A finished sentence keeps only its last wrap in the previous slot.
 #[component]
 pub fn KaraokeLyrics(script: Script, player: Player) -> impl IntoView {
+    let now_shift = RwSignal::new(0i32);
+    let prev_shift = RwSignal::new(0i32);
+    let script_roll = script.clone();
+    Effect::new(move |_| {
+        let playing = player.playing.get();
+        let cursor = player.cursor.get();
+        let script = script_roll.clone();
+        request_animation_frame(move || {
+            apply_roll(&script, player, playing, cursor, now_shift, prev_shift);
+        });
+    });
+
     view! {
         <div class="karaoke" aria-live="polite">
             {script.lines.iter().enumerate().map(|(li, line)| {
@@ -99,6 +116,7 @@ pub fn KaraokeLyrics(script: Script, player: Player) -> impl IntoView {
                 let now_script = script.clone();
                 let gone_script = script.clone();
                 let word_script = script.clone();
+                let style_script = script.clone();
                 view! {
                     <p
                         class="line"
@@ -124,7 +142,27 @@ pub fn KaraokeLyrics(script: Script, player: Player) -> impl IntoView {
                             li + 1 < cur
                         }
                     >
-                        <span class="body">
+                        <span
+                            class="body"
+                            style=move || {
+                                let cur = style_script
+                                    .get(player.cursor.get())
+                                    .map(|(i, _, _)| i)
+                                    .unwrap_or(0);
+                                let y = if cur == li {
+                                    now_shift.get()
+                                } else if cur == li + 1 {
+                                    prev_shift.get()
+                                } else {
+                                    0
+                                };
+                                if y == 0 {
+                                    String::new()
+                                } else {
+                                    format!("transform: translateY({y}px)")
+                                }
+                            }
+                        >
                             {body.into_iter().map(|(ti, tok)| {
                                 let italic = tok.italic;
                                 let text = format!("{} ", tok.text);
@@ -167,4 +205,134 @@ pub fn KaraokeLyrics(script: Script, player: Player) -> impl IntoView {
             }).collect_view()}
         </div>
     }
+}
+
+/// Shift the current sentence up so its active wrap sits on the second
+/// line of the two-line window. Measured after layout, from real word boxes.
+fn apply_roll(
+    script: &Script,
+    player: Player,
+    playing: bool,
+    cursor: usize,
+    now_shift: RwSignal<i32>,
+    prev_shift: RwSignal<i32>,
+) {
+    let idle = !playing && cursor == player.start_at;
+    if idle {
+        now_shift.set(0);
+        prev_shift.set(0);
+        return;
+    }
+    let Some((cur, ti, _)) = script.get(cursor) else {
+        now_shift.set(0);
+        prev_shift.set(0);
+        return;
+    };
+    let now = shift_px(script, cur, Some(ti), 2);
+    let prev = if cur > 0 {
+        shift_px(script, cur - 1, None, 1)
+    } else {
+        0
+    };
+    if now_shift.get_untracked() != now {
+        now_shift.set(now);
+    }
+    if prev_shift.get_untracked() != prev {
+        prev_shift.set(prev);
+    }
+}
+
+/// Negative pixels to translate a line's body. `active` is the sung body
+/// word; `None` means the line is finished, so only its last wrap stays.
+fn shift_px(script: &Script, line: usize, active: Option<usize>, window: usize) -> i32 {
+    let Some(body) = line_body(line) else {
+        return 0;
+    };
+    let width = body.client_width() as f32;
+    if width <= 0.0 {
+        return 0;
+    }
+    let nodes = body.children();
+    let mut widths = Vec::new();
+    for i in 0..nodes.length() {
+        let w = nodes
+            .item(i)
+            .and_then(|n| n.dyn_into::<web_sys::Element>().ok())
+            .map(|n| {
+                let box_w = n.get_bounding_client_rect().width() as f32;
+                let margin = n
+                    .owner_document()
+                    .and_then(|d| d.default_view())
+                    .and_then(|w| w.get_computed_style(&n).ok().flatten())
+                    .and_then(|s| s.get_property_value("margin-right").ok())
+                    .and_then(|v| v.trim_end_matches("px").parse::<f32>().ok())
+                    .unwrap_or(0.0);
+                box_w + margin
+            })
+            .unwrap_or(0.0);
+        widths.push(w);
+    }
+    let rows = wrap_rows(&widths, width);
+    let body_i = match active {
+        Some(ti) => script
+            .lines
+            .get(line)
+            .map(|line| {
+                line.tokens
+                    .iter()
+                    .take(ti + 1)
+                    .filter(|t| !t.cite)
+                    .count()
+                    .saturating_sub(1)
+            })
+            .unwrap_or(0),
+        None => rows.len().saturating_sub(1),
+    };
+    let shift = if active.is_some() {
+        roll_shift(&rows, body_i, window)
+    } else {
+        last_row(&rows).saturating_sub(window - 1)
+    };
+    let line_h = line_height_px(&body);
+    if shift == 0 || line_h <= 0.0 {
+        0
+    } else {
+        -((shift as f32) * line_h).round() as i32
+    }
+}
+
+fn line_body(line: usize) -> Option<web_sys::HtmlElement> {
+    let doc = web_sys::window()?.document()?;
+    let lines = doc.get_elements_by_class_name("line");
+    let line_el = lines.item(line as u32)?.dyn_into::<web_sys::Element>().ok()?;
+    // A finished line is display:none until it becomes .prev, so its wrap
+    // width is 0 unless we measure it laid out.
+    let html = line_el.dyn_ref::<web_sys::HtmlElement>()?;
+    let hidden = html.client_width() == 0;
+    if hidden {
+        let _ = html.style().set_property("display", "grid");
+    }
+    let body = line_el.get_elements_by_class_name("body").item(0)?;
+    let body = body.dyn_into::<web_sys::HtmlElement>().ok()?;
+    if hidden {
+        let _ = html.style().remove_property("display");
+    }
+    Some(body)
+}
+
+fn line_height_px(body: &web_sys::HtmlElement) -> f32 {
+    body.owner_document()
+        .and_then(|d| d.default_view())
+        .and_then(|w| w.get_computed_style(body).ok().flatten())
+        .and_then(|s| s.get_property_value("line-height").ok())
+        .and_then(|v| v.trim_end_matches("px").parse().ok())
+        .unwrap_or(0.0)
+}
+
+fn request_animation_frame(f: impl FnOnce() + 'static) {
+    let Some(window) = web_sys::window() else {
+        return;
+    };
+    let cb = wasm_bindgen::closure::Closure::once_into_js(f);
+    let _ = window.request_animation_frame(cb.as_ref().unchecked_ref());
 }

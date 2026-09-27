@@ -1,6 +1,10 @@
 //! Read-mode layout: Fitzpatrick paragraphs.
 //! Citations hang in the margin. A cited clause breaks so the next
 //! sentence starts on a new line; a full stop with no cite does not.
+//!
+//! Record mode keeps a two-line lyric window. A sentence that wraps
+//! past those two lines rolls up: older wraps leave, the active wrap
+//! stays on the second line.
 
 use super::script::{Line, Script};
 
@@ -9,6 +13,45 @@ pub enum Atom {
     Word { text: String, italic: bool },
     Cite(String),
     Break,
+}
+
+/// How many wrapped rows a word occupies in the record lyric column.
+///
+/// `widths` are advance widths in the same unit as `width` (em, px, …).
+/// A word that does not fit the remaining space of the current row starts
+/// the next row. The returned row index is 0-based.
+pub fn wrap_rows(word_widths: &[f32], width: f32) -> Vec<usize> {
+    let mut rows = Vec::with_capacity(word_widths.len());
+    let mut row = 0usize;
+    let mut used = 0f32;
+    for &w in word_widths {
+        let w = if w.is_finite() { w.max(0.0) } else { 0.0 };
+        if used > 0.0 && used + w > width {
+            row += 1;
+            used = 0.0;
+        }
+        rows.push(row);
+        used += w;
+    }
+    rows
+}
+
+/// How many wrapped rows to shift a finished sentence so only its last
+/// wrap remains in a one-line previous slot.
+pub fn last_row(rows: &[usize]) -> usize {
+    rows.last().copied().unwrap_or(0)
+}
+
+/// `rows[i]` is the wrap row of token `i`. `active` is the token being
+/// sung. Returns how many wrap rows to shift up so the active row sits
+/// on the last line of the window (or at its natural row, if it already
+/// fits). The previous wrap stays visible above it.
+pub fn roll_shift(rows: &[usize], active: usize, window: usize) -> usize {
+    let window = window.max(1);
+    let Some(&row) = rows.get(active) else {
+        return 0;
+    };
+    row.saturating_sub(window - 1)
 }
 
 pub fn read_layout(script: &Script) -> Vec<Vec<Atom>> {
@@ -89,6 +132,38 @@ mod tests {
                 _ => None,
             })
             .collect()
+    }
+
+    #[test]
+    fn wrap_rows_breaks_when_the_next_word_does_not_fit() {
+        // Four words of width 3 into a column of width 7: 3+3 fit, then wrap.
+        let rows = wrap_rows(&[3.0, 3.0, 3.0, 3.0], 7.0);
+        assert_eq!(rows, vec![0, 0, 1, 1]);
+    }
+
+    #[test]
+    fn wrap_rows_keeps_a_single_overlong_word_on_its_row() {
+        let rows = wrap_rows(&[10.0, 2.0], 7.0);
+        assert_eq!(rows, vec![0, 1]);
+    }
+
+    #[test]
+    fn roll_keeps_the_active_row_on_the_last_line_of_a_two_line_window() {
+        // I.7's conclusion wraps to four rows. While the cursor is still
+        // on the first two, nothing rolls. On the third row the first
+        // row leaves; on the fourth, two rows have left.
+        let rows = vec![0, 0, 1, 1, 2, 2, 3, 3];
+        assert_eq!(roll_shift(&rows, 0, 2), 0);
+        assert_eq!(roll_shift(&rows, 3, 2), 0);
+        assert_eq!(roll_shift(&rows, 4, 2), 1);
+        assert_eq!(roll_shift(&rows, 7, 2), 2);
+    }
+
+    #[test]
+    fn roll_does_not_shift_a_sentence_that_already_fits() {
+        let rows = vec![0, 0, 1];
+        assert_eq!(roll_shift(&rows, 2, 2), 0);
+        assert_eq!(last_row(&rows), 1);
     }
 
     #[test]

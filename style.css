@@ -348,6 +348,7 @@ footer {
   stroke-width: 2.3px;
 }
 
+/* Two lines, even when the sentence wraps. Older wraps roll up. */
 .stage.record .karaoke {
   flex: 0 0 6.6rem;
   height: 6.6rem;
@@ -359,6 +360,26 @@ footer {
   margin-top: 0.2rem;
   padding: 0;
   overflow: hidden;
+}
+
+.stage.record .karaoke .line.prev,
+.stage.record .karaoke .line.now {
+  overflow: hidden;
+  align-items: start;
+}
+
+/* One complete previous wrap, then the active wrap and the one above it. */
+.stage.record .karaoke .line.prev {
+  max-height: 1.5em;
+}
+
+.stage.record .karaoke .line.now {
+  max-height: 3em;
+}
+
+.stage.record .karaoke .line .body {
+  display: block;
+  will-change: transform;
 }
 
 .record-copy { display: none; }
