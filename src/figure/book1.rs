@@ -192,3 +192,38 @@ pub fn book1_prop9() -> Diagram {
     d.dots(&["A", "B", "C", "D", "E", "F"]);
     d
 }
+
+/// I.10 — Fitzpatrick plate (Elements p. 16): equilateral ABC on the
+/// given finite straight-line AB; CD bisects ∠ACB and cuts AB in half.
+pub fn book1_prop10() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("A", V2::new(0.0, 0.0), Place::Deg(180.0));
+    d.put("B", V2::new(100.0, 0.0), Place::Deg(0.0));
+    d.put("C", V2::new(50.0, 86.6025404), Place::Deg(90.0));
+    d.put("D", V2::new(50.0, 0.0), Place::Deg(-90.0));
+    d.base("A", "B");
+    d.join("A", "C");
+    d.join("B", "C");
+    d.join("C", "D");
+    d.dots(&["A", "B", "C", "D"]);
+    d
+}
+
+/// I.11 — Fitzpatrick plate (Elements p. 16): AB the given line, C on it;
+/// D on AC, CE = CD; equilateral FDE; FC perpendicular to AB.
+/// One scale: AD : DC : CB = 0.215 : 0.285 : 0.500.
+pub fn book1_prop11() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("A", V2::new(0.0, 0.0), Place::Deg(180.0));
+    d.put("B", V2::new(100.0, 0.0), Place::Deg(0.0));
+    d.put("D", V2::new(21.46, 0.0), Place::Deg(-90.0));
+    d.put("C", V2::new(50.0, 0.0), Place::Deg(-90.0));
+    d.put("E", V2::new(78.54, 0.0), Place::Deg(-90.0));
+    d.put("F", V2::new(50.0, 49.43273), Place::Deg(90.0));
+    d.chain(&["A", "D", "C", "E", "B"]);
+    d.join("D", "F");
+    d.join("E", "F");
+    d.join("F", "C");
+    d.dots(&["A", "B", "C", "D", "E", "F"]);
+    d
+}

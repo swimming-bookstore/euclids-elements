@@ -125,6 +125,7 @@ h1 {
 }
 
 .proof .word.em { font-style: italic; }
+.proof .word.gap { margin-right: 0.28em; }
 
 /* Zero-size marker on the current line; the cite hangs in the
    padding so following words stay on the same line. */
@@ -172,7 +173,7 @@ h1 {
   overflow-wrap: break-word;
 }
 
-.karaoke .word {
+.karaoke .word.gap {
   margin-right: 0.28em;
 }
 

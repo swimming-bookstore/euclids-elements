@@ -668,6 +668,79 @@ def book1_prop9() -> Fig:
     return f
 
 
+def book1_prop10() -> Fig:
+    # Fitzpatrick p. 16 English plate. Equilateral ABC on AB (I.1);
+    # CD bisects ∠ACB and cuts AB in half (I.9). One scale: AB = 1.
+    # Plate: half-base 78 pt, height 117.3 pt, ∠ACB = 67.26° — equilateral.
+    ab = 100.0
+    s = Sketch()
+    s.put("A", 0.0, 0.0)
+    s.put("B", ab, 0.0)
+    s.put("C", ab / 2.0, ab * math.sqrt(3.0) / 2.0)
+    s.put("D", ab / 2.0, 0.0)
+    s.require_eq("A", "B", "B", "C")
+    s.require_eq("B", "C", "C", "A")
+    s.require_eq("A", "D", "D", "B")
+    s.require_same_angle("A", "C", "D", "D", "C", "B")
+    s.require_angle("A", "D", "C", 90.0)
+    f = Fig(
+        "book1_prop10",
+        "I.10 — Fitzpatrick plate (Elements p. 16): equilateral ABC on the\n"
+        "given finite straight-line AB; CD bisects ∠ACB and cuts AB in half.",
+    )
+    f.put("A", *s.at("A"), ("deg", 180.0))
+    f.put("B", *s.at("B"), ("deg", 0.0))
+    f.put("C", *s.at("C"), ("deg", 90.0))
+    f.put("D", *s.at("D"), ("deg", -90.0))
+    f.base("A", "B")
+    f.join("A", "C")
+    f.join("B", "C")
+    f.join("C", "D")
+    f.dots("A", "B", "C", "D")
+    return f
+
+
+def book1_prop11() -> Fig:
+    # Fitzpatrick p. 16 English plate. AB the given line, C on it;
+    # D on AC, CE = CD, equilateral FDE, FC the perpendicular.
+    # Plate: AD : DC : CB = 0.215 : 0.285 : 0.500, so DC = CE and C is
+    # the midpoint of DE. ∠DCF = ∠ECF = 90°.
+    ab = 100.0
+    ad, dc = 0.2146 * ab, 0.2854 * ab
+    s = Sketch()
+    s.put("A", 0.0, 0.0)
+    s.put("B", ab, 0.0)
+    s.put("D", ad, 0.0)
+    s.put("C", ad + dc, 0.0)
+    s.put("E", ad + 2.0 * dc, 0.0)
+    s.turn("F", "D", "E", 60.0)  # equilateral, above DE
+    s.require_eq("D", "C", "C", "E")
+    s.require_eq("D", "E", "D", "F")
+    s.require_eq("D", "F", "E", "F")
+    s.require_angle("D", "C", "F", 90.0)
+    s.require_same_angle("D", "C", "F", "F", "C", "E")
+    s.require_ratio("A", "D", "A", "B", 0.2146, eps=0.001)
+    s.require_ratio("D", "C", "A", "B", 0.2854, eps=0.001)
+    f = Fig(
+        "book1_prop11",
+        "I.11 — Fitzpatrick plate (Elements p. 16): AB the given line, C on it;\n"
+        "D on AC, CE = CD; equilateral FDE; FC perpendicular to AB.\n"
+        "One scale: AD : DC : CB = 0.215 : 0.285 : 0.500.",
+    )
+    f.put("A", *s.at("A"), ("deg", 180.0))
+    f.put("B", *s.at("B"), ("deg", 0.0))
+    f.put("D", *s.at("D"), ("deg", -90.0))
+    f.put("C", *s.at("C"), ("deg", -90.0))
+    f.put("E", *s.at("E"), ("deg", -90.0))
+    f.put("F", *s.at("F"), ("deg", 90.0))
+    f.chain("A", "D", "C", "E", "B")
+    f.join("D", "F")
+    f.join("E", "F")
+    f.join("F", "C")
+    f.dots("A", "B", "C", "D", "E", "F")
+    return f
+
+
 PLATES = [
     book1_prop1,
     book1_prop2,
@@ -678,6 +751,8 @@ PLATES = [
     book1_prop7,
     book1_prop8,
     book1_prop9,
+    book1_prop10,
+    book1_prop11,
 ]
 
 
