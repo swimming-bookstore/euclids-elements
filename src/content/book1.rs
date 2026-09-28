@@ -2,6 +2,7 @@ use super::{s, Proposition};
 use crate::figure::{
     book1_prop1, book1_prop2, book1_prop3, book1_prop4, book1_prop5, book1_prop6,
     book1_prop7, book1_prop8, book1_prop9, book1_prop10, book1_prop11,
+    book1_prop12, book1_prop13,
 };
 
 pub const PROP_1: Proposition = Proposition {
@@ -280,6 +281,50 @@ pub const PROP_11: Proposition = Proposition {
     ],
 };
 
+pub const PROP_12: Proposition = Proposition {
+    book: 1,
+    number: 12,
+    enunciation: "To draw a straight-line perpendicular to a given infinite straight-line from a given point which is not on it.",
+    figure: book1_prop12,
+    phrases: &[
+        s(1, "Let *AB* be the given infinite straight-line and *C* the given point, which is not on (*AB*)."),
+        s(1, "So it is required to draw a straight-line perpendicular to the given infinite straight-line *AB* from the given point *C*, which is not on (*AB*)."),
+        s(2, "For let point *D* have been taken at random on the other side (to *C*) of the straight-line *AB*, and let the circle *EFG* have been drawn with center *C* and radius *CD,*{[Post. 3]} and let the straight-line *EG* have been cut in half at (point) *H,*{[Prop. 1.10]} and let the straight-lines *CG*, *CH*, and *CE* have been joined."),
+        s(2, "I say that the (straight-line) *CH* has been drawn perpendicular to the given infinite straight-line *AB* from the given point *C*, which is not on (*AB*)."),
+        s(3, "For since *GH* is equal to *HE*, and *HC* (is) common, the two (straight-lines) *GH*, *HC* are equal to the two (straight-lines) *EH*, *HC*, respectively, and the base *CG* is equal to the base *CE*."),
+        s(3, "Thus, the angle *CHG* is equal to the angle *EHC,*{[Prop. 1.8]} and they are adjacent."),
+        s(3, "But when a straight-line stood on a(nother) straight-line makes the adjacent angles equal to one another, each of the equal angles is a right-angle, and the former straight-line is called a perpendicular to that upon which it stands.{[Def. 1.10]}"),
+        s(4, "Thus, the (straight-line) *CH* has been drawn perpendicular to the given infinite straight-line *AB* from the given point *C*, which is not on (*AB*)."),
+        s(4, "(Which is) the very thing it was required to do."),
+    ],
+};
+
+pub const PROP_13: Proposition = Proposition {
+    book: 1,
+    number: 13,
+    enunciation: "If a straight-line stood on a(nother) straight-line makes angles, it will certainly either make two right-angles, or (angles whose sum is) equal to two right-angles.",
+    figure: book1_prop13,
+    phrases: &[
+        s(1, "For let some straight-line *AB* stood on the straight-line *CD* make the angles *CBA* and *ABD*."),
+        s(1, "I say that the angles *CBA* and *ABD* are certainly either two right-angles, or (have a sum) equal to two right-angles."),
+        s(2, "In fact, if *CBA* is equal to *ABD* then they are two right-angles.{[Def. 1.10]}"),
+        s(2, "But, if not, let *BE* have been drawn from the point *B* at right-angles to *CD*.{[Prop. 1.11]}"),
+        s(2, "Thus, *CBE* and *EBD* are two right-angles."),
+        s(2, "And since *CBE* is equal to the two (angles) *CBA* and *ABE*, let *EBD* have been added to both."),
+        s(2, "Thus, the (sum of the angles) *CBE* and *EBD* is equal to the (sum of the) three (angles) *CBA*, *ABE*, and *EBD*.{[C.N. 2]}"),
+        s(2, "Again, since *DBA* is equal to the two (angles) *DBE* and *EBA*, let *ABC* have been added to both."),
+        s(2, "Thus, the (sum of the angles) *DBA* and *ABC* is equal to the (sum of the) three (angles) *DBE*, *EBA*, and *ABC*.{[C.N. 2]}"),
+        s(2, "But (the sum of) *CBE* and *EBD* was also shown (to be) equal to the (sum of the) same three (angles)."),
+        s(2, "And things equal to the same thing are also equal to one another.{[C.N. 1]}"),
+        s(2, "Therefore, (the sum of) *CBE* and *EBD* is also equal to (the sum of) *DBA* and *ABC*."),
+        s(2, "But, (the sum of) *CBE* and *EBD* is two right-angles."),
+        s(2, "Thus, (the sum of) *ABD* and *ABC* is also equal to two right-angles."),
+        s(3, "Thus, if a straight-line stood on a(nother) straight-line makes angles, it will certainly either make two right-angles, or (angles whose sum is) equal to two right-angles."),
+        s(3, "(Which is) the very thing it was required to show."),
+    ],
+};
+
 pub const PROPOSITIONS: &[Proposition] = &[
     PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6, PROP_7, PROP_8, PROP_9, PROP_10, PROP_11,
+    PROP_12, PROP_13,
 ];

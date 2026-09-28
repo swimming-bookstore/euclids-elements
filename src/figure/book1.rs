@@ -193,13 +193,14 @@ pub fn book1_prop9() -> Diagram {
     d
 }
 
-/// I.10 — Fitzpatrick plate (Elements p. 16): equilateral ABC on the
-/// given finite straight-line AB; CD bisects ∠ACB and cuts AB in half.
+/// I.10 — Fitzpatrick plate (Elements p. 16): ABC on the given finite
+/// straight-line AB; CD bisects ∠ACB and cuts AB in half.
+/// One scale: isosceles, height/AB = 0.741.
 pub fn book1_prop10() -> Diagram {
     let mut d = Diagram::new();
     d.put("A", V2::new(0.0, 0.0), Place::Deg(180.0));
     d.put("B", V2::new(100.0, 0.0), Place::Deg(0.0));
-    d.put("C", V2::new(50.0, 86.6025404), Place::Deg(90.0));
+    d.put("C", V2::new(50.0, 74.12), Place::Deg(90.0));
     d.put("D", V2::new(50.0, 0.0), Place::Deg(-90.0));
     d.base("A", "B");
     d.join("A", "C");
@@ -211,19 +212,60 @@ pub fn book1_prop10() -> Diagram {
 
 /// I.11 — Fitzpatrick plate (Elements p. 16): AB the given line, C on it;
 /// D on AC, CE = CD; equilateral FDE; FC perpendicular to AB.
-/// One scale: AD : DC : CB = 0.215 : 0.285 : 0.500.
+/// One scale: AD : DE : EB = 0.223 : 0.565 : 0.212.
 pub fn book1_prop11() -> Diagram {
     let mut d = Diagram::new();
-    d.put("A", V2::new(0.0, 0.0), Place::Deg(180.0));
-    d.put("B", V2::new(100.0, 0.0), Place::Deg(0.0));
-    d.put("D", V2::new(21.46, 0.0), Place::Deg(-90.0));
-    d.put("C", V2::new(50.0, 0.0), Place::Deg(-90.0));
-    d.put("E", V2::new(78.54, 0.0), Place::Deg(-90.0));
-    d.put("F", V2::new(50.0, 49.43273), Place::Deg(90.0));
+    d.put_line_end("A", V2::new(0.0, 0.0), true);
+    d.put_line_end("B", V2::new(100.0, 0.0), false);
+    d.put("D", V2::new(22.25, 0.0), Place::Deg(-90.0));
+    d.put("C", V2::new(50.505, 0.0), Place::Deg(-90.0));
+    d.put("E", V2::new(78.76, 0.0), Place::Deg(-90.0));
+    d.put("F", V2::new(50.505, 48.9390956), Place::Deg(90.0));
     d.chain(&["A", "D", "C", "E", "B"]);
     d.join("D", "F");
     d.join("E", "F");
     d.join("F", "C");
     d.dots(&["A", "B", "C", "D", "E", "F"]);
+    d
+}
+
+/// I.12 — Fitzpatrick plate (Elements p. 17): AB the infinite line;
+/// C not on it; D on the other side; circle EFG center C through D
+/// cuts AB at G and E; H the midpoint of EG; CH the perpendicular.
+/// One scale: C over the midpoint of AB, GE/AB = 0.457.
+pub fn book1_prop12() -> Diagram {
+    let mut d = Diagram::new();
+    d.put_line_end("A", V2::new(0.0, 0.0), true);
+    d.put_line_end("B", V2::new(100.0, 0.0), false);
+    d.put("C", V2::new(50.0, 24.8), Place::Deg(90.0));
+    d.put("D", V2::new(62.0, -6.7), Place::Deg(-90.0));
+    d.put("E", V2::new(72.8300241, 0.0), Place::Deg(-70.0));
+    d.put("G", V2::new(27.1699759, 0.0), Place::Deg(-110.0));
+    d.put("H", V2::new(50.0, 0.0), Place::Deg(-90.0));
+    d.circle("EFG", "C", "D");
+    d.on_circle("F", "C", "D", 90.0);
+    d.chain(&["A", "G", "H", "E", "B"]);
+    d.join("C", "G");
+    d.join("C", "H");
+    d.join("C", "E");
+    d.dots(&["A", "B", "C", "D", "E", "G", "H"]);
+    d
+}
+
+/// I.13 — Fitzpatrick plate (Elements p. 18): AB stood on CD, making
+/// ∠CBA and ∠ABD; BE drawn from B at right-angles to CD.
+/// D left, C right; AB leans toward C; E on the tip of BE.
+/// One scale: BD/BC = 0.624, AB/BE = 1.036, ∠CBA = 64.01°.
+pub fn book1_prop13() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("D", V2::new(-62.43, 0.0), Place::Deg(-135.0));
+    d.put("B", V2::new(0.0, 0.0), Place::Deg(-90.0));
+    d.put("C", V2::new(100.0, 0.0), Place::Deg(-45.0));
+    d.put("A", V2::new(70.7146369, 145.050739), Place::Deg(64.0));
+    d.put("E", V2::new(0.0, 155.74), Place::Deg(90.0));
+    d.chain(&["C", "B", "D"]);
+    d.join("A", "B");
+    d.join("B", "E");
+    d.dots(&["A", "B", "C", "D", "E"]);
     d
 }

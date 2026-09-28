@@ -37,7 +37,7 @@ def main() -> None:
     parser.add_argument("--book", type=int, default=1)
     parser.add_argument("--prop", type=int, default=1)
     parser.add_argument("--slug", default="proposition1")
-    parser.add_argument("--hold", type=float, default=182)
+    parser.add_argument("--hold", type=float, default=420)
     args = parser.parse_args()
 
     os.environ.setdefault("DISPLAY", ":0.0")
@@ -59,7 +59,7 @@ def main() -> None:
         width=900,
         height=800,
         fps=15,
-        max_sec=args.hold + 20,
+        max_sec=args.hold + 40,
         cdp_port=9331 + args.prop,
     )
     rec.attach_chrome()
@@ -70,7 +70,17 @@ def main() -> None:
             "ready",
         )
         rec.start_capture()
-        rec.hold(args.hold)
+        # Hold until the last sung word, then a beat of the finished plate.
+        # A fixed hold cut I.8 off in the middle of the proof.
+        # Last sung word keeps .sing after play stops, so watch the Play
+        # button instead: idle start has no .sung, finished plate does.
+        rec.wait_js(
+            "document.querySelector('.karaoke-play .play')?.textContent.trim() === 'Play'"
+            " && document.querySelectorAll('.karaoke .word.sung').length > 0",
+            args.hold,
+            "karaoke finished",
+        )
+        rec.hold(3.0)
         rec._stop.set()
         if rec._cap:
             rec._cap.join(timeout=15)

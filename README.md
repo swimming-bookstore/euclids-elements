@@ -1,6 +1,6 @@
 # Euclid’s Elements
 
-Leptos (WASM) shell for all 13 books. Book I Propositions 1–11 are filled in.
+Leptos (WASM) shell for all 13 books. Book I Propositions 1–13 are filled in.
 
 ```bash
 trunk serve

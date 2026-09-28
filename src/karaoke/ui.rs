@@ -65,7 +65,7 @@ pub fn KaraokeRead(script: Script) -> impl IntoView {
                     <p class="para">
                         {atoms.into_iter().map(|atom| match atom {
                             Atom::Word { text, italic, spaced } => view! {
-                                <span class="word" class:em=italic class:gap=spaced>{text}</span>
+                                <span class="word" class:em=italic>{text}{space(spaced)}</span>
                             }.into_any(),
                             Atom::Cite(text) => view! {
                                 <span class="sidenote">
@@ -97,6 +97,7 @@ pub fn KaraokeLyrics(script: Script, player: Player) -> impl IntoView {
         let script = script_roll.clone();
         request_animation_frame(move || {
             apply_roll(&script, player, playing, cursor, now_shift, prev_shift);
+            mark_broken_words();
         });
     });
 
@@ -165,15 +166,16 @@ pub fn KaraokeLyrics(script: Script, player: Player) -> impl IntoView {
                         >
                             {body.into_iter().map(|(ti, tok)| {
                                 let italic = tok.italic;
-                                let gap = tok.spaced;
+                                let gap = super::layout::demo_spaced(&line.tokens, ti);
                                 let text = tok.text;
+                                let broken = hyphen_at(&text);
                                 let sing_script = word_script.clone();
                                 let sung_script = word_script.clone();
                                 view! {
                                     <span
                                         class="word"
                                         class:em=italic
-                                        class:gap=gap
+                                        class:break=broken.is_some()
                                         class:sing=move || {
                                             if !player.playing.get() && player.cursor.get() == player.start_at {
                                                 return false;
@@ -192,7 +194,15 @@ pub fn KaraokeLyrics(script: Script, player: Player) -> impl IntoView {
                                             }
                                         }
                                     >
-                                        {text}
+                                        {match broken {
+                                            Some(at) => view! {
+                                                <span class="pre">{text[..at].to_string()}</span>
+                                                <span class="hy">"-"</span>
+                                                <span class="post">{text[at..].to_string()}</span>
+                                                {space(gap)}
+                                            }.into_any(),
+                                            None => view! { <span class="pre">{text}{space(gap)}</span> }.into_any(),
+                                        }}
                                     </span>
                                 }
                             }).collect_view()}
@@ -329,6 +339,70 @@ fn line_height_px(body: &web_sys::HtmlElement) -> f32 {
         .and_then(|s| s.get_property_value("line-height").ok())
         .and_then(|v| v.trim_end_matches("px").parse().ok())
         .unwrap_or(0.0)
+}
+
+fn space(spaced: bool) -> &'static str {
+    if spaced {
+        " "
+    } else {
+        ""
+    }
+}
+
+/// Where a long word may break, so a wrap can show a hyphen. `None` if the
+/// word is short, a name, or already hyphenated.
+fn hyphen_at(text: &str) -> Option<usize> {
+    let bare: String = text
+        .chars()
+        .filter(|c| c.is_ascii_alphabetic())
+        .collect();
+    if bare.len() < 10 || bare.chars().any(|c| c.is_ascii_uppercase()) {
+        return None;
+    }
+    if text.contains('-') {
+        return None;
+    }
+    let chars: Vec<char> = text.chars().collect();
+    let mut alpha = 0usize;
+    let mut at = None;
+    for (i, c) in chars.iter().enumerate() {
+        if c.is_ascii_alphabetic() {
+            alpha += 1;
+            if alpha == bare.len() / 2 {
+                at = Some(i + 1);
+            }
+        }
+    }
+    at.filter(|&i| i > 0 && i < chars.len())
+}
+
+/// A `.break` word whose pieces landed on different rows gets `.broken`,
+/// which paints the hyphen at the end of the first row.
+fn mark_broken_words() {
+    let Some(doc) = web_sys::window().and_then(|w| w.document()) else {
+        return;
+    };
+    let words = doc.get_elements_by_class_name("word break");
+    for i in 0..words.length() {
+        let Some(el) = words.item(i).and_then(|n| n.dyn_into::<web_sys::Element>().ok()) else {
+            continue;
+        };
+        let pre = el.get_elements_by_class_name("pre").item(0);
+        let post = el.get_elements_by_class_name("post").item(0);
+        let broken = match (pre, post) {
+            (Some(a), Some(b)) => {
+                let ay = a.get_bounding_client_rect().top();
+                let by = b.get_bounding_client_rect().top();
+                (by - ay).abs() > 2.0
+            }
+            _ => false,
+        };
+        if broken {
+            let _ = el.class_list().add_1("broken");
+        } else {
+            let _ = el.class_list().remove_1("broken");
+        }
+    }
 }
 
 fn request_animation_frame(f: impl FnOnce() + 'static) {

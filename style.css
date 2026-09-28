@@ -33,13 +33,12 @@ h1 {
 }
 
 .figure-wrap {
-  --cap-w: 36rem;
-  --cap-h: 40rem;
+  --cap-w: 26rem;
+  --cap-h: 18rem;
   margin: 0 auto 1.2rem;
   display: flex;
   justify-content: center;
   width: 100%;
-  container-type: inline-size;
 }
 
 .figure-frame {
@@ -49,6 +48,8 @@ h1 {
   width: min(100%, var(--cap-w), calc(var(--cap-h) * var(--fw) / var(--fh)));
   height: auto;
   max-height: var(--cap-h);
+  /* Letters size to the plate, not the page. */
+  container-type: inline-size;
 }
 
 .figure {
@@ -82,9 +83,9 @@ h1 {
   --dx: 0em;
   --dy: 0em;
   position: absolute;
-  /* Glyph center = mark + (--dx,--dy) in em. Same radius on every plate. */
+  /* Glyph center = mark + (--dx,--dy) in em. Radius tracks type, not plate width. */
   transform: translate(-50%, -50%) translate(var(--dx), var(--dy));
-  font-size: clamp(16px, 4.2cqw, 28px);
+  font-size: clamp(16px, 4.2cqmin, 22px);
   line-height: 1;
   font-family: Georgia, "Times New Roman", serif;
   color: #111;
@@ -122,10 +123,11 @@ h1 {
   margin: 0 0 0.7rem;
   padding-right: 7.2rem;
   overflow: visible;
+  overflow-wrap: break-word;
+  clear: both;
 }
 
 .proof .word.em { font-style: italic; }
-.proof .word.gap { margin-right: 0.28em; }
 
 /* Zero-size marker on the current line; the cite hangs in the
    padding so following words stay on the same line. */
@@ -171,10 +173,21 @@ h1 {
 .karaoke .body {
   min-width: 0;
   overflow-wrap: break-word;
+  hyphens: manual;
+  white-space: normal;
 }
 
-.karaoke .word.gap {
-  margin-right: 0.28em;
+/* A word that wraps in demo mode keeps a hyphen on the broken piece. */
+.karaoke .word.break {
+  display: inline;
+}
+
+.karaoke .word.break .hy {
+  display: none;
+}
+
+.karaoke .word.break.broken .hy {
+  display: inline;
 }
 
 .karaoke .word.em {
@@ -203,6 +216,7 @@ footer {
   margin-top: 1.4rem;
   padding-top: 0.5rem;
   border-top: 1px solid #ccc;
+  clear: both;
 }
 
 .books,
@@ -317,22 +331,24 @@ footer {
   display: flex;
   justify-content: center;
   align-items: center;
+  /* Letter % positions assume overlay box == viewBox. Size the plate
+     with contain so a wide figure (I.11) is not letterboxed. */
+  container-type: size;
 }
 
 .stage.record .figure-frame {
   position: relative;
-  width: auto;
-  height: 100%;
+  width: min(100cqi, calc(100cqh * var(--fw) / var(--fh)));
+  height: auto;
   max-width: 100%;
-  max-height: 100%;
-  aspect-ratio: inherit;
+  max-height: none;
 }
 
 .stage.record .figure {
-  position: absolute;
-  inset: 0;
+  display: block;
+  position: static;
   width: 100%;
-  height: 100%;
+  height: auto;
   margin: 0;
   overflow: visible;
 }
@@ -347,6 +363,11 @@ footer {
 .stage.record .figure .circ.on,
 .stage.record .figure .arc.on {
   stroke-width: 2.3px;
+}
+
+/* Record fills the viewport; keep type (and the em offset) from scaling with it. */
+.stage.record .letter-layer .letter {
+  font-size: clamp(15px, 2.4cqmin, 20px);
 }
 
 /* Two lines, even when the sentence wraps. Older wraps roll up. */

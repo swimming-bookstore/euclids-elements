@@ -58,6 +58,12 @@ pub fn roll_shift(rows: &[usize], active: usize, window: usize) -> usize {
     row.saturating_sub(window - 1)
 }
 
+/// Demo mode parks citations in the margin, so a comma before `{[…]}`
+/// still needs a space before the next body word on the lyric line.
+pub fn demo_spaced(tokens: &[super::script::Token], i: usize) -> bool {
+    tokens[i + 1..].iter().any(|t| !t.cite)
+}
+
 pub fn read_layout(script: &Script) -> Vec<Vec<Atom>> {
     read_layout_lines(&script.lines)
 }
@@ -76,10 +82,11 @@ pub fn read_layout_lines(lines: &[Line]) -> Vec<Vec<Atom>> {
             let mut atoms = Vec::new();
             for (i, line) in ls.iter().enumerate() {
                 if i > 0 {
-                    if let Some(Atom::Word { text, spaced, .. }) = atoms.last_mut() {
-                        if text.ends_with('.') {
-                            *spaced = true;
-                        }
+                    // Phrase breaks are not wrap points. A comma (or any
+                    // mark) at the end of a karaoke line still needs a
+                    // space before the next phrase in the paragraph.
+                    if let Some(Atom::Word { spaced, .. }) = atoms.last_mut() {
+                        *spaced = true;
                     }
                 }
                 for (ti, t) in line.tokens.iter().enumerate() {
@@ -179,6 +186,42 @@ mod tests {
         let rows = vec![0, 0, 1];
         assert_eq!(roll_shift(&rows, 2, 2), 0);
         assert_eq!(last_row(&rows), 1);
+    }
+
+    #[test]
+    fn demo_spaces_after_a_comma_cite() {
+        struct NoneMap;
+        impl crate::karaoke::PartsMap for NoneMap {
+            fn parts(&self, _: &str) -> Vec<String> {
+                Vec::new()
+            }
+        }
+        let phrases = [Phrase {
+            para: 1,
+            text: "constructed upon *DE,*{[Prop. 1.1]} and let *AF* have been joined.",
+        }];
+        let script = compile(&phrases, &NoneMap, Timing::default());
+        let toks = &script.lines[0].tokens;
+        let body: Vec<_> = toks
+            .iter()
+            .enumerate()
+            .filter(|(_, t)| !t.cite)
+            .map(|(i, t)| (t.text.as_str(), demo_spaced(toks, i)))
+            .collect();
+        assert_eq!(
+            body,
+            vec![
+                ("constructed", true),
+                ("upon", true),
+                ("DE,", true),
+                ("and", true),
+                ("let", true),
+                ("AF", true),
+                ("have", true),
+                ("been", true),
+                ("joined.", false),
+            ]
+        );
     }
 
     #[test]
@@ -361,6 +404,11 @@ mod tests {
         );
         let qed = para_text(&i4[2]);
         assert!(qed.contains("equal straight-line equal"));
+        assert!(
+            qed.contains("respectively, and have the angle")
+                && qed.contains("equal, then they will also have the base"),
+            "comma at a phrase join must keep a space: {qed}"
+        );
         assert!(qed.contains("corresponding remaining angles. (Which is) the very thing it was required to show."));
     }
 
@@ -544,6 +592,67 @@ mod tests {
         let qed = para_text(&i11[3]);
         assert!(qed.contains(
             "at right-angles to the given straight-line AB from the given point C on it. (Which is) the very thing it was required to do."
+        ));
+    }
+
+    #[test]
+    fn i12_fitzpatrick_paragraphs() {
+        let i12 = layout_of(1, 12);
+        assert_eq!(i12.len(), 4, "I.12 has four Fitzpatrick paragraphs");
+        assert!(cites(&i12[0]).is_empty());
+        assert_eq!(cites(&i12[1]), vec!["[Post. 3]", "[Prop. 1.10]"]);
+        assert_eq!(cites(&i12[2]), vec!["[Prop. 1.8]", "[Def. 1.10]"]);
+        assert!(cites(&i12[3]).is_empty());
+        let given = para_text(&i12[0]);
+        assert!(given.contains("Let AB be the given infinite straight-line"));
+        assert!(given.contains("which is not on (AB)"));
+        let construction = para_text(&i12[1]);
+        assert!(construction.contains("radius CD, [Post. 3] \nand let the straight-line EG"));
+        assert!(construction.contains("at (point) H, [Prop. 1.10] \nand let the straight-lines CG"));
+        let proof = para_text(&i12[2]);
+        assert!(proof.contains("For since GH is equal to HE, and HC (is) common"));
+        assert!(proof.contains(
+            "equal to the angle EHC, [Prop. 1.8] \nand they are adjacent."
+        ));
+        assert!(proof.contains(
+            "upon which it stands. [Def. 1.10]"
+        ));
+        assert!(
+            proof.contains("respectively, and the base CG is equal to the base CE."),
+            "plain full stops stay: {proof}"
+        );
+        let qed = para_text(&i12[3]);
+        assert!(qed.contains(
+            "which is not on (AB). (Which is) the very thing it was required to do."
+        ));
+    }
+
+    #[test]
+    fn i13_fitzpatrick_paragraphs() {
+        let i13 = layout_of(1, 13);
+        assert_eq!(i13.len(), 3, "I.13 has three Fitzpatrick paragraphs");
+        assert!(cites(&i13[0]).is_empty());
+        assert_eq!(
+            cites(&i13[1]),
+            vec!["[Def. 1.10]", "[Prop. 1.11]", "[C.N. 2]", "[C.N. 2]", "[C.N. 1]"]
+        );
+        assert!(cites(&i13[2]).is_empty());
+        let given = para_text(&i13[0]);
+        assert!(given.contains("For let some straight-line AB stood on the straight-line CD"));
+        assert!(given.contains("(have a sum) equal to two right-angles"));
+        let proof = para_text(&i13[1]);
+        assert!(proof.contains("two right-angles. [Def. 1.10] \nBut, if not"));
+        assert!(proof.contains("at right-angles to CD. [Prop. 1.11] \nThus, CBE and EBD"));
+        assert!(proof.contains("and EBD. [C.N. 2] \nAgain, since DBA"));
+        assert!(proof.contains("and ABC. [C.N. 2] \nBut (the sum of) CBE"));
+        assert!(proof.contains("one another. [C.N. 1] \nTherefore, (the sum of) CBE"));
+        assert!(
+            proof.contains("two right-angles. And since CBE is equal"),
+            "plain full stops stay: {proof}"
+        );
+        let qed = para_text(&i13[2]);
+        assert!(qed.contains(
+            "equal to two right-angles. (Which is) the very thing it was required to show."
         ));
     }
 }

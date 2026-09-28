@@ -78,6 +78,10 @@ pub enum Place {
     AboveRight,
     BelowLeft,
     BelowRight,
+    /// Outside the left end of a given straight-line, slightly above the stroke.
+    LineLeft,
+    /// Outside the right end of a given straight-line, slightly above the stroke.
+    LineRight,
     /// Degrees from +x, y-up (same as `V2::polar`).
     Deg(f64),
 }
@@ -95,6 +99,8 @@ impl Place {
             Place::BelowLeft => Some(-PI + FRAC_PI_4),
             Place::Below => Some(-FRAC_PI_2),
             Place::BelowRight => Some(-FRAC_PI_4),
+            Place::LineLeft => Some(FRAC_PI_2 + FRAC_PI_4),
+            Place::LineRight => Some(FRAC_PI_4),
             Place::Deg(d) => Some(d.to_radians()),
         }
     }

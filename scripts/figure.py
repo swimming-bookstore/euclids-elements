@@ -139,6 +139,14 @@ class Sketch:
         """Letter on the ±90° normal of `along_a` → `along_b`."""
         return ("deg", round(self.heading(along_a, along_b) + 90.0 * sign, 1))
 
+    def beside(self, a: str, b: str, sign: float, tilt: float = 40.0) -> tuple:
+        """Letter at `b`, beside segment `a`–`b` (not past the tip).
+
+        `sign` +1 is left of `a` → `b`; −1 is right. `tilt` pulls the glyph
+        back along the stroke so an endpoint letter sits on the side.
+        """
+        return ("deg", round(self.heading(a, b) + sign * (90.0 + tilt), 1))
+
     def beyond(self, a: str, b: str) -> tuple:
         """Letter past `b`, along `a` → `b`."""
         return ("deg", round(self.heading(a, b), 1))
@@ -166,6 +174,8 @@ PLACES = {
     "above_right": "AboveRight",
     "below_left": "BelowLeft",
     "below_right": "BelowRight",
+    "line_left": "LineLeft",
+    "line_right": "LineRight",
 }
 
 
@@ -200,6 +210,13 @@ class Fig:
             self._add(
                 f'    d.put_r("{name}", V2::new({f64(x)}, {f64(y)}), {rust_place(place)}, {f64(r)});'
             )
+
+    def put_line_end(self, name: str, x: float, y: float, left: bool) -> None:
+        """Given-line end: letter outside the end, slightly above the stroke."""
+        side = "true" if left else "false"
+        self._add(
+            f'    d.put_line_end("{name}", V2::new({f64(x)}, {f64(y)}), {side});'
+        )
 
     def pin(self, name: str, x: float, y: float) -> None:
         self._add(f'    d.pin("{name}", V2::new({f64(x)}, {f64(y)}));')
@@ -669,24 +686,26 @@ def book1_prop9() -> Fig:
 
 
 def book1_prop10() -> Fig:
-    # Fitzpatrick p. 16 English plate. Equilateral ABC on AB (I.1);
-    # CD bisects ∠ACB and cuts AB in half (I.9). One scale: AB = 1.
-    # Plate: half-base 78 pt, height 117.3 pt, ∠ACB = 67.26° — equilateral.
+    # Fitzpatrick p. 16 English plate. ABC on the given AB; CD bisects
+    # ∠ACB and cuts AB in half. The plate is isosceles, not equilateral:
+    # letter centers give height/AB = 0.741 (equilateral would be 0.866).
     ab = 100.0
+    h = 0.7412 * ab
     s = Sketch()
     s.put("A", 0.0, 0.0)
     s.put("B", ab, 0.0)
-    s.put("C", ab / 2.0, ab * math.sqrt(3.0) / 2.0)
+    s.put("C", ab / 2.0, h)
     s.put("D", ab / 2.0, 0.0)
-    s.require_eq("A", "B", "B", "C")
-    s.require_eq("B", "C", "C", "A")
+    s.require_eq("A", "C", "B", "C")
     s.require_eq("A", "D", "D", "B")
     s.require_same_angle("A", "C", "D", "D", "C", "B")
     s.require_angle("A", "D", "C", 90.0)
+    s.require_ratio("A", "C", "A", "B", math.hypot(0.5, 0.7412), eps=0.001)
     f = Fig(
         "book1_prop10",
-        "I.10 — Fitzpatrick plate (Elements p. 16): equilateral ABC on the\n"
-        "given finite straight-line AB; CD bisects ∠ACB and cuts AB in half.",
+        "I.10 — Fitzpatrick plate (Elements p. 16): ABC on the given finite\n"
+        "straight-line AB; CD bisects ∠ACB and cuts AB in half.\n"
+        "One scale: isosceles, height/AB = 0.741.",
     )
     f.put("A", *s.at("A"), ("deg", 180.0))
     f.put("B", *s.at("B"), ("deg", 0.0))
@@ -703,32 +722,36 @@ def book1_prop10() -> Fig:
 def book1_prop11() -> Fig:
     # Fitzpatrick p. 16 English plate. AB the given line, C on it;
     # D on AC, CE = CD, equilateral FDE, FC the perpendicular.
-    # Plate: AD : DC : CB = 0.215 : 0.285 : 0.500, so DC = CE and C is
-    # the midpoint of DE. ∠DCF = ∠ECF = 90°.
+    # Letter centers: AD:DC:CE:EB = 0.223 : 0.288 : 0.277 : 0.212.
+    # Construction still wants CE = CD; take DC as the mean of the two
+    # plate segments so DE sits as on the plate (DE/AB = 0.565).
     ab = 100.0
-    ad, dc = 0.2146 * ab, 0.2854 * ab
+    ad = 0.2225 * ab
+    de = 0.5651 * ab
     s = Sketch()
     s.put("A", 0.0, 0.0)
     s.put("B", ab, 0.0)
     s.put("D", ad, 0.0)
-    s.put("C", ad + dc, 0.0)
-    s.put("E", ad + 2.0 * dc, 0.0)
+    s.put("C", ad + de / 2.0, 0.0)
+    s.put("E", ad + de, 0.0)
     s.turn("F", "D", "E", 60.0)  # equilateral, above DE
     s.require_eq("D", "C", "C", "E")
     s.require_eq("D", "E", "D", "F")
     s.require_eq("D", "F", "E", "F")
     s.require_angle("D", "C", "F", 90.0)
     s.require_same_angle("D", "C", "F", "F", "C", "E")
-    s.require_ratio("A", "D", "A", "B", 0.2146, eps=0.001)
-    s.require_ratio("D", "C", "A", "B", 0.2854, eps=0.001)
+    s.require_ratio("A", "D", "A", "B", 0.2225, eps=0.001)
+    s.require_ratio("D", "E", "A", "B", 0.5651, eps=0.001)
+    s.require_ratio("E", "B", "A", "B", 0.2124, eps=0.001)
     f = Fig(
         "book1_prop11",
         "I.11 — Fitzpatrick plate (Elements p. 16): AB the given line, C on it;\n"
         "D on AC, CE = CD; equilateral FDE; FC perpendicular to AB.\n"
-        "One scale: AD : DC : CB = 0.215 : 0.285 : 0.500.",
+        "One scale: AD : DE : EB = 0.223 : 0.565 : 0.212.",
     )
-    f.put("A", *s.at("A"), ("deg", 180.0))
-    f.put("B", *s.at("B"), ("deg", 0.0))
+    # Fitzpatrick: A/B sit outside the ends, slightly above AB (D/C/E stay below).
+    f.put_line_end("A", *s.at("A"), left=True)
+    f.put_line_end("B", *s.at("B"), left=False)
     f.put("D", *s.at("D"), ("deg", -90.0))
     f.put("C", *s.at("C"), ("deg", -90.0))
     f.put("E", *s.at("E"), ("deg", -90.0))
@@ -738,6 +761,97 @@ def book1_prop11() -> Fig:
     f.join("E", "F")
     f.join("F", "C")
     f.dots("A", "B", "C", "D", "E", "F")
+    return f
+
+
+def book1_prop12() -> Fig:
+    # Fitzpatrick p. 17 English plate. AB the infinite line; C not on it;
+    # D on the other side; circle EFG center C through D cuts AB at G and E;
+    # H the midpoint of EG (foot of the perpendicular from C).
+    # Letter centers on the plate (AB = 100): GE/AB = 0.457, CH/AB = 0.248,
+    # D at x = 62.0, depth 6.7 (the small cap below GE).
+    ab = 100.0
+    s = Sketch()
+    s.put("A", 0.0, 0.0)
+    s.put("B", ab, 0.0)
+    s.put("C", ab / 2.0, 0.248 * ab)
+    s.put("D", 0.620 * ab, -0.067 * ab)
+    r = s.dist("C", "D")
+    s.polar("F", "C", r, 90.0)
+    h = s.at("C")[1]
+    half = math.sqrt(r * r - h * h)
+    s.put("G", ab / 2.0 - half, 0.0)
+    s.put("E", ab / 2.0 + half, 0.0)
+    s.put("H", ab / 2.0, 0.0)
+    s.require_eq("C", "D", "C", "E")
+    s.require_eq("C", "E", "C", "G")
+    s.require_eq("C", "G", "C", "F")
+    s.require_eq("G", "H", "H", "E")
+    s.require_angle("C", "H", "E", 90.0)
+    s.require_angle("C", "H", "G", 90.0)
+    s.require_line_angle("C", "H", "A", "B", 90.0)
+    s.require_ratio("G", "E", "A", "B", 0.457, eps=0.004)
+    f = Fig(
+        "book1_prop12",
+        "I.12 — Fitzpatrick plate (Elements p. 17): AB the infinite line;\n"
+        "C not on it; D on the other side; circle EFG center C through D\n"
+        "cuts AB at G and E; H the midpoint of EG; CH the perpendicular.\n"
+        "One scale: C over the midpoint of AB, GE/AB = 0.457.",
+    )
+    # Fitzpatrick: A/B sit outside the ends, slightly above the infinite line.
+    f.put_line_end("A", *s.at("A"), left=True)
+    f.put_line_end("B", *s.at("B"), left=False)
+    # Fitzpatrick: C on the vertical CH/CF, above the mark (same column as F).
+    f.put("C", *s.at("C"), ("deg", 90.0))
+    f.put("D", *s.at("D"), ("deg", -90.0))
+    # G/E sit below AB, slightly outward so the glyph clears the chord.
+    f.put("E", *s.at("E"), ("deg", -70.0))
+    f.put("G", *s.at("G"), ("deg", -110.0))
+    f.put("H", *s.at("H"), ("deg", -90.0))
+    f.circle("EFG", "C", "D")
+    f.on_circle("F", "C", "D", 90.0)
+    f.chain("A", "G", "H", "E", "B")
+    f.join("C", "G")
+    f.join("C", "H")
+    f.join("C", "E")
+    f.dots("A", "B", "C", "D", "E", "G", "H")
+    return f
+
+
+def book1_prop13() -> Fig:
+    # Fitzpatrick p. 18 English plate. CD horizontal, D left of B, C right;
+    # AB stood on it at B, leaning toward C; BE up from B, taller than A.
+    # E sits on the tip of BE. Ink: BD/BC = 0.624, AB/BE = 1.036,
+    # ∠CBA = 64.01°. One scale: BC = 100.
+    bc = 100.0
+    s = Sketch()
+    s.put("B", 0.0, 0.0)
+    s.put("C", bc, 0.0)
+    s.put("D", -0.6243 * bc, 0.0)
+    s.polar("A", "B", 1.6137 * bc, 64.01)
+    s.put("E", 0.0, 1.5574 * bc)
+    s.require_angle("C", "B", "A", 64.01)
+    s.require_angle("C", "B", "E", 90.0)
+    s.require_angle("E", "B", "D", 90.0)
+    s.require_ratio("B", "D", "B", "C", 0.6243, eps=0.001)
+    s.require_ratio("A", "B", "B", "E", 1.0361, eps=0.001)
+    f = Fig(
+        "book1_prop13",
+        "I.13 — Fitzpatrick plate (Elements p. 18): AB stood on CD, making\n"
+        "∠CBA and ∠ABD; BE drawn from B at right-angles to CD.\n"
+        "D left, C right; AB leans toward C; E on the tip of BE.\n"
+        "One scale: BD/BC = 0.624, AB/BE = 1.036, ∠CBA = 64.01°.",
+    )
+    # Fitzpatrick: D below-left of the left end, C below-right of the right.
+    f.put("D", *s.at("D"), ("deg", -135.0))
+    f.put("B", *s.at("B"), ("deg", -90.0))
+    f.put("C", *s.at("C"), ("deg", -45.0))
+    f.put("A", *s.at("A"), s.beyond("B", "A"))
+    f.put("E", *s.at("E"), s.beyond("B", "E"))
+    f.chain("C", "B", "D")
+    f.join("A", "B")
+    f.join("B", "E")
+    f.dots("A", "B", "C", "D", "E")
     return f
 
 
@@ -753,6 +867,8 @@ PLATES = [
     book1_prop9,
     book1_prop10,
     book1_prop11,
+    book1_prop12,
+    book1_prop13,
 ]
 
 
