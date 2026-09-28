@@ -301,4 +301,29 @@ mod tests {
         assert!((placed[0].ang - ang_of(Place::BelowLeft)).abs() < 1e-9);
         assert!((placed[0].at.x - at.x).abs() < 1e-9 && (placed[0].at.y - at.y).abs() < 1e-9);
     }
+
+    #[test]
+    fn given_line_ends_sit_outside_and_above() {
+        assert!((ang_of(Place::LineLeft) - ang_of(Place::AboveLeft)).abs() < 1e-9);
+        assert!((ang_of(Place::LineRight) - ang_of(Place::AboveRight)).abs() < 1e-9);
+        let labels = [
+            Label {
+                id: "A".into(),
+                text: "A".into(),
+                at: V2::new(0.0, 0.0),
+                place: Place::LineLeft,
+                r_em: plate::LETTER_R,
+            },
+            Label {
+                id: "B".into(),
+                text: "B".into(),
+                at: V2::new(400.0, 0.0),
+                place: Place::LineRight,
+                r_em: plate::LETTER_R,
+            },
+        ];
+        let placed = place(&[], None, &labels, plate::Size { w: 1000.0, h: 1000.0 });
+        assert!(placed[0].ang.cos() < 0.0 && placed[0].ang.sin() > 0.0);
+        assert!(placed[1].ang.cos() > 0.0 && placed[1].ang.sin() > 0.0);
+    }
 }

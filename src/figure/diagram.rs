@@ -54,6 +54,20 @@ impl Diagram {
         p
     }
 
+    /// End of a given straight-line (Fitzpatrick): letter outside the end,
+    /// slightly above the stroke. `left` is the lesser-x end on a left-to-right line.
+    pub fn put_line_end(&mut self, name: &'static str, p: V2, left: bool) -> V2 {
+        self.put(
+            name,
+            p,
+            if left {
+                Place::LineLeft
+            } else {
+                Place::LineRight
+            },
+        )
+    }
+
     /// Name a point; letter center at `r_em` from the mark.
     pub fn put_r(&mut self, name: &'static str, p: V2, place: Place, r_em: f64) -> V2 {
         self.pin(name, p);
@@ -415,7 +429,8 @@ fn sorted_letters(s: &str) -> String {
 mod tests {
     use crate::figure::{
         book1_prop1, book1_prop2, book1_prop3, book1_prop4, book1_prop5, book1_prop6,
-        book1_prop7, book1_prop8, book1_prop9,
+        book1_prop7, book1_prop8, book1_prop9, book1_prop10, book1_prop11, book1_prop12,
+        book1_prop13,
     };
 
     fn has(v: &[String], id: &str) -> bool {
@@ -781,6 +796,151 @@ mod tests {
         let eaf_deg = angle_at(&d, "E", "A", "F").to_degrees();
         assert!((daf_deg - eaf_deg).abs() < 0.05, "AF bisects ∠DAE");
         assert!((f.x - a.x).abs() < 0.05, "AF vertical on the plate");
+    }
+
+    #[test]
+    fn prop10_paths() {
+        let d = book1_prop10();
+        let a = d.at("A");
+        let b = d.at("B");
+        let c = d.at("C");
+        let dd = d.at("D");
+        assert!((a.y - b.y).abs() < 1e-9, "AB horizontal");
+        assert!(dd.on_seg(a, b, 1e-4) && (a.dist(dd) - dd.dist(b)).abs() < 1e-6);
+        assert!((a.dist(c) - b.dist(c)).abs() < 1e-6, "isosceles");
+        assert!((c.y / a.dist(b) - 0.7412).abs() < 0.002, "plate height/AB");
+        assert!((angle_at(&d, "A", "D", "C").to_degrees() - 90.0).abs() < 0.05);
+    }
+
+    #[test]
+    fn prop11_paths() {
+        let d = book1_prop11();
+        let a = d.at("A");
+        let b = d.at("B");
+        let c = d.at("C");
+        let dd = d.at("D");
+        let e = d.at("E");
+        let f = d.at("F");
+        let ab = a.dist(b);
+        assert!(dd.on_seg(a, b, 1e-4) && c.on_seg(a, b, 1e-4) && e.on_seg(a, b, 1e-4));
+        assert!((dd.dist(c) - c.dist(e)).abs() < 1e-6, "CE = CD");
+        assert!((dd.dist(e) - dd.dist(f)).abs() < 1e-6, "equilateral FDE");
+        assert!((a.dist(dd) / ab - 0.2225).abs() < 0.002, "AD/AB");
+        assert!((dd.dist(e) / ab - 0.5651).abs() < 0.002, "DE/AB");
+        assert!((e.dist(b) / ab - 0.2124).abs() < 0.002, "EB/AB");
+        assert!((angle_at(&d, "D", "C", "F").to_degrees() - 90.0).abs() < 0.05);
+        let html = d.svg(&[] as &[String]);
+        let (adx, ady) = letter_offset(&html, "A");
+        let (bdx, bdy) = letter_offset(&html, "B");
+        assert!(adx < -0.4 && ady < -0.4, "A above-left of the end, --dx={adx} --dy={ady}");
+        assert!(bdx > 0.4 && bdy < -0.4, "B above-right of the end, --dx={bdx} --dy={bdy}");
+    }
+
+    #[test]
+    fn prop12_paths() {
+        let d = book1_prop12();
+        let ab = d.highlight("AB");
+        assert!(
+            has(&ab, "ag") && has(&ab, "gh") && has(&ab, "he") && has(&ab, "eb"),
+            "AB is the given line through G, H, E: {ab:?}"
+        );
+        let efg = d.highlight("EFG");
+        assert!(has(&efg, "circ-efg") && has(&efg, "E") && has(&efg, "F") && has(&efg, "G"));
+        let eg = d.highlight("EG");
+        assert!(has(&eg, "gh") && has(&eg, "he"), "EG is the chord G–H–E: {eg:?}");
+        let ch = d.highlight("CH");
+        assert!(has(&ch, "ch") || has(&ch, "hc"));
+        let chg = d.highlight_angle("CHG");
+        assert!(
+            (has(&chg, "ch") || has(&chg, "hc")) && has(&chg, "gh") && !has(&chg, "he"),
+            "∠CHG is the left adjacent right-angle: {chg:?}"
+        );
+        let ehc = d.highlight_angle("EHC");
+        assert!((has(&ehc, "ch") || has(&ehc, "hc")) && has(&ehc, "he"));
+        let a = d.at("A");
+        let b = d.at("B");
+        let c = d.at("C");
+        let dd = d.at("D");
+        let e = d.at("E");
+        let g = d.at("G");
+        let h = d.at("H");
+        assert!((a.y - b.y).abs() < 1e-9, "AB horizontal");
+        assert!(c.y > a.y, "C not on AB");
+        assert!(dd.y < a.y, "D on the other side of AB");
+        assert!(e.on_seg(a, b, 1e-4) && g.on_seg(a, b, 1e-4) && h.on_seg(a, b, 1e-4), "EG on AB");
+        assert!((c.dist(dd) - c.dist(e)).abs() < 1e-6, "E on circle through D");
+        assert!((c.dist(e) - c.dist(g)).abs() < 1e-6, "G on the same circle");
+        assert!((g.dist(h) - h.dist(e)).abs() < 1e-6, "H midpoint of EG");
+        assert!((g.dist(e) / a.dist(b) - 0.457).abs() < 0.004, "GE/AB from the plate");
+        assert!(dd.y > -8.0, "small cap below GE, D not deep");
+        assert!((angle_at(&d, "C", "H", "E").to_degrees() - 90.0).abs() < 0.05);
+        assert!((angle_at(&d, "C", "H", "G").to_degrees() - 90.0).abs() < 0.05);
+        let html = d.svg(&[] as &[String]);
+        let (dx, dy) = letter_offset(&html, "C");
+        assert!(dx.abs() < 0.2, "C on the vertical CH, --dx={dx}");
+        assert!(dy < -0.5, "C above the mark, same column as F, --dy={dy}");
+        let (adx, ady) = letter_offset(&html, "A");
+        let (bdx, bdy) = letter_offset(&html, "B");
+        assert!(adx < -0.4 && ady < -0.4, "A above-left of the infinite line, --dx={adx} --dy={ady}");
+        assert!(bdx > 0.4 && bdy < -0.4, "B above-right of the infinite line, --dx={bdx} --dy={bdy}");
+    }
+
+    #[test]
+    fn prop13_paths() {
+        let d = book1_prop13();
+        let cd = d.highlight("CD");
+        assert!(has(&cd, "cb") && has(&cd, "bd"), "CD through B: {cd:?}");
+        let ab = d.highlight("AB");
+        assert!(has(&ab, "ab") || has(&ab, "ba"));
+        let be = d.highlight("BE");
+        assert!(has(&be, "be") || has(&be, "eb"));
+        let cba = d.highlight_angle("CBA");
+        assert!(has(&cba, "cb") && (has(&cba, "ab") || has(&cba, "ba")));
+        let abd = d.highlight_angle("ABD");
+        assert!((has(&abd, "ab") || has(&abd, "ba")) && has(&abd, "bd"));
+        let cbe = d.highlight_angle("CBE");
+        assert!(has(&cbe, "cb") && (has(&cbe, "be") || has(&cbe, "eb")));
+        let a = d.at("A");
+        let b = d.at("B");
+        let c = d.at("C");
+        let dd = d.at("D");
+        let e = d.at("E");
+        assert!((c.y - dd.y).abs() < 1e-9 && (b.y - c.y).abs() < 1e-9, "CD horizontal");
+        assert!(b.on_seg(c, dd, 1e-4), "B on CD");
+        assert!((angle_at(&d, "C", "B", "E").to_degrees() - 90.0).abs() < 0.05);
+        assert!((angle_at(&d, "E", "B", "D").to_degrees() - 90.0).abs() < 0.05);
+        let cba_deg = angle_at(&d, "C", "B", "A").to_degrees();
+        assert!((cba_deg - 64.01).abs() < 0.05, "∠CBA from the plate, got {cba_deg}");
+        assert!((dd.dist(b) / b.dist(c) - 0.6243).abs() < 0.002, "BD/BC");
+        assert!((a.dist(b) / b.dist(e) - 1.0361).abs() < 0.002, "AB/BE");
+        assert!(e.y > a.y, "BE taller than A, E at the top");
+        assert!(dd.x < b.x && b.x < c.x, "plate is D–B–C left to right");
+        assert!(a.x > e.x, "AB leans toward C, right of BE");
+        let html = d.svg(&[] as &[String]);
+        let (dx, dy) = letter_offset(&html, "E");
+        assert!(dx.abs() < 0.2, "E centered on BE, --dx={dx}");
+        assert!(dy < -0.5, "E sits on the tip of BE, --dy={dy}");
+        let (ddx, ddy) = letter_offset(&html, "D");
+        let (cdx, cdy) = letter_offset(&html, "C");
+        assert!(ddx < -0.4 && ddy > 0.4, "D below-left of CD, --dx={ddx} --dy={ddy}");
+        assert!(cdx > 0.4 && cdy > 0.4, "C below-right of CD, --dx={cdx} --dy={cdy}");
+    }
+
+    fn letter_offset(html: &str, id: &str) -> (f64, f64) {
+        let needle = format!("data-id=\"{id}\"");
+        let start = html.find(&needle).expect(id);
+        let chunk = &html[start..html[start..].find("</span>").map(|i| start + i).unwrap()];
+        let grab = |key: &str| {
+            let k = format!("{key}:");
+            let i = chunk.find(&k).unwrap() + k.len();
+            chunk[i..]
+                .split(|c: char| c == 'e' || c == ';')
+                .next()
+                .unwrap()
+                .parse::<f64>()
+                .unwrap()
+        };
+        (grab("--dx"), grab("--dy"))
     }
 
     fn has_layer(html: &str) -> bool {
