@@ -10,7 +10,11 @@ use super::script::{Line, Script};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Atom {
-    Word { text: String, italic: bool },
+    Word {
+        text: String,
+        italic: bool,
+        spaced: bool,
+    },
     Cite(String),
     Break,
 }
@@ -71,6 +75,13 @@ pub fn read_layout_lines(lines: &[Line]) -> Vec<Vec<Atom>> {
         .map(|(_, ls)| {
             let mut atoms = Vec::new();
             for (i, line) in ls.iter().enumerate() {
+                if i > 0 {
+                    if let Some(Atom::Word { text, spaced, .. }) = atoms.last_mut() {
+                        if text.ends_with('.') {
+                            *spaced = true;
+                        }
+                    }
+                }
                 for (ti, t) in line.tokens.iter().enumerate() {
                     if t.cite {
                         atoms.push(Atom::Cite(t.text.clone()));
@@ -85,6 +96,7 @@ pub fn read_layout_lines(lines: &[Line]) -> Vec<Vec<Atom>> {
                         atoms.push(Atom::Word {
                             text: t.text.clone(),
                             italic: t.italic,
+                            spaced: t.spaced,
                         });
                     }
                 }
@@ -111,11 +123,14 @@ mod tests {
         let mut s = String::new();
         for a in para {
             match a {
-                Atom::Word { text, .. } => {
+                Atom::Word { text, spaced, .. } => {
                     s.push_str(text);
-                    s.push(' ');
+                    if *spaced {
+                        s.push(' ');
+                    }
                 }
                 Atom::Cite(c) => {
+                    s.push(' ');
                     s.push_str(c);
                     s.push(' ');
                 }
@@ -182,18 +197,52 @@ mod tests {
         let texts: Vec<_> = script.lines[0]
             .tokens
             .iter()
-            .map(|t| (t.text.as_str(), t.italic, t.cite))
+            .map(|t| (t.text.as_str(), t.italic, t.cite, t.spaced))
             .collect();
         assert_eq!(
             texts,
             vec![
-                ("Let", false, false),
-                ("AB", true, false),
-                ("be", false, false),
-                ("drawn,", false, false),
-                ("[Post. 3]", false, true),
-                ("and", false, false),
-                ("again.", false, false),
+                ("Let", false, false, true),
+                ("AB", true, false, true),
+                ("be", false, false, true),
+                ("drawn,", false, false, false),
+                ("[Post. 3]", false, true, false),
+                ("and", false, false, true),
+                ("again.", false, false, false),
+            ]
+        );
+    }
+
+    #[test]
+    fn paren_does_not_take_a_gap_inside_the_marks() {
+        struct NoneMap;
+        impl crate::karaoke::PartsMap for NoneMap {
+            fn parts(&self, _: &str) -> Vec<String> {
+                Vec::new()
+            }
+        }
+        let phrases = [Phrase {
+            para: 1,
+            text: "constructed upon (*AB*),{[Prop. 1.1]} and let *DE,* be joined.",
+        }];
+        let script = compile(&phrases, &NoneMap, Timing::default());
+        let texts: Vec<_> = script.lines[0]
+            .tokens
+            .iter()
+            .map(|t| (t.text.as_str(), t.spaced))
+            .collect();
+        assert_eq!(
+            texts,
+            vec![
+                ("constructed", true),
+                ("upon", true),
+                ("(AB),", false),
+                ("[Prop. 1.1]", false),
+                ("and", true),
+                ("let", true),
+                ("DE,", true),
+                ("be", true),
+                ("joined.", false),
             ]
         );
     }
@@ -442,5 +491,59 @@ mod tests {
         assert!(proof.contains("angle EAF. [Prop. 1.8]"));
         let qed = para_text(&i9[3]);
         assert!(qed.contains("cut in half by the straight-line AF. (Which is) the very thing it was required to do."));
+    }
+
+    #[test]
+    fn i10_fitzpatrick_paragraphs() {
+        let i10 = layout_of(1, 10);
+        assert_eq!(i10.len(), 4, "I.10 has four Fitzpatrick paragraphs");
+        assert!(cites(&i10[0]).is_empty());
+        assert_eq!(cites(&i10[1]), vec!["[Prop. 1.1]", "[Prop. 1.9]"]);
+        assert_eq!(cites(&i10[2]), vec!["[Prop. 1.4]"]);
+        assert!(cites(&i10[3]).is_empty());
+        let given = para_text(&i10[0]);
+        assert!(given.contains("Let AB be the given finite straight-line"));
+        assert!(given.contains("cut the finite straight-line AB in half."));
+        let construction = para_text(&i10[1]);
+        assert!(construction.contains(
+            "upon (AB), [Prop. 1.1] \nand let the angle ACB have been cut in half"
+        ));
+        assert!(construction.contains("straight-line CD. [Prop. 1.9] \nI say that"));
+        let proof = para_text(&i10[2]);
+        assert!(proof.contains("For since AC is equal to CB, and CD (is) common"));
+        assert!(proof.contains("equal to the base BD. [Prop. 1.4]"));
+        let qed = para_text(&i10[3]);
+        assert!(qed.contains(
+            "cut in half at (point) D. (Which is) the very thing it was required to do."
+        ));
+    }
+
+    #[test]
+    fn i11_fitzpatrick_paragraphs() {
+        let i11 = layout_of(1, 11);
+        assert_eq!(i11.len(), 4, "I.11 has four Fitzpatrick paragraphs");
+        assert!(cites(&i11[0]).is_empty());
+        assert_eq!(cites(&i11[1]), vec!["[Prop. 1.3]", "[Prop. 1.1]"]);
+        assert_eq!(cites(&i11[2]), vec!["[Prop. 1.8]", "[Def. 1.10]"]);
+        assert!(cites(&i11[3]).is_empty());
+        let given = para_text(&i11[0]);
+        assert!(given.contains("Let AB be the given straight-line, and C the given point"));
+        let construction = para_text(&i11[1]);
+        assert!(construction.contains("equal to CD, [Prop. 1.3] \nand let the equilateral"));
+        assert!(construction.contains("on DE, [Prop. 1.1] \nand let FC have been joined."));
+        let proof = para_text(&i11[2]);
+        assert!(proof.contains("For since DC is equal to CE, and CF is common"));
+        assert!(proof.contains(
+            "equal to the angle ECF, [Prop. 1.8] \nand they are adjacent."
+        ));
+        assert!(proof.contains("is a right-angle. [Def. 1.10] \nThus, each of the (angles) DCF"));
+        assert!(
+            proof.contains("respectively. And the base DF is equal to the base FE."),
+            "plain full stops stay: {proof}"
+        );
+        let qed = para_text(&i11[3]);
+        assert!(qed.contains(
+            "at right-angles to the given straight-line AB from the given point C on it. (Which is) the very thing it was required to do."
+        ));
     }
 }

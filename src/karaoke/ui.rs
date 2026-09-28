@@ -64,8 +64,8 @@ pub fn KaraokeRead(script: Script) -> impl IntoView {
                 view! {
                     <p class="para">
                         {atoms.into_iter().map(|atom| match atom {
-                            Atom::Word { text, italic } => view! {
-                                <span class="word" class:em=italic>{text}" "</span>
+                            Atom::Word { text, italic, spaced } => view! {
+                                <span class="word" class:em=italic class:gap=spaced>{text}</span>
                             }.into_any(),
                             Atom::Cite(text) => view! {
                                 <span class="sidenote">
@@ -165,13 +165,15 @@ pub fn KaraokeLyrics(script: Script, player: Player) -> impl IntoView {
                         >
                             {body.into_iter().map(|(ti, tok)| {
                                 let italic = tok.italic;
-                                let text = format!("{} ", tok.text);
+                                let gap = tok.spaced;
+                                let text = tok.text;
                                 let sing_script = word_script.clone();
                                 let sung_script = word_script.clone();
                                 view! {
                                     <span
                                         class="word"
                                         class:em=italic
+                                        class:gap=gap
                                         class:sing=move || {
                                             if !player.playing.get() && player.cursor.get() == player.start_at {
                                                 return false;

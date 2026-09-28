@@ -29,6 +29,9 @@ pub struct Token {
     pub text: String,
     pub italic: bool,
     pub cite: bool,
+    /// A space follows this token. False when the next mark is punctuation
+    /// (`(*AB*)`, `*DE,*`) so the gap is not painted inside the marks.
+    pub spaced: bool,
     pub parts: Vec<String>,
     pub dur_ms: u32,
 }
@@ -92,6 +95,7 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing, angle: &mut bool) -
     let mut out = Vec::new();
     let chars: Vec<char> = src.chars().collect();
     let mut i = 0;
+    let mut pending_open = String::new();
     while i < chars.len() {
         if chars[i] == '{' {
             i += 1;
@@ -107,6 +111,7 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing, angle: &mut bool) -
                 text: cite,
                 italic: false,
                 cite: true,
+                spaced: false,
                 parts: Vec::new(),
                 dur_ms: timing.cite_ms,
             });
@@ -122,11 +127,26 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing, angle: &mut bool) -
             if i < chars.len() {
                 i += 1;
             }
-            push_words(&mut out, &inner, true, map, timing, *angle);
-            glue_punct(&mut out, &chars, &mut i);
+            for piece in split_sentence(&inner) {
+                push_words(
+                    &mut out,
+                    &piece,
+                    true,
+                    map,
+                    timing,
+                    *angle,
+                    &mut pending_open,
+                );
+            }
+            glue_punct(&mut out, &chars, &mut i, &mut pending_open);
             continue;
         }
         if chars[i].is_whitespace() {
+            i += 1;
+            continue;
+        }
+        if opens_word(chars[i]) {
+            pending_open.push(chars[i]);
             i += 1;
             continue;
         }
@@ -139,8 +159,63 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing, angle: &mut bool) -
             glue_text(&mut out, &word);
         } else {
             note_angle(angle, &word);
-            push_words(&mut out, &word, false, map, timing, false);
+            push_words(&mut out, &word, false, map, timing, false, &mut pending_open);
         }
+    }
+    mark_spaces(&mut out);
+    out
+}
+
+/// A space follows a word. It does not follow a word whose next mark is a
+/// citation (`AB,{[Prop. 1.1]}` → `AB, [Prop. 1.1]`), and it does not sit
+/// inside a parenthesis that was attached to the word.
+fn mark_spaces(tokens: &mut [Token]) {
+    for i in 0..tokens.len() {
+        if tokens[i].cite {
+            continue;
+        }
+        let next = tokens.get(i + 1);
+        if tokens[i].spaced {
+            if matches!(next, Some(t) if t.cite) {
+                tokens[i].spaced = false;
+            }
+            continue;
+        }
+        tokens[i].spaced = match next {
+            Some(t) if t.cite => false,
+            Some(_) => true,
+            None => false,
+        };
+    }
+}
+
+fn opens_word(c: char) -> bool {
+    matches!(c, '(' | '[')
+}
+
+/// `*D. (Which*` and `*respectively.And*` close the sentence inside the
+/// italic run. Split so the period keeps the space before the next word.
+fn split_sentence(inner: &str) -> Vec<String> {
+    let chars: Vec<char> = inner.chars().collect();
+    let mut out = Vec::new();
+    let mut start = 0;
+    let mut i = 0;
+    while i + 1 < chars.len() {
+        let boundary = chars[i] == '.'
+            && (chars[i + 1].is_ascii_uppercase() || chars[i + 1].is_whitespace());
+        if boundary {
+            out.push(chars[start..=i].iter().collect());
+            start = i + 1;
+            while start < chars.len() && chars[start].is_whitespace() {
+                start += 1;
+            }
+            i = start;
+            continue;
+        }
+        i += 1;
+    }
+    if start < chars.len() {
+        out.push(chars[start..].iter().collect());
     }
     out
 }
@@ -204,7 +279,10 @@ fn note_angle(angle: &mut bool, word: &str) {
 }
 
 fn is_punct(c: char) -> bool {
-    matches!(c, ',' | '.' | ';' | ':' | '!' | '?' | ')' | ']')
+    matches!(
+        c,
+        ',' | '.' | ';' | ':' | '!' | '?' | ')' | ']' | '}' | '(' | '['
+    )
 }
 
 fn is_punct_only(s: &str) -> bool {
@@ -212,19 +290,24 @@ fn is_punct_only(s: &str) -> bool {
 }
 
 fn glue_text(out: &mut Vec<Token>, extra: &str) {
-    if extra.is_empty() {
+    if extra.is_empty() || extra.chars().all(opens_word) {
         return;
     }
-    if let Some(last) = out.last_mut() {
-        if !last.cite {
-            last.text.push_str(extra);
+    if let Some(last) = out.iter_mut().rev().find(|t| !t.cite) {
+        last.text.push_str(extra);
+        if extra.contains('.') {
+            last.spaced = true;
         }
     }
 }
 
-fn glue_punct(out: &mut Vec<Token>, chars: &[char], i: &mut usize) {
-    while *i < chars.len() && is_punct(chars[*i]) {
+fn glue_punct(out: &mut Vec<Token>, chars: &[char], i: &mut usize, pending_open: &mut String) {
+    while *i < chars.len() && is_punct(chars[*i]) && !opens_word(chars[*i]) {
         glue_text(out, &chars[*i].to_string());
+        *i += 1;
+    }
+    while *i < chars.len() && opens_word(chars[*i]) {
+        pending_open.push(chars[*i]);
         *i += 1;
     }
 }
@@ -236,33 +319,61 @@ fn push_words(
     map: &impl PartsMap,
     timing: &Timing,
     angle: bool,
+    pending_open: &mut String,
 ) {
     if chunk.is_empty() {
         return;
     }
-    for word in chunk.split_whitespace() {
-        let parts = if italic {
-            if angle {
-                map.angle_parts(word)
-            } else {
-                map.parts(word)
-            }
-        } else {
-            Vec::new()
-        };
-        let dur = if parts.is_empty() {
-            timing.word_ms
-        } else {
-            timing.hit_ms
-        };
-        out.push(Token {
-            text: word.to_string(),
-            italic,
-            cite: false,
-            parts,
-            dur_ms: dur,
-        });
+    let mut words: Vec<&str> = chunk.split_whitespace().collect();
+    if words.is_empty() {
+        return;
     }
+    if !pending_open.is_empty() {
+        let first = format!("{}{}", pending_open, words[0]);
+        pending_open.clear();
+        let owned = std::mem::take(&mut words);
+        push_one(out, &first, italic, map, timing, angle);
+        for word in owned.into_iter().skip(1) {
+            push_one(out, word, italic, map, timing, angle);
+        }
+        return;
+    }
+    for word in words {
+        push_one(out, word, italic, map, timing, angle);
+    }
+}
+
+fn push_one(
+    out: &mut Vec<Token>,
+    word: &str,
+    italic: bool,
+    map: &impl PartsMap,
+    timing: &Timing,
+    angle: bool,
+) {
+    let bare: String = word.chars().filter(|c| !opens_word(*c)).collect();
+    let parts = if italic {
+        if angle {
+            map.angle_parts(&bare)
+        } else {
+            map.parts(&bare)
+        }
+    } else {
+        Vec::new()
+    };
+    let dur = if parts.is_empty() {
+        timing.word_ms
+    } else {
+        timing.hit_ms
+    };
+    out.push(Token {
+        text: word.to_string(),
+        italic,
+        cite: false,
+        spaced: false,
+        parts,
+        dur_ms: dur,
+    });
 }
 
 #[cfg(test)]

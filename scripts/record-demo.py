@@ -60,7 +60,7 @@ def main() -> None:
         height=800,
         fps=15,
         max_sec=args.hold + 20,
-        cdp_port=9331,
+        cdp_port=9331 + args.prop,
     )
     rec.attach_chrome()
     try:

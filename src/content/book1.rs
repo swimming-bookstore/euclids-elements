@@ -1,7 +1,7 @@
 use super::{s, Proposition};
 use crate::figure::{
     book1_prop1, book1_prop2, book1_prop3, book1_prop4, book1_prop5, book1_prop6,
-    book1_prop7, book1_prop8, book1_prop9,
+    book1_prop7, book1_prop8, book1_prop9, book1_prop10, book1_prop11,
 };
 
 pub const PROP_1: Proposition = Proposition {
@@ -242,6 +242,44 @@ pub const PROP_9: Proposition = Proposition {
     ],
 };
 
+pub const PROP_10: Proposition = Proposition {
+    book: 1,
+    number: 10,
+    enunciation: "To cut a given finite straight-line in half.",
+    figure: book1_prop10,
+    phrases: &[
+        s(1, "Let *AB* be the given finite straight-line."),
+        s(1, "So it is required to cut the finite straight-line *AB* in half."),
+        s(2, "Let the equilateral triangle *ABC* have been constructed upon (*AB*),{[Prop. 1.1]} and let the angle *ACB* have been cut in half by the straight-line *CD*.{[Prop. 1.9]}"),
+        s(2, "I say that the straight-line *AB* has been cut in half at point *D*."),
+        s(3, "For since *AC* is equal to *CB*, and *CD* (is) common, the two (straight-lines) *AC*, *CD* are equal to the two (straight-lines) *BC*, *CD*, respectively."),
+        s(3, "And the angle *ACD* is equal to the angle *BCD*."),
+        s(3, "Thus, the base *AD* is equal to the base *BD*.{[Prop. 1.4]}"),
+        s(4, "Thus, the given finite straight-line *AB* has been cut in half at (point) *D*."),
+        s(4, "(Which is) the very thing it was required to do."),
+    ],
+};
+
+pub const PROP_11: Proposition = Proposition {
+    book: 1,
+    number: 11,
+    enunciation: "To draw a straight-line at right-angles to a given straight-line from a given point on it.",
+    figure: book1_prop11,
+    phrases: &[
+        s(1, "Let *AB* be the given straight-line, and *C* the given point on it."),
+        s(1, "So it is required to draw a straight-line from the point *C* at right-angles to the straight-line *AB*."),
+        s(2, "Let the point *D* be have been taken at random on *AC*, and let *CE* be made equal to *CD,*{[Prop. 1.3]} and let the equilateral triangle *FDE* have been constructed on *DE,*{[Prop. 1.1]} and let *FC* have been joined."),
+        s(2, "I say that the straight-line *FC* has been drawn at right-angles to the given straight-line *AB* from the given point *C* on it."),
+        s(3, "For since *DC* is equal to *CE*, and *CF* is common, the two (straight-lines) *DC*, *CF* are equal to the two (straight-lines) *EC*, *CF*, respectively."),
+        s(3, "And the base *DF* is equal to the base *FE*."),
+        s(3, "Thus, the angle *DCF* is equal to the angle *ECF*,{[Prop. 1.8]} and they are adjacent."),
+        s(3, "But when a straight-line stood on a(nother) straight-line makes the adjacent angles equal to one another, each of the equal angles is a right-angle.{[Def. 1.10]}"),
+        s(3, "Thus, each of the (angles) *DCF* and *FCE* is a right-angle."),
+        s(4, "Thus, the straight-line *CF* has been drawn at right-angles to the given straight-line *AB* from the given point *C* on it."),
+        s(4, "(Which is) the very thing it was required to do."),
+    ],
+};
+
 pub const PROPOSITIONS: &[Proposition] = &[
-    PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6, PROP_7, PROP_8, PROP_9,
+    PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6, PROP_7, PROP_8, PROP_9, PROP_10, PROP_11,
 ];

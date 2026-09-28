@@ -61,6 +61,8 @@
 
 .karaoke .word {
   color: #c8c8c8;
+}
+.karaoke .word.gap {
   margin-right: 0.32em;
 }
 
