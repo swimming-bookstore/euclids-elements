@@ -61,7 +61,14 @@ pub fn roll_shift(rows: &[usize], active: usize, window: usize) -> usize {
 /// Demo mode parks citations in the margin, so a comma before `{[…]}`
 /// still needs a space before the next body word on the lyric line.
 pub fn demo_spaced(tokens: &[super::script::Token], i: usize) -> bool {
-    tokens[i + 1..].iter().any(|t| !t.cite)
+    if tokens[i].cite {
+        return false;
+    }
+    let next = tokens.get(i + 1);
+    if next.is_some_and(|t| t.cite) {
+        return tokens[i + 1..].iter().any(|t| !t.cite);
+    }
+    tokens[i].spaced
 }
 
 pub fn read_layout(script: &Script) -> Vec<Vec<Atom>> {
@@ -220,6 +227,40 @@ mod tests {
                 ("have", true),
                 ("been", true),
                 ("joined.", false),
+            ]
+        );
+    }
+
+    #[test]
+    fn em_dash_glues_to_the_italic_name() {
+        struct NoneMap;
+        impl crate::karaoke::PartsMap for NoneMap {
+            fn parts(&self, _: &str) -> Vec<String> {
+                Vec::new()
+            }
+        }
+        let phrases = [Phrase {
+            para: 1,
+            text: "(that) *BCG*—that is to say, *ACD*—(is) also",
+        }];
+        let script = compile(&phrases, &NoneMap, Timing::default());
+        let texts: Vec<_> = script.lines[0]
+            .tokens
+            .iter()
+            .map(|t| (t.text.as_str(), t.spaced))
+            .collect();
+        assert_eq!(
+            texts,
+            vec![
+                ("(that)", true),
+                ("BCG—", false),
+                ("that", true),
+                ("is", true),
+                ("to", true),
+                ("say,", true),
+                ("ACD—", false),
+                ("(is)", true),
+                ("also", false),
             ]
         );
     }
@@ -653,6 +694,65 @@ mod tests {
         let qed = para_text(&i13[2]);
         assert!(qed.contains(
             "equal to two right-angles. (Which is) the very thing it was required to show."
+        ));
+    }
+
+    #[test]
+    fn i16_fitzpatrick_paragraphs() {
+        let i16 = layout_of(1, 16);
+        assert_eq!(i16.len(), 4, "I.16 has four Fitzpatrick paragraphs");
+        assert!(cites(&i16[0]).is_empty());
+        assert_eq!(cites(&i16[1]), vec!["[Prop. 1.10]", "[Prop. 1.3]"]);
+        assert_eq!(cites(&i16[2]), vec!["[Prop. 1.15]", "[Prop. 1.4]"]);
+        assert!(cites(&i16[3]).is_empty());
+        let given = para_text(&i16[0]);
+        assert!(given.contains("Let ABC be a triangle, and let one of its sides BC"));
+        assert!(given.contains("internal and opposite angles, CBA and BAC."));
+        let construction = para_text(&i16[1]);
+        assert!(construction.contains("at (point) E. [Prop. 1.10] \nAnd BE being joined"));
+        assert!(construction.contains("equal to BE, [Prop. 1.3] \nand let FC have been joined"));
+        let proof = para_text(&i16[2]);
+        assert!(proof.contains("vertically opposite. [Prop. 1.15] \nThus, the base AB"));
+        assert!(proof.contains(
+            "corresponding remaining angles. [Prop. 1.4] \nThus, BAE is equal to ECF."
+        ));
+        assert!(
+            proof.contains("greater than ECF. Thus, ACD is greater than BAE."),
+            "plain full stops stay: {proof}"
+        );
+        assert!(
+            proof.contains("BCG—that is to say, ACD—(is) also greater"),
+            "Fitzpatrick has no space around the em dashes: {proof}"
+        );
+        let qed = para_text(&i16[3]);
+        assert!(qed.contains(
+            "internal and opposite angles. (Which is) the very thing it was required to show."
+        ));
+    }
+
+    #[test]
+    fn i17_fitzpatrick_paragraphs() {
+        let i17 = layout_of(1, 17);
+        assert_eq!(i17.len(), 4, "I.17 has four Fitzpatrick paragraphs");
+        assert!(cites(&i17[0]).is_empty());
+        assert!(cites(&i17[1]).is_empty());
+        assert_eq!(cites(&i17[2]), vec!["[Prop. 1.16]", "[Prop. 1.13]"]);
+        assert!(cites(&i17[3]).is_empty());
+        let given = para_text(&i17[0]);
+        assert!(given.contains("Let ABC be a triangle."));
+        assert!(given.contains("less than two right-angles."));
+        let construction = para_text(&i17[1]);
+        assert!(construction.contains("For let BC have been produced to D."));
+        let proof = para_text(&i17[2]);
+        assert!(proof.contains("opposite angle ABC. [Prop. 1.16] \nLet ACB have been added"));
+        assert!(proof.contains("two right-angles. [Prop. 1.13] \nThus, (the sum of) ABC"));
+        assert!(
+            proof.contains("less than two right-angles. Similarly, we can show"),
+            "plain full stops stay: {proof}"
+        );
+        let qed = para_text(&i17[3]);
+        assert!(qed.contains(
+            "less than two right-angles. (Which is) the very thing it was required to show."
         ));
     }
 }

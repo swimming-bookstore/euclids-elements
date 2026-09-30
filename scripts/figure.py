@@ -1023,6 +1023,85 @@ def book1_prop15() -> Fig:
     return f
 
 
+def book1_prop16() -> Fig:
+    # Fitzpatrick p. 21 English plate. Ink tips: B–C–D one base (`level`);
+    # E midpoint of AC; F on BE produced with EF = BE; G on AC produced.
+    # One scale BD = 100. Ink: BC/BD = 0.494, hA/BD = 0.521, CG/BD = 0.437.
+    bd = 100.0
+    s = Sketch()
+    s.put("B", 0.0, 0.0)
+    s.level("C", "B", 0.494377 * bd)
+    s.level("D", "B", bd)
+    s.put("A", 0.293684 * bd, 0.520953 * bd)
+    s.ray("E", "A", "C", s.dist("A", "C") / 2.0)
+    s.ray("F", "B", "E", 2.0 * s.dist("B", "E"))
+    s.ray("G", "A", "C", s.dist("A", "C") + 0.4365 * bd)
+    s.require_eq("A", "E", "E", "C")
+    s.require_eq("B", "E", "E", "F")
+    s.require_eq("A", "B", "F", "C")
+    s.require_same_angle("B", "A", "E", "E", "C", "F")
+    s.require_same_angle("A", "E", "B", "F", "E", "C")
+    s.require_ratio("B", "C", "B", "D", 0.4944, eps=0.001)
+    s.require_ratio("A", "B", "B", "D", 0.5980, eps=0.001)
+    s.require_ratio("C", "G", "B", "D", 0.4365, eps=0.002)
+    # E in ∠AEB (bisector ~162°). Ink 136.8° sits on AC.
+    # C from the true vertex BD∩AG (Fitzpatrick: under the base, left of the
+    # junction). Nearest-ink −145.9° is the FC stroke, not the meet.
+    s.letters(A=85.0, B=163.9, C=-121.5, D=14.2, E=162.0, F=33.6, G=-8.5)
+    f = Fig(
+        "book1_prop16",
+        "I.16 — Fitzpatrick plate (Elements p. 21): triangle ABC, BC produced to D\n"
+        "(`level`); E midpoint of AC; BE produced to F with EF = BE; AC through to G.\n"
+        "One scale: BC/BD = 0.494, height/BD = 0.521.",
+        sketch=s,
+    )
+    f.put("B", *s.at("B"))
+    f.level("C", "B", s.at("C")[0])
+    f.level("D", "B", s.at("D")[0])
+    f.put("A", *s.at("A"))
+    f.ray("E", "A", "C", s.dist("A", "C") / 2.0)
+    f.ray("F", "B", "E", 2.0 * s.dist("B", "E"))
+    f.ray("G", "A", "C", s.dist("A", "G"))
+    f.chain("B", "C", "D")
+    f.chain("A", "E", "C", "G")
+    f.chain("B", "E", "F")
+    f.join("A", "B")
+    f.join("F", "C")
+    f.dots("A", "B", "C", "D", "E", "F", "G")
+    return f
+
+
+def book1_prop17() -> Fig:
+    # Fitzpatrick p. 21 English plate (lower). ABC; BC produced to D (`level`).
+    # One scale BC = 100. Ink: CD/BC = 0.376, Ax/BC = −0.357, Ay/BC = 1.007.
+    bc = 100.0
+    s = Sketch()
+    s.put("B", 0.0, 0.0)
+    s.level("C", "B", bc)
+    s.level("D", "B", 1.375839 * bc)
+    s.put("A", -0.356925 * bc, 1.006711 * bc)
+    s.require_ratio("C", "D", "B", "C", 0.3758, eps=0.001)
+    s.require_ratio("A", "B", "B", "C", 1.0681, eps=0.001)
+    s.require_ratio("A", "C", "B", "C", 1.6896, eps=0.001)
+    # Under BD, as on Fitzpatrick lower p. 21 (not above the base).
+    s.letters(A=89.9, B=-118.3, C=-90.6, D=-63.3)
+    f = Fig(
+        "book1_prop17",
+        "I.17 — Fitzpatrick plate (Elements p. 21): triangle ABC, BC produced to D\n"
+        "(`level`). A sits left of B (not a letter-column). One scale: CD/BC = 0.376,\n"
+        "height/BC = 1.007.",
+        sketch=s,
+    )
+    f.put("B", *s.at("B"))
+    f.level("C", "B", s.at("C")[0])
+    f.level("D", "B", s.at("D")[0])
+    f.put("A", *s.at("A"))
+    f.chain("B", "C", "D")
+    f.join("A", "B")
+    f.join("A", "C")
+    f.dots("A", "B", "C", "D")
+    return f
+
 
 PLATES = [
     book1_prop1,
@@ -1040,6 +1119,8 @@ PLATES = [
     book1_prop13,
     book1_prop14,
     book1_prop15,
+    book1_prop16,
+    book1_prop17,
 ]
 
 

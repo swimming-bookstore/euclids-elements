@@ -181,6 +181,10 @@ fn mark_spaces(tokens: &mut [Token]) {
             }
             continue;
         }
+        if tokens[i].text.ends_with('—') || tokens[i].text.ends_with('–') {
+            tokens[i].spaced = false;
+            continue;
+        }
         tokens[i].spaced = match next {
             Some(t) if t.cite => false,
             Some(_) => true,
@@ -281,7 +285,7 @@ fn note_angle(angle: &mut bool, word: &str) {
 fn is_punct(c: char) -> bool {
     matches!(
         c,
-        ',' | '.' | ';' | ':' | '!' | '?' | ')' | ']' | '}' | '(' | '['
+        ',' | '.' | ';' | ':' | '!' | '?' | ')' | ']' | '}' | '(' | '[' | '—' | '–'
     )
 }
 
