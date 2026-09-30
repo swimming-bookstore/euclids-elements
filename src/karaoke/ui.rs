@@ -104,15 +104,6 @@ pub fn KaraokeLyrics(script: Script, player: Player) -> impl IntoView {
     view! {
         <div class="karaoke" aria-live="polite">
             {script.lines.iter().enumerate().map(|(li, line)| {
-                let mut body = Vec::new();
-                let mut cites = Vec::new();
-                for (ti, tok) in line.tokens.iter().cloned().enumerate() {
-                    if tok.cite {
-                        cites.push(tok);
-                    } else {
-                        body.push((ti, tok));
-                    }
-                }
                 let prev_script = script.clone();
                 let now_script = script.clone();
                 let gone_script = script.clone();
@@ -164,7 +155,7 @@ pub fn KaraokeLyrics(script: Script, player: Player) -> impl IntoView {
                                 }
                             }
                         >
-                            {body.into_iter().map(|(ti, tok)| {
+                            {lyric_chunks(&line.tokens).into_iter().map(|(ti, tok, cites)| {
                                 let italic = tok.italic;
                                 let gap = super::layout::demo_spaced(&line.tokens, ti);
                                 let text = tok.text;
@@ -203,13 +194,11 @@ pub fn KaraokeLyrics(script: Script, player: Player) -> impl IntoView {
                                             }.into_any(),
                                             None => view! { <span class="pre">{text}{space(gap)}</span> }.into_any(),
                                         }}
+                                        {cites.into_iter().map(|cite| {
+                                            view! { <span class="cite">{cite}</span> }
+                                        }).collect_view()}
                                     </span>
                                 }
-                            }).collect_view()}
-                        </span>
-                        <span class="cites">
-                            {cites.into_iter().map(|tok| {
-                                view! { <span class="word cite">{tok.text}</span> }
                             }).collect_view()}
                         </span>
                     </p>
@@ -260,29 +249,35 @@ fn shift_px(script: &Script, line: usize, active: Option<usize>, window: usize) 
     let Some(body) = line_body(line) else {
         return 0;
     };
-    let width = body.client_width() as f32;
+    let pad = body
+        .owner_document()
+        .and_then(|d| d.default_view())
+        .and_then(|w| w.get_computed_style(&body).ok().flatten())
+        .and_then(|s| s.get_property_value("padding-right").ok())
+        .and_then(|v| v.trim_end_matches("px").parse::<f32>().ok())
+        .unwrap_or(0.0);
+    let width = body.client_width() as f32 - pad;
     if width <= 0.0 {
         return 0;
     }
     let nodes = body.children();
     let mut widths = Vec::new();
     for i in 0..nodes.length() {
-        let w = nodes
-            .item(i)
-            .and_then(|n| n.dyn_into::<web_sys::Element>().ok())
-            .map(|n| {
-                let box_w = n.get_bounding_client_rect().width() as f32;
-                let margin = n
-                    .owner_document()
-                    .and_then(|d| d.default_view())
-                    .and_then(|w| w.get_computed_style(&n).ok().flatten())
-                    .and_then(|s| s.get_property_value("margin-right").ok())
-                    .and_then(|v| v.trim_end_matches("px").parse::<f32>().ok())
-                    .unwrap_or(0.0);
-                box_w + margin
-            })
+        let Some(n) = nodes.item(i).and_then(|n| n.dyn_into::<web_sys::Element>().ok()) else {
+            continue;
+        };
+        if n.class_list().contains("cite") {
+            continue;
+        }
+        let box_w = n.get_bounding_client_rect().width() as f32;
+        let margin = n
+            .owner_document()
+            .and_then(|d| d.default_view())
+            .and_then(|w| w.get_computed_style(&n).ok().flatten())
+            .and_then(|s| s.get_property_value("margin-right").ok())
+            .and_then(|v| v.trim_end_matches("px").parse::<f32>().ok())
             .unwrap_or(0.0);
-        widths.push(w);
+        widths.push(box_w + margin);
     }
     let rows = wrap_rows(&widths, width);
     let body_i = match active {
@@ -322,7 +317,7 @@ fn line_body(line: usize) -> Option<web_sys::HtmlElement> {
     let html = line_el.dyn_ref::<web_sys::HtmlElement>()?;
     let hidden = html.client_width() == 0;
     if hidden {
-        let _ = html.style().set_property("display", "grid");
+        let _ = html.style().set_property("display", "block");
     }
     let body = line_el.get_elements_by_class_name("body").item(0)?;
     let body = body.dyn_into::<web_sys::HtmlElement>().ok()?;
@@ -374,6 +369,24 @@ fn hyphen_at(text: &str) -> Option<usize> {
         }
     }
     at.filter(|&i| i > 0 && i < chars.len())
+}
+
+/// Body words with the cites that follow them, so a margin cite rides
+/// the same wrap as `CD.` instead of dropping onto the next lyric.
+fn lyric_chunks(
+    tokens: &[super::script::Token],
+) -> Vec<(usize, super::script::Token, Vec<String>)> {
+    let mut out: Vec<(usize, super::script::Token, Vec<String>)> = Vec::new();
+    for (ti, tok) in tokens.iter().cloned().enumerate() {
+        if tok.cite {
+            if let Some((_, _, cites)) = out.last_mut() {
+                cites.push(tok.text);
+            }
+            continue;
+        }
+        out.push((ti, tok, Vec::new()));
+    }
+    out
 }
 
 /// A `.break` word whose pieces landed on different rows gets `.broken`,

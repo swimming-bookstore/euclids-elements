@@ -2,7 +2,8 @@ use super::{s, Proposition};
 use crate::figure::{
     book1_prop1, book1_prop2, book1_prop3, book1_prop4, book1_prop5, book1_prop6,
     book1_prop7, book1_prop8, book1_prop9, book1_prop10, book1_prop11,
-    book1_prop12, book1_prop13, book1_prop14, book1_prop15,
+    book1_prop12, book1_prop13, book1_prop14, book1_prop15, book1_prop16,
+    book1_prop17,
 };
 
 pub const PROP_1: Proposition = Proposition {
@@ -367,7 +368,50 @@ pub const PROP_15: Proposition = Proposition {
     ],
 };
 
+pub const PROP_16: Proposition = Proposition {
+    book: 1,
+    number: 16,
+    enunciation: "For any triangle, when one of the sides is produced, the external angle is greater than each of the internal and opposite angles.",
+    figure: book1_prop16,
+    phrases: &[
+        s(1, "Let *ABC* be a triangle, and let one of its sides *BC* have been produced to *D*."),
+        s(1, "I say that the external angle *ACD* is greater than each of the internal and opposite angles, *CBA* and *BAC*."),
+        s(2, "Let the (straight-line) *AC* have been cut in half at (point) *E*.{[Prop. 1.10]}"),
+        s(2, "And *BE* being joined, let it have been produced in a straight-line to (point) *F*."),
+        s(2, "And let *EF* be made equal to *BE*,{[Prop. 1.3]} and let *FC* have been joined, and let *AC* have been drawn through to (point) *G*."),
+        s(3, "Therefore, since *AE* is equal to *EC*, and *BE* to *EF*, the two (straight-lines) *AE*, *EB* are equal to the two (straight-lines) *CE*, *EF*, respectively."),
+        s(3, "Also, angle *AEB* is equal to angle *FEC*, for (they are) vertically opposite.{[Prop. 1.15]}"),
+        s(3, "Thus, the base *AB* is equal to the base *FC*, and the triangle *ABE* is equal to the triangle *FEC*, and the remaining angles subtended by the equal sides are equal to the corresponding remaining angles.{[Prop. 1.4]}"),
+        s(3, "Thus, *BAE* is equal to *ECF*."),
+        s(3, "But *ECD* is greater than *ECF*."),
+        s(3, "Thus, *ACD* is greater than *BAE*."),
+        s(3, "Similarly, by having cut *BC* in half, it can be shown (that) *BCG*—that is to say, *ACD*—(is) also greater than *ABC*."),
+        s(4, "Thus, for any triangle, when one of the sides is produced, the external angle is greater than each of the internal and opposite angles."),
+        s(4, "(Which is) the very thing it was required to show."),
+    ],
+};
+
+pub const PROP_17: Proposition = Proposition {
+    book: 1,
+    number: 17,
+    enunciation: "For any triangle, (the sum of) two angles taken together in any (possible way) is less than two right-angles.",
+    figure: book1_prop17,
+    phrases: &[
+        s(1, "Let *ABC* be a triangle."),
+        s(1, "I say that (the sum of) two angles of triangle *ABC* taken together in any (possible way) is less than two right-angles."),
+        s(2, "For let *BC* have been produced to *D*."),
+        s(3, "And since the angle *ACD* is external to triangle *ABC*, it is greater than the internal and opposite angle *ABC*.{[Prop. 1.16]}"),
+        s(3, "Let *ACB* have been added to both."),
+        s(3, "Thus, the (sum of the angles) *ACD* and *ACB* is greater than the (sum of the angles) *ABC* and *BCA*."),
+        s(3, "But, (the sum of) *ACD* and *ACB* is equal to two right-angles.{[Prop. 1.13]}"),
+        s(3, "Thus, (the sum of) *ABC* and *BCA* is less than two right-angles."),
+        s(3, "Similarly, we can show that (the sum of) *BAC* and *ACB* is also less than two right-angles, and further (that the sum of) *CAB* and *ABC* (is less than two right-angles)."),
+        s(4, "Thus, for any triangle, (the sum of) two angles taken together in any (possible way) is less than two right-angles."),
+        s(4, "(Which is) the very thing it was required to show."),
+    ],
+};
+
 pub const PROPOSITIONS: &[Proposition] = &[
     PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6, PROP_7, PROP_8, PROP_9, PROP_10, PROP_11,
-    PROP_12, PROP_13, PROP_14, PROP_15,
+    PROP_12, PROP_13, PROP_14, PROP_15, PROP_16, PROP_17,
 ];

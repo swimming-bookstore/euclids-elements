@@ -46,7 +46,7 @@
 
 .karaoke .line.now,
 .karaoke .line.prev {
-  display: grid;
+  display: block;
 }
 
 .karaoke .line.prev {
@@ -71,7 +71,7 @@
   background: #ffe58a;
 }
 
-.karaoke .word.cite {
+.karaoke .cite {
   color: #333;
   background: none;
 }

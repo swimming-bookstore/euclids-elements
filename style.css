@@ -161,17 +161,17 @@ h1 {
 }
 
 .karaoke .line {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 7.2rem;
-  column-gap: 0.55rem;
-  align-items: end;
+  display: block;
   margin: 0;
   overflow: visible;
   white-space: normal;
 }
 
 .karaoke .body {
+  display: block;
+  position: relative;
   min-width: 0;
+  padding-right: 7.2rem;
   overflow-wrap: break-word;
   hyphens: manual;
   white-space: normal;
@@ -194,17 +194,19 @@ h1 {
   font-style: italic;
 }
 
-.karaoke .cites {
+/* Nested in the cited word so `top: auto` keeps the static wrap
+   (I.10 [Prop. 1.9] beside `CD.`). `right` is against `.body`. */
+.karaoke .word .cite {
+  position: absolute;
+  right: 0;
+  width: 6.5rem;
+  margin: 0;
+  padding: 0;
   text-align: right;
   font-size: 0.92rem;
   line-height: inherit;
-  color: #333;
-}
-
-.karaoke .word.cite {
-  display: block;
-  margin: 0;
   white-space: nowrap;
+  color: #333;
 }
 
 .empty {
