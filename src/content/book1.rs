@@ -2,7 +2,7 @@ use super::{s, Proposition};
 use crate::figure::{
     book1_prop1, book1_prop2, book1_prop3, book1_prop4, book1_prop5, book1_prop6,
     book1_prop7, book1_prop8, book1_prop9, book1_prop10, book1_prop11,
-    book1_prop12, book1_prop13,
+    book1_prop12, book1_prop13, book1_prop14, book1_prop15,
 };
 
 pub const PROP_1: Proposition = Proposition {
@@ -324,7 +324,50 @@ pub const PROP_13: Proposition = Proposition {
     ],
 };
 
+pub const PROP_14: Proposition = Proposition {
+    book: 1,
+    number: 14,
+    enunciation: "If two straight-lines, not lying on the same side, make adjacent angles (whose sum is) equal to two right-angles with some straight-line, at a point on it, then the two straight-lines will be straight-on (with respect) to one another.",
+    figure: book1_prop14,
+    phrases: &[
+        s(1, "For let two straight-lines *BC* and *BD*, not lying on the same side, make adjacent angles *ABC* and *ABD* (whose sum is) equal to two right-angles with some straight-line *AB*, at the point *B* on it."),
+        s(1, "I say that *BD* is straight-on with respect to *CB*."),
+        s(2, "For if *BD* is not straight-on to *BC* then let *BE* be straight-on to *CB*."),
+        s(3, "Therefore, since the straight-line *AB* stands on the straight-line *CBE*, the (sum of the) angles *ABC* and *ABE* is thus equal to two right-angles.{[Prop. 1.13]}"),
+        s(3, "But (the sum of) *ABC* and *ABD* is also equal to two right-angles."),
+        s(3, "Thus, (the sum of angles) *CBA* and *ABE* is equal to (the sum of angles) *CBA* and *ABD*.{[C.N. 1]}"),
+        s(3, "Let (angle) *CBA* have been subtracted from both."),
+        s(3, "Thus, the remainder *ABE* is equal to the remainder *ABD*,{[C.N. 3]} the lesser to the greater."),
+        s(3, "The very thing is impossible."),
+        s(3, "Thus, *BE* is not straight-on with respect to *CB*."),
+        s(3, "Similarly, we can show that neither (is) any other (straight-line) than *BD*."),
+        s(3, "Thus, *CB* is straight-on with respect to *BD*."),
+        s(4, "Thus, if two straight-lines, not lying on the same side, make adjacent angles (whose sum is) equal to two right-angles with some straight-line, at a point on it, then the two straight-lines will be straight-on (with respect) to one another."),
+        s(4, "(Which is) the very thing it was required to show."),
+    ],
+};
+
+pub const PROP_15: Proposition = Proposition {
+    book: 1,
+    number: 15,
+    enunciation: "If two straight-lines cut one another then they make the vertically opposite angles equal to one another.",
+    figure: book1_prop15,
+    phrases: &[
+        s(1, "For let the two straight-lines *AB* and *CD* cut one another at the point *E*."),
+        s(1, "I say that angle *AEC* is equal to (angle) *DEB*, and (angle) *CEB* to (angle) *AED*."),
+        s(2, "For since the straight-line *AE* stands on the straight-line *CD*, making the angles *CEA* and *AED*, the (sum of the) angles *CEA* and *AED* is thus equal to two right-angles.{[Prop. 1.13]}"),
+        s(2, "Again, since the straight-line *DE* stands on the straight-line *AB*, making the angles *AED* and *DEB*, the (sum of the) angles *AED* and *DEB* is thus equal to two right-angles.{[Prop. 1.13]}"),
+        s(2, "But (the sum of) *CEA* and *AED* was also shown (to be) equal to two right-angles."),
+        s(2, "Thus, (the sum of) *CEA* and *AED* is equal to (the sum of) *AED* and *DEB*.{[C.N. 1]}"),
+        s(2, "Let *AED* have been subtracted from both."),
+        s(2, "Thus, the remainder *CEA* is equal to the remainder *BED*.{[C.N. 3]}"),
+        s(2, "Similarly, it can be shown that *CEB* and *DEA* are also equal."),
+        s(3, "Thus, if two straight-lines cut one another then they make the vertically opposite angles equal to one another."),
+        s(3, "(Which is) the very thing it was required to show."),
+    ],
+};
+
 pub const PROPOSITIONS: &[Proposition] = &[
     PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6, PROP_7, PROP_8, PROP_9, PROP_10, PROP_11,
-    PROP_12, PROP_13,
+    PROP_12, PROP_13, PROP_14, PROP_15,
 ];
