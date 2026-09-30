@@ -1,17 +1,39 @@
 #!/usr/bin/env python3
 """Author Euclidean plates as Python, emit src/figure/book1.rs.
 
+Figures copy Fitzpatrick’s English plate (Elements.pdf), not a “nice”
+construction. Vertices are **ink tips**, not letter boxes — a letter
+names the nearest stroke-point outside its glyph, so segment lengths
+stay in plate proportion.
+
+    python3 scripts/figure.py --measure PAGE
+        rasterize the English column, blank the capitals, take the
+        nearest ink to each letter. Shared *ink* rows (`level`) and
+        columns (`plumb`) snap; a cut is `meet`. Prints one-scale
+        ratios and angles.
+
+    Put those in `book1_propN` as a Sketch (`put` / `polar` / `level` /
+    `plumb` / `meet`, then `require_*`). Copy `s.letters(...)` from
+    `--measure` (tip→glyph headings). `Fig(..., sketch=s)` then places
+    every letter that way unless you pass a `place`.
+
     python3 scripts/figure.py --write
+        emit src/figure/book1.rs
 """
 
 from __future__ import annotations
 
 import argparse
 import math
+import re
+import subprocess
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "src" / "figure" / "book1.rs"
+DEFAULT_PDF = Path("/tmp/euclid-pdf/Elements.pdf")
+ENG_X0_PT = 310.0
 
 
 class Sketch:
@@ -22,6 +44,7 @@ class Sketch:
 
     def __init__(self):
         self.pts: dict[str, tuple[float, float]] = {}
+        self._letters: dict[str, float] = {}
 
     def put(self, name: str, x: float, y: float) -> tuple[float, float]:
         self.pts[name] = (x, y)
@@ -38,6 +61,30 @@ class Sketch:
         dx, dy = tx - ox, ty - oy
         n = math.hypot(dx, dy)
         return self.put(name, ox + dx / n * dist, oy + dy / n * dist)
+
+    def meet(self, name: str, a: str, b: str, c: str, d: str) -> tuple[float, float]:
+        """`name` at the intersection of lines `a``b` and `c``d`."""
+        ax, ay = self.pts[a]
+        bx, by = self.pts[b]
+        cx, cy = self.pts[c]
+        dx, dy = self.pts[d]
+        den = (ax - bx) * (cy - dy) - (ay - by) * (cx - dx)
+        if abs(den) < 1e-12:
+            raise SystemExit(f"{a}{b} ∥ {c}{d}")
+        t = ((ax - cx) * (cy - dy) - (ay - cy) * (cx - dx)) / den
+        return self.put(name, ax + t * (bx - ax), ay + t * (by - ay))
+
+    def level(self, name: str, of: str, x: float) -> tuple[float, float]:
+        """`name` at (`x`, y of `of`) — same height as a plate letter-row."""
+        return self.put(name, x, self.pts[of][1])
+
+    def plumb(self, name: str, of: str, y: float) -> tuple[float, float]:
+        """`name` at (x of `of`, `y`) — same column as a plate letter-column."""
+        return self.put(name, self.pts[of][0], y)
+
+    def corner(self, name: str, x_of: str, y_of: str) -> tuple[float, float]:
+        """`name` at (x of `x_of`, y of `y_of`) — a letter-column × letter-row."""
+        return self.put(name, self.pts[x_of][0], self.pts[y_of][1])
 
     def copy_length(self, name: str, origin: str, through: str, a: str, b: str) -> tuple[float, float]:
         """`origin`–`name` on the ray `origin` → `through`, equal to `a`–`b`."""
@@ -148,8 +195,26 @@ class Sketch:
         return ("deg", round(self.heading(a, b) + sign * (90.0 + tilt), 1))
 
     def beyond(self, a: str, b: str) -> tuple:
-        """Letter past `b`, along `a` → `b`."""
+        """Letter past `b`, along `a` → `b` — only when the plate does that."""
         return ("deg", round(self.heading(a, b), 1))
+
+    def letters(self, **headings: float) -> None:
+        """Tip→glyph headings from `--measure PAGE` (`s.letters(A=92.4, …)`)."""
+        self._letters.update({k: float(v) for k, v in headings.items()})
+
+    def glyph(self, name_or_deg: str | float) -> tuple:
+        """Letter center from the ink tip toward the Fitzpatrick glyph.
+
+        A name looks up `letters(...)`. A number is the heading itself.
+        """
+        if isinstance(name_or_deg, str):
+            if name_or_deg not in self._letters:
+                raise SystemExit(
+                    f"no tip→glyph heading for {name_or_deg}; "
+                    "s.letters(...) from --measure PAGE"
+                )
+            name_or_deg = self._letters[name_or_deg]
+        return ("deg", round(float(name_or_deg), 1))
 
     def report(self, title: str, angles: list[tuple]) -> None:
         print(title)
@@ -193,22 +258,32 @@ def f64(x: float) -> str:
 
 
 class Fig:
-    def __init__(self, fn: str, doc: str):
+    def __init__(self, fn: str, doc: str, sketch: Sketch | None = None):
         self.fn = fn
         self.doc = doc
+        self.sketch = sketch
         self.lines: list[str] = []
 
     def _add(self, s: str) -> None:
         self.lines.append(s)
 
-    def put(self, name: str, x: float, y: float, place, r: float | None = None) -> None:
+    def _place(self, name: str, place) -> str:
+        if place is None:
+            if self.sketch is None:
+                raise SystemExit(
+                    f"{self.fn}: {name} needs a place, or Fig(..., sketch=s) with s.letters(...)"
+                )
+            place = self.sketch.glyph(name)
+        return rust_place(place)
+
+    def put(self, name: str, x: float, y: float, place=None, r: float | None = None) -> None:
         if r is None:
             self._add(
-                f'    d.put("{name}", V2::new({f64(x)}, {f64(y)}), {rust_place(place)});'
+                f'    d.put("{name}", V2::new({f64(x)}, {f64(y)}), {self._place(name, place)});'
             )
         else:
             self._add(
-                f'    d.put_r("{name}", V2::new({f64(x)}, {f64(y)}), {rust_place(place)}, {f64(r)});'
+                f'    d.put_r("{name}", V2::new({f64(x)}, {f64(y)}), {self._place(name, place)}, {f64(r)});'
             )
 
     def put_line_end(self, name: str, x: float, y: float, left: bool) -> None:
@@ -218,17 +293,37 @@ class Fig:
             f'    d.put_line_end("{name}", V2::new({f64(x)}, {f64(y)}), {side});'
         )
 
+    def level(self, name: str, of: str, x: float, place=None) -> None:
+        self._add(
+            f'    d.level("{name}", "{of}", {f64(x)}, {self._place(name, place)});'
+        )
+
+    def plumb(self, name: str, of: str, y: float, place=None) -> None:
+        self._add(
+            f'    d.plumb("{name}", "{of}", {f64(y)}, {self._place(name, place)});'
+        )
+
+    def corner(self, name: str, x_of: str, y_of: str, place=None) -> None:
+        self._add(
+            f'    d.corner("{name}", "{x_of}", "{y_of}", {self._place(name, place)});'
+        )
+
+    def meet(self, name: str, a: str, b: str, c: str, d: str, place=None) -> None:
+        self._add(
+            f'    d.meet("{name}", "{a}", "{b}", "{c}", "{d}", {self._place(name, place)});'
+        )
+
     def pin(self, name: str, x: float, y: float) -> None:
         self._add(f'    d.pin("{name}", V2::new({f64(x)}, {f64(y)}));')
 
-    def polar(self, name: str, origin: str, r: float, deg: float, place) -> None:
+    def polar(self, name: str, origin: str, r: float, deg: float, place=None) -> None:
         self._add(
-            f'    d.polar("{name}", "{origin}", {f64(r)}, {f64(deg)}, {rust_place(place)});'
+            f'    d.polar("{name}", "{origin}", {f64(r)}, {f64(deg)}, {self._place(name, place)});'
         )
 
-    def ray(self, name: str, origin: str, through: str, dist: float, place) -> None:
+    def ray(self, name: str, origin: str, through: str, dist: float, place=None) -> None:
         self._add(
-            f'    d.ray("{name}", "{origin}", "{through}", {f64(dist)}, {rust_place(place)});'
+            f'    d.ray("{name}", "{origin}", "{through}", {f64(dist)}, {self._place(name, place)});'
         )
 
     def join(self, a: str, b: str) -> None:
@@ -257,10 +352,10 @@ class Fig:
             f'    d.{method}("{name}", "{center}", "{through}", {f64(deg)});'
         )
 
-    def on_line(self, name: str, a: str, b: str, t: float, place) -> None:
+    def on_line(self, name: str, a: str, b: str, t: float, place=None) -> None:
         """Letter on segment `a`–`b` at fraction `t`."""
         self._add(
-            f'    d.on_line("{name}", "{a}", "{b}", {f64(t)}, {rust_place(place)});'
+            f'    d.on_line("{name}", "{a}", "{b}", {f64(t)}, {self._place(name, place)});'
         )
 
     def named_line(self, letters: str, a: str, b: str) -> None:
@@ -855,6 +950,80 @@ def book1_prop13() -> Fig:
     return f
 
 
+def book1_prop14() -> Fig:
+    # Fitzpatrick p. 19 English plate. Ink tips (letters blanked): C,B,D one
+    # base; A,E one height. E is *past* D, not the column of D. One scale BC = 100.
+    # --measure 19: BD/BC = 1.1363, ∠ABC = 61.03°.
+    bc = 100.0
+    s = Sketch()
+    s.put("C", -bc, 0.0)
+    s.level("B", "C", 0.0)
+    s.level("D", "C", 1.13625 * bc)
+    s.put("A", -0.82263 * bc, 1.48587 * bc)
+    s.level("E", "A", 1.19538 * bc)
+    s.require_angle("C", "B", "A", 61.03, eps=0.05)
+    s.require_ratio("B", "D", "B", "C", 1.13625, eps=0.001)
+    s.require_ratio("A", "B", "B", "C", 1.6986, eps=0.002)
+    s.require_ratio("B", "E", "B", "C", 1.9070, eps=0.002)
+    s.letters(A=92.4, B=-88.9, C=-118.2, D=-63.0, E=89.0)
+    f = Fig(
+        "book1_prop14",
+        "I.14 — Fitzpatrick plate (Elements p. 19): BC and BD on opposite sides\n"
+        "of AB at B; C–B–D collinear (`level`); A and E share a height (`level`);\n"
+        "BE the reductio, E past D (not the column of D). One scale: BD/BC = 1.136.",
+        sketch=s,
+    )
+    f.put("C", *s.at("C"))
+    f.level("B", "C", s.at("B")[0])
+    f.level("D", "C", s.at("D")[0])
+    f.put("A", *s.at("A"))
+    f.level("E", "A", s.at("E")[0])
+    f.chain("C", "B", "D")
+    f.join("A", "B")
+    f.join("B", "E")
+    f.dots("A", "B", "C", "D", "E")
+    return f
+
+
+
+def book1_prop15() -> Fig:
+    # Fitzpatrick p. 20 English plate. Ink tips: D–C one base; E = AB ∩ CD
+    # (`meet`). B sits below-right, slightly past C — not the column of C.
+    # One scale CD = 100. --measure 20: CE/CD = 0.4995, AE/CD = 0.672, EB/CD = 0.682.
+    cd = 100.0
+    s = Sketch()
+    s.put("D", 0.0, 0.0)
+    s.level("C", "D", cd)
+    s.put("A", -0.01334 * cd, 0.43333 * cd)
+    s.put("B", 1.02222 * cd, -0.44000 * cd)
+    s.meet("E", "A", "B", "D", "C")
+    s.require_angle("A", "E", "B", 180.0, eps=0.05)
+    s.require_angle("D", "E", "C", 180.0, eps=0.05)
+    s.require_same_angle("A", "E", "C", "D", "E", "B")
+    s.require_same_angle("C", "E", "B", "A", "E", "D")
+    s.require_ratio("C", "E", "C", "D", 0.4995, eps=0.003)
+    s.require_ratio("A", "E", "C", "D", 0.6722, eps=0.003)
+    s.require_ratio("E", "B", "C", "D", 0.6825, eps=0.003)
+    s.letters(A=46.0, B=-92.4, C=-64.3, D=-116.9, E=65.9)
+    f = Fig(
+        "book1_prop15",
+        "I.15 — Fitzpatrick plate (Elements p. 20): AB and CD cut one another\n"
+        "at E (`meet`); D–C `level`; A above-left, B below-right slightly past C\n"
+        "(not a letter-column). One scale: CE/CD = 0.500, AE/EB = 0.672/0.682.",
+        sketch=s,
+    )
+    f.put("D", *s.at("D"))
+    f.level("C", "D", s.at("C")[0])
+    f.put("A", *s.at("A"))
+    f.put("B", *s.at("B"))
+    f.meet("E", "A", "B", "D", "C")
+    f.chain("D", "E", "C")
+    f.chain("A", "E", "B")
+    f.dots("A", "B", "C", "D", "E")
+    return f
+
+
+
 PLATES = [
     book1_prop1,
     book1_prop2,
@@ -869,6 +1038,8 @@ PLATES = [
     book1_prop11,
     book1_prop12,
     book1_prop13,
+    book1_prop14,
+    book1_prop15,
 ]
 
 
@@ -877,6 +1048,8 @@ use super::geom::{Place, V2};
 
 // Generated by scripts/figure.py. Edit the Python plates, then:
 //     python3 scripts/figure.py --write
+// Ratios, angles, and `s.letters(...)` come from `--measure PAGE`
+// (ink tips; `level` / `plumb` / `meet` only when the ink lines up).
 """
 
 
@@ -887,11 +1060,380 @@ def rust_file() -> str:
     return "\n".join(parts)
 
 
+# --- Fitzpatrick plate measurement ------------------------------------------
+#
+# Capitals in the English column *name* the points. Vertices are the
+# nearest ink to each glyph (letters blanked so they are not the stroke).
+# Shared *ink* rows (`level`) and columns (`plumb`) snap; a letter on two
+# named lines is their `meet`. One scale is the longest nearly-horizontal
+# segment. Segment ratios are ink-tip to ink-tip.
+
+WORD_RE = re.compile(
+    r'<word xMin="([^"]+)" yMin="([^"]+)" xMax="([^"]+)" yMax="([^"]+)">([^<]*)</word>'
+)
+
+
+def _bbox_html(pdf: Path, page: int) -> str:
+    with tempfile.NamedTemporaryFile(suffix=".html", delete=False) as f:
+        out = Path(f.name)
+    try:
+        subprocess.run(
+            ["pdftotext", "-f", str(page), "-l", str(page), "-bbox", str(pdf), str(out)],
+            check=True,
+            capture_output=True,
+        )
+        return out.read_text(errors="replace")
+    finally:
+        out.unlink(missing_ok=True)
+
+
+def _figure_letters(html: str) -> list[tuple[str, float, float, float, float]]:
+    """Isolated A–Z in the English column: (name, cx, cy, w, h), PDF y down.
+
+    Drops the running “I.” of “Proposition N” (a very narrow glyph) and the
+    body-text letters. The plate is the highest (smallest y) cluster with the
+    most unique names — proof letters sit lower on the page.
+    """
+    marks: list[tuple[str, float, float, float, float]] = []
+    for a, b, c, d, w in WORD_RE.findall(html):
+        x0, y0, x1, y1 = map(float, (a, b, c, d))
+        if x0 < ENG_X0_PT or not re.fullmatch(r"[A-Z]", w):
+            continue
+        ww, hh = x1 - x0, y1 - y0
+        if hh < 6.5 or hh > 10.5 or ww < 5.0:
+            continue
+        marks.append((w, (x0 + x1) / 2.0, (y0 + y1) / 2.0, ww, hh))
+    if not marks:
+        return []
+
+    def near(p, q) -> bool:
+        return abs(p[1] - q[1]) < 200.0 and abs(p[2] - q[2]) < 180.0
+
+    def spread(items):
+        xs = [m[1] for m in items]
+        ys = [m[2] for m in items]
+        return (max(xs) - min(xs)) * (max(ys) - min(ys) + 1.0)
+
+    def meant(items):
+        return sum(m[2] for m in items) / len(items)
+
+    best: list[tuple[str, float, float, float, float]] = []
+    for seed in marks:
+        cluster = [m for m in marks if near(seed, m)]
+        names = {m[0] for m in cluster}
+        if not best:
+            best = cluster
+            continue
+        bn = {m[0] for m in best}
+        if len(names) > len(bn):
+            best = cluster
+        elif len(names) == len(bn):
+            if meant(cluster) < meant(best) - 8.0:
+                best = cluster
+            elif abs(meant(cluster) - meant(best)) <= 8.0 and spread(cluster) < spread(best):
+                best = cluster
+    cy = sum(m[2] for m in best) / len(best)
+    by_name: dict[str, tuple[str, float, float, float, float]] = {}
+    for m in best:
+        prev = by_name.get(m[0])
+        if prev is None or abs(m[2] - cy) < abs(prev[2] - cy):
+            by_name[m[0]] = m
+    return list(by_name.values())
+
+
+def _read_pgm(path: Path) -> tuple[int, int, bytes]:
+    data = path.read_bytes()
+    if data.startswith(b"P5"):
+        header, raw = data.split(b"\x0a255\x0a", 1)
+        dims = [ln for ln in header.split(b"\n") if ln and not ln.startswith(b"#") and ln != b"P5"]
+        w, h = map(int, dims[-1].split())
+        return w, h, raw[: w * h]
+    if not data.startswith(b"P6"):
+        raise SystemExit(f"not a PGM/PPM: {path}")
+    header, raw = data.split(b"\x0a255\x0a", 1)
+    dims = [ln for ln in header.split(b"\n") if ln and not ln.startswith(b"#") and ln != b"P6"]
+    w, h = map(int, dims[-1].split())
+    rgb = raw[: w * h * 3]
+    gray = bytes((rgb[i] + rgb[i + 1] + rgb[i + 2]) // 3 for i in range(0, len(rgb), 3))
+    return w, h, gray
+
+
+def _raster_page(pdf: Path, page: int, dpi: int) -> tuple[int, int, bytearray]:
+    with tempfile.TemporaryDirectory() as td:
+        prefix = str(Path(td) / "p")
+        subprocess.run(
+            ["pdftoppm", "-f", str(page), "-l", str(page), "-gray", "-r", str(dpi), str(pdf), prefix],
+            check=True,
+            capture_output=True,
+        )
+        files = sorted(Path(td).glob("*.pgm")) or sorted(Path(td).glob("*.ppm"))
+        if not files:
+            raise SystemExit("pdftoppm wrote no image")
+        w, h, raw = _read_pgm(files[0])
+        return w, h, bytearray(raw)
+
+
+def _blank_letters(
+    gray: bytearray,
+    w: int,
+    h: int,
+    letters: list[tuple[str, float, float, float, float]],
+    sx: float,
+    sy: float,
+) -> None:
+    """Paint each capital white so the glyph is not the stroke."""
+    for _n, cx, cy, ww, hh in letters:
+        pad = 1.4
+        x0 = max(0, int((cx - ww / 2 - pad) * sx))
+        x1 = min(w - 1, int((cx + ww / 2 + pad) * sx))
+        y0 = max(0, int((cy - hh / 2 - pad) * sy))
+        y1 = min(h - 1, int((cy + hh / 2 + pad) * sy))
+        for y in range(y0, y1 + 1):
+            i = y * w
+            for x in range(x0, x1 + 1):
+                gray[i + x] = 255
+
+
+def _ink(gray: bytes, w: int, x: int, y: int) -> bool:
+    return gray[y * w + x] < 110
+
+
+def _nearest_ink(
+    gray: bytes, w: int, h: int, cx: float, cy: float, rmax: float
+) -> tuple[float, float] | None:
+    """First ink ring around a blanked letter, then the dark centroid there."""
+    x0, y0 = int(round(cx)), int(round(cy))
+    rmax_i = max(2, int(rmax))
+    for r in range(1, rmax_i + 1):
+        sx = sy = n = 0.0
+        for dy in range(-r, r + 1):
+            for dx in range(-r, r + 1):
+                if max(abs(dx), abs(dy)) != r:
+                    continue
+                x, y = x0 + dx, y0 + dy
+                if 0 <= x < w and 0 <= y < h and _ink(gray, w, x, y):
+                    sx += x
+                    sy += y
+                    n += 1
+        if n:
+            return sx / n, sy / n
+    return None
+
+
+def _snap_axes(pts: dict[str, tuple[float, float]], tol: float = 1.6):
+    """Union-find snap of x (plumb) and y (level) among *ink* vertices."""
+    names = list(pts)
+    parent = {n: n for n in names}
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    def union(a, b):
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[rb] = ra
+
+    for axis in (0, 1):
+        parent = {n: n for n in names}
+        for i, a in enumerate(names):
+            for b in names[i + 1 :]:
+                if abs(pts[a][axis] - pts[b][axis]) <= tol:
+                    union(a, b)
+        groups: dict[str, list[str]] = {}
+        for n in names:
+            groups.setdefault(find(n), []).append(n)
+        for members in groups.values():
+            if len(members) < 2:
+                continue
+            mean = sum(pts[n][axis] for n in members) / len(members)
+            kind = "level" if axis == 1 else "plumb"
+            print(f"  {kind}: {', '.join(sorted(members))}")
+            for n in members:
+                x, y = pts[n]
+                pts[n] = (mean, y) if axis == 0 else (x, mean)
+    return pts
+
+
+def _seg_dist(p, a, b) -> float:
+    ax, ay = a
+    bx, by = b
+    px, py = p
+    abx, aby = bx - ax, by - ay
+    l2 = abx * abx + aby * aby
+    if l2 < 1e-12:
+        return math.hypot(px - ax, py - ay)
+    t = max(0.0, min(1.0, ((px - ax) * abx + (py - ay) * aby) / l2))
+    return math.hypot(px - ax - t * abx, py - ay - t * aby)
+
+
+def _cut(a, b, c, d):
+    ax, ay = a
+    bx, by = b
+    cx, cy = c
+    dx, dy = d
+    den = (ax - bx) * (cy - dy) - (ay - by) * (cx - dx)
+    if abs(den) < 1e-9:
+        return None
+    t = ((ax - cx) * (cy - dy) - (ay - cy) * (cx - dx)) / den
+    return (ax + t * (bx - ax), ay + t * (by - ay))
+
+
+def _meet_interiors(pts: dict[str, tuple[float, float]], tol: float = 8.0):
+    """A letter close to two segments between *other* letters is their meet."""
+    names = list(pts)
+    segs = [(a, b) for i, a in enumerate(names) for b in names[i + 1 :]]
+    for n in names:
+        p = pts[n]
+        close = [(a, b) for a, b in segs if n not in (a, b) and _seg_dist(p, pts[a], pts[b]) <= tol]
+        # unique undirected lines
+        uniq = []
+        for a, b in close:
+            if all({a, b} != {c, d} for c, d in uniq):
+                uniq.append((a, b))
+        if len(uniq) < 2:
+            continue
+        hit = _cut(pts[uniq[0][0]], pts[uniq[0][1]], pts[uniq[1][0]], pts[uniq[1][1]])
+        if hit is None:
+            continue
+        print(f"  meet {n}: {uniq[0][0]}{uniq[0][1]} × {uniq[1][0]}{uniq[1][1]}")
+        pts[n] = hit
+    return pts
+
+
+def measure_page(pdf: Path, page: int, dpi: int = 200) -> None:
+    html = _bbox_html(pdf, page)
+    letters = _figure_letters(html)
+    if len(letters) < 2:
+        raise SystemExit(f"no English-plate letters on page {page}")
+    w, h, gray = _raster_page(pdf, page, dpi)
+    sx = w / 612.0
+    sy = h / 792.0
+    _blank_letters(gray, w, h, letters, sx, sy)
+    # Ink vertices in PDF pt (y down). Search ~3 em from each glyph.
+    pts: dict[str, tuple[float, float]] = {}
+    for n, cx, cy, ww, hh in letters:
+        hit = _nearest_ink(gray, w, h, cx * sx, cy * sy, rmax=max(ww, hh) * sx * 2.4)
+        if hit is None:
+            raise SystemExit(f"no ink near letter {n}")
+        pts[n] = (hit[0] / sx, hit[1] / sy)
+        print(f"  ink {n}: letter ({cx:.2f},{cy:.2f}) → tip ({pts[n][0]:.2f},{pts[n][1]:.2f})")
+    print("letters:", " ".join(sorted(pts)))
+    print("snaps:")
+    # ~1.2 pt of collinearity on a 200 dpi plate.
+    pts = _snap_axes(pts, tol=1.2)
+    # y-up, origin at the left-most of the lowest letter-row
+    min_y = max(p[1] for p in pts.values())  # PDF y down
+    low = [n for n, p in pts.items() if p[1] >= min_y - 2.5]
+    origin = min(low, key=lambda n: pts[n][0])
+    ox, oy = pts[origin]
+    plane = {n: (p[0] - ox, oy - p[1]) for n, p in pts.items()}
+    plane = _meet_interiors(plane)
+
+    names = sorted(plane)
+
+    def dist(a, b):
+        ax, ay = plane[a]
+        bx, by = plane[b]
+        return math.hypot(bx - ax, by - ay)
+
+    def heading(a, b):
+        ax, ay = plane[a]
+        bx, by = plane[b]
+        return math.degrees(math.atan2(by - ay, bx - ax))
+
+    def angle(p, v, q):
+        px, py = plane[p]
+        vx, vy = plane[v]
+        qx, qy = plane[q]
+        ax, ay = px - vx, py - vy
+        bx, by = qx - vx, qy - vy
+        na, nb = math.hypot(ax, ay), math.hypot(bx, by)
+        return math.degrees(math.acos(max(-1.0, min(1.0, (ax * bx + ay * by) / (na * nb)))))
+
+    horiz = []
+    for i, a in enumerate(names):
+        for b in names[i + 1 :]:
+            ang = abs(heading(a, b)) % 180.0
+            if ang > 90:
+                ang = 180 - ang
+            if ang < 12:
+                horiz.append((dist(a, b), a, b))
+    horiz.sort(reverse=True)
+    if horiz:
+        scale_name = f"{horiz[0][1]}{horiz[0][2]}"
+        scale = horiz[0][0]
+    else:
+        pairs = [(dist(a, b), a, b) for i, a in enumerate(names) for b in names[i + 1 :]]
+        pairs.sort(reverse=True)
+        scale_name = f"{pairs[0][1]}{pairs[0][2]}"
+        scale = pairs[0][0]
+
+    print(f"I.? page {page}  origin {origin}  scale {scale_name} = {scale:.3f} pt → 100")
+    print("vertices (one-scale, y-up). Use level/plumb/corner/meet in the Sketch:")
+    k = 100.0 / scale
+    for n in names:
+        x, y = plane[n]
+        print(f"  {n}: ({x * k:.3f}, {y * k:.3f})")
+    print("polar from nearest (r / scale, heading deg):")
+    for n in names:
+        if n == origin:
+            continue
+        parent = min((dist(n, o), o) for o in names if o != n)[1]
+        print(
+            f"  {n} from {parent}: r={dist(n, parent) * k:.3f}  heading={heading(parent, n):.2f}"
+        )
+    print("angles at junctions:")
+    for v in names:
+        others = [o for o in names if o != v]
+        if len(others) < 2:
+            continue
+        for i, p in enumerate(others):
+            for q in others[i + 1 :]:
+                if dist(p, v) < 1 or dist(q, v) < 1:
+                    continue
+                print(f"  ∠{p}{v}{q} = {angle(p, v, q):.2f}°")
+    print("ratios (over scale):")
+    for i, a in enumerate(names):
+        for b in names[i + 1 :]:
+            print(f"  {a}{b}/{scale_name} = {dist(a, b) / scale:.4f}")
+    print("letter from tip (y-up heading deg) — paste into the Sketch:")
+    letter_xy = {n: (cx, cy) for n, cx, cy, _w, _h in letters}
+    heads = []
+    for n in names:
+        cx, cy = letter_xy[n]
+        lx, ly = cx - ox, oy - cy
+        tx, ty = plane[n]
+        deg = math.degrees(math.atan2(ly - ty, lx - tx))
+        heads.append(f"{n}={deg:.1f}")
+        print(f"  {n}: {deg:.1f}")
+    print(f"  s.letters({', '.join(heads)})")
+    print("Fig(..., sketch=s) then places every letter that way. python3 scripts/figure.py --write")
+
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--write", action="store_true", help="write src/figure/book1.rs")
     parser.add_argument("--check", action="store_true", help="print measured angles")
+    parser.add_argument(
+        "--measure",
+        type=int,
+        metavar="PAGE",
+        help="rasterize Fitzpatrick PAGE and print plate ratios",
+    )
+    parser.add_argument(
+        "--pdf",
+        type=Path,
+        default=DEFAULT_PDF,
+        help="Fitzpatrick Elements.pdf (default /tmp/euclid-pdf/Elements.pdf)",
+    )
     args = parser.parse_args()
+    if args.measure:
+        measure_page(args.pdf, args.measure)
+        return
     src = rust_file()
     if args.write:
         OUT.write_text(src)

@@ -100,6 +100,47 @@ impl Diagram {
         self.put(name, p, place)
     }
 
+    /// Same height as `of` (a Fitzpatrick letter-row).
+    pub fn level(&mut self, name: &'static str, of: &str, x: f64, place: Place) -> V2 {
+        self.put(name, V2::new(x, self.at(of).y), place)
+    }
+
+    /// Same column as `of` (a Fitzpatrick letter-column).
+    pub fn plumb(&mut self, name: &'static str, of: &str, y: f64, place: Place) -> V2 {
+        self.put(name, V2::new(self.at(of).x, y), place)
+    }
+
+    /// Column of `x_of` × row of `y_of`.
+    pub fn corner(&mut self, name: &'static str, x_of: &str, y_of: &str, place: Place) -> V2 {
+        self.put(name, V2::new(self.at(x_of).x, self.at(y_of).y), place)
+    }
+
+    /// Intersection of lines `a``b` and `c``d`.
+    pub fn meet(
+        &mut self,
+        name: &'static str,
+        a: &str,
+        b: &str,
+        c: &str,
+        d: &str,
+        place: Place,
+    ) -> V2 {
+        let pa = self.at(a);
+        let pb = self.at(b);
+        let pc = self.at(c);
+        let pd = self.at(d);
+        let den = (pa.x - pb.x) * (pc.y - pd.y) - (pa.y - pb.y) * (pc.x - pd.x);
+        if den.abs() < 1e-12 {
+            panic!("{a}{b} parallel to {c}{d}");
+        }
+        let t = ((pa.x - pc.x) * (pc.y - pd.y) - (pa.y - pc.y) * (pc.x - pd.x)) / den;
+        self.put(
+            name,
+            V2::new(pa.x + t * (pb.x - pa.x), pa.y + t * (pb.y - pa.y)),
+            place,
+        )
+    }
+
     /// Letter on the circle `center`–`through`, at `deg` from +x.
     /// The glyph sits radially **outside** the circumference.
     pub fn on_circle(
@@ -430,7 +471,7 @@ mod tests {
     use crate::figure::{
         book1_prop1, book1_prop2, book1_prop3, book1_prop4, book1_prop5, book1_prop6,
         book1_prop7, book1_prop8, book1_prop9, book1_prop10, book1_prop11, book1_prop12,
-        book1_prop13,
+        book1_prop13, book1_prop14, book1_prop15,
     };
 
     fn has(v: &[String], id: &str) -> bool {
@@ -924,6 +965,102 @@ mod tests {
         let (cdx, cdy) = letter_offset(&html, "C");
         assert!(ddx < -0.4 && ddy > 0.4, "D below-left of CD, --dx={ddx} --dy={ddy}");
         assert!(cdx > 0.4 && cdy > 0.4, "C below-right of CD, --dx={cdx} --dy={cdy}");
+    }
+
+    #[test]
+    fn prop14_paths() {
+        let d = book1_prop14();
+        let cbd = d.highlight("CBD");
+        assert!(has(&cbd, "cb") && has(&cbd, "bd"), "CBD through B: {cbd:?}");
+        let cbe = d.highlight("CBE");
+        assert!(has(&cbe, "cb") && (has(&cbe, "be") || has(&cbe, "eb")));
+        let abc = d.highlight_angle("ABC");
+        assert!((has(&abc, "ab") || has(&abc, "ba")) && has(&abc, "cb"));
+        let abd = d.highlight_angle("ABD");
+        assert!((has(&abd, "ab") || has(&abd, "ba")) && has(&abd, "bd"));
+        let a = d.at("A");
+        let b = d.at("B");
+        let c = d.at("C");
+        let dd = d.at("D");
+        let e = d.at("E");
+        assert!((c.y - b.y).abs() < 1e-9 && (dd.y - b.y).abs() < 1e-9, "CBD horizontal");
+        assert!(b.on_seg(c, dd, 1e-4), "B on CD");
+        assert!(c.x < b.x && b.x < dd.x, "plate is C–B–D left to right");
+        assert!(a.x < e.x, "AB leans toward C, left of BE");
+        assert!((a.y - e.y).abs() < 1e-6, "A and E share an ink-row");
+        assert!(e.x > dd.x, "E is past D, not the column of D");
+        let abc_deg = angle_at(&d, "A", "B", "C").to_degrees();
+        assert!((abc_deg - 61.03).abs() < 0.05, "∠ABC from the plate, got {abc_deg}");
+        assert!((dd.dist(b) / b.dist(c) - 1.13625).abs() < 0.002, "BD/BC");
+        assert!((a.dist(b) / b.dist(c) - 1.6986).abs() < 0.003, "AB/BC");
+        assert!((e.dist(b) / b.dist(c) - 1.9070).abs() < 0.003, "BE/BC");
+        let html = d.svg(&[] as &[String]);
+        let (adx, ady) = letter_offset(&html, "A");
+        let (edx, edy) = letter_offset(&html, "E");
+        // Fitzpatrick: A and E almost above the tips — not `beyond` BA / BE.
+        assert!(adx.abs() < 0.15 && ady < -0.7, "A above the tip, --dx={adx} --dy={ady}");
+        assert!(edx.abs() < 0.15 && edy < -0.7, "E above the tip, --dx={edx} --dy={edy}");
+        let (cdx, cdy) = letter_offset(&html, "C");
+        let (ddx, ddy) = letter_offset(&html, "D");
+        // Fitzpatrick: C ~-118°, D ~-63° from the tip — not ±45° corners.
+        assert!(cdx < -0.3 && cdy > 0.6, "C below-left of CBD, --dx={cdx} --dy={cdy}");
+        assert!(ddx > 0.3 && ddy > 0.6, "D below-right of CBD, --dx={ddx} --dy={ddy}");
+    }
+
+    #[test]
+    fn prop15_paths() {
+        let d = book1_prop15();
+        let ab = d.highlight("AB");
+        assert!(
+            (has(&ab, "ae") || has(&ab, "ea")) && (has(&ab, "eb") || has(&ab, "be")),
+            "AB through E: {ab:?}"
+        );
+        let cd = d.highlight("CD");
+        assert!(
+            (has(&cd, "de") || has(&cd, "ed")) && (has(&cd, "ec") || has(&cd, "ce")),
+            "CD through E: {cd:?}"
+        );
+        let aec = d.highlight_angle("AEC");
+        assert!(
+            (has(&aec, "ae") || has(&aec, "ea")) && (has(&aec, "ec") || has(&aec, "ce")),
+            "∠AEC: {aec:?}"
+        );
+        let deb = d.highlight_angle("DEB");
+        assert!((has(&deb, "de") || has(&deb, "ed")) && (has(&deb, "eb") || has(&deb, "be")));
+        let a = d.at("A");
+        let b = d.at("B");
+        let c = d.at("C");
+        let dd = d.at("D");
+        let e = d.at("E");
+        assert!((dd.y - c.y).abs() < 1e-9 && (e.y - c.y).abs() < 1e-9, "CD horizontal");
+        assert!(e.on_seg(c, dd, 1e-4), "E on CD");
+        assert!(e.on_seg(a, b, 1e-4), "E on AB");
+        assert!(dd.x < e.x && e.x < c.x, "plate is D–E–C left to right");
+        assert!(b.x > c.x, "B sits slightly past C, not a letter-column");
+        assert!((angle_at(&d, "A", "E", "B").to_degrees() - 180.0).abs() < 0.05);
+        assert!((angle_at(&d, "C", "E", "D").to_degrees() - 180.0).abs() < 0.05);
+        let aec_deg = angle_at(&d, "A", "E", "C").to_degrees();
+        let deb_deg = angle_at(&d, "D", "E", "B").to_degrees();
+        assert!((aec_deg - deb_deg).abs() < 0.05, "vertically opposite");
+        assert!((c.dist(e) / c.dist(dd) - 0.4995).abs() < 0.003, "CE/CD");
+        assert!((a.dist(e) / c.dist(dd) - 0.6722).abs() < 0.004, "AE/CD");
+        assert!((e.dist(b) / c.dist(dd) - 0.6825).abs() < 0.004, "EB/CD");
+        assert!(a.y > e.y && a.x < e.x, "A above-left of E");
+        assert!(b.y < e.y && b.x > e.x, "B below-right of E");
+        let html = d.svg(&[] as &[String]);
+        let (adx, ady) = letter_offset(&html, "A");
+        let (bdx, bdy) = letter_offset(&html, "B");
+        // Fitzpatrick: A above-right of the tip, B under the tip — not `beyond` AB.
+        assert!(adx > 0.3 && ady < -0.3, "A above-right of the tip, --dx={adx} --dy={ady}");
+        assert!(bdx.abs() < 0.15 && bdy > 0.7, "B under the tip, --dx={bdx} --dy={bdy}");
+        let (cdx, cdy) = letter_offset(&html, "C");
+        let (ddx, ddy) = letter_offset(&html, "D");
+        // Fitzpatrick: D ~-117°, C ~-64° from the tip — not ±45° corners.
+        assert!(ddx < -0.3 && ddy > 0.6, "D below-left of CD, --dx={ddx} --dy={ddy}");
+        assert!(cdx > 0.3 && cdy > 0.6, "C below-right of CD, --dx={cdx} --dy={cdy}");
+        let (edx, edy) = letter_offset(&html, "E");
+        // --measure 20: E 65.9° (above-right of the crossing), not straight up.
+        assert!(edx > 0.2 && edx < 0.5 && edy < -0.6, "E above-right of the crossing, --dx={edx} --dy={edy}");
     }
 
     fn letter_offset(html: &str, id: &str) -> (f64, f64) {

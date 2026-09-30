@@ -1,6 +1,6 @@
 # Euclid’s Elements
 
-Leptos (WASM) shell for all 13 books. Book I Propositions 1–13 are filled in.
+Leptos (WASM) shell for all 13 books. Book I Propositions 1–15 are filled in.
 
 ```bash
 trunk serve
@@ -25,10 +25,11 @@ A new proposition:
 
 1. **Words** — `python3 scripts/words.py --from PAGE --to PAGE --phrases --start N`  
    English column from Fitzpatrick’s PDF → karaoke `s(para, "…")` lines for `src/content/bookN.rs`.
-2. **Figure** — plate in `scripts/figure.py`, then `python3 scripts/figure.py --write` → `src/figure/book1.rs`.
+2. **Figure** — `python3 scripts/figure.py --measure PAGE` blanks the English-column capitals and takes the nearest **ink tip** to each letter (`level` / `plumb` / `meet` only when the ink lines up). It prints `s.letters(A=…, …)` — tip→glyph headings. Paste that into the Sketch; `Fig(..., sketch=s)` places every letter that way. Then `python3 scripts/figure.py --write` → `src/figure/book1.rs`.
+3. Points are Euclidean (`level` / `plumb` / `corner` / `meet` in `Diagram`); lengths are ink-tip to ink-tip.
 
 Karaoke lighting is derived from the construction graph.
 
 Read mode flows Fitzpatrick paragraphs (`src/karaoke/layout.rs`): citations hang in the right margin; a cited clause starts the next sentence on a new line. A full stop with no cite stays in the paragraph. Record mode still steps one sentence at a time.
 
-Figures are fitted to a plate (`src/figure/plate.rs`). Point letters (`src/figure/labels.rs`) sit with their **center** at `--r: 0.92em` from the mark, in the author’s direction — the same radius on every diagram, at every size.
+Figures are fitted to a plate (`src/figure/plate.rs`). Point letters (`src/figure/labels.rs`) sit with their **center** at `--r: 0.82em` from the mark, in the author’s direction — the same radius on every diagram, at every size.
