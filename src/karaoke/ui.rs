@@ -1,4 +1,4 @@
-use super::layout::{last_row, read_layout, roll_shift, wrap_rows, Atom};
+use super::layout::{read_layout, roll_shift, Atom};
 use super::player::Player;
 use super::script::Script;
 use leptos::prelude::*;
@@ -96,8 +96,10 @@ pub fn KaraokeLyrics(script: Script, player: Player) -> impl IntoView {
         let cursor = player.cursor.get();
         let script = script_roll.clone();
         request_animation_frame(move || {
-            apply_roll(&script, player, playing, cursor, now_shift, prev_shift);
-            mark_broken_words();
+            request_animation_frame(move || {
+                apply_roll(&script, player, playing, cursor, now_shift, prev_shift);
+                mark_broken_words();
+            });
         });
     });
 
@@ -109,6 +111,8 @@ pub fn KaraokeLyrics(script: Script, player: Player) -> impl IntoView {
                 let gone_script = script.clone();
                 let word_script = script.clone();
                 let style_script = script.clone();
+                let chunks = lyric_chunks(&line.tokens);
+                let n_chunks = chunks.len();
                 view! {
                     <p
                         class="line"
@@ -155,48 +159,53 @@ pub fn KaraokeLyrics(script: Script, player: Player) -> impl IntoView {
                                 }
                             }
                         >
-                            {lyric_chunks(&line.tokens).into_iter().map(|(ti, tok, cites)| {
+                            {chunks.into_iter().enumerate().map(|(ci, (ti, tok, cites))| {
                                 let italic = tok.italic;
                                 let gap = super::layout::demo_spaced(&line.tokens, ti);
                                 let text = tok.text;
                                 let broken = hyphen_at(&text);
+                                let cite_break = !cites.is_empty() && ci + 1 < n_chunks;
                                 let sing_script = word_script.clone();
                                 let sung_script = word_script.clone();
                                 view! {
-                                    <span
-                                        class="word"
-                                        class:em=italic
-                                        class:break=broken.is_some()
-                                        class:sing=move || {
-                                            if !player.playing.get() && player.cursor.get() == player.start_at {
-                                                return false;
+                                    <span class="chunk">
+                                        <span
+                                            class="word"
+                                            class:em=italic
+                                            class:break=broken.is_some()
+                                            class:cite-break=cite_break
+                                            class:sing=move || {
+                                                if !player.playing.get() && player.cursor.get() == player.start_at {
+                                                    return false;
+                                                }
+                                                sing_script.get(player.cursor.get())
+                                                    .map(|(a, b, _)| a == li && b == ti)
+                                                    .unwrap_or(false)
                                             }
-                                            sing_script.get(player.cursor.get())
-                                                .map(|(a, b, _)| a == li && b == ti)
-                                                .unwrap_or(false)
-                                        }
-                                        class:sung=move || {
-                                            if !player.playing.get() && player.cursor.get() == player.start_at {
-                                                return false;
+                                            class:sung=move || {
+                                                if !player.playing.get() && player.cursor.get() == player.start_at {
+                                                    return false;
+                                                }
+                                                match sung_script.get(player.cursor.get()) {
+                                                    Some((a, b, _)) if a > li || (a == li && b > ti) => true,
+                                                    _ => false,
+                                                }
                                             }
-                                            match sung_script.get(player.cursor.get()) {
-                                                Some((a, b, _)) if a > li || (a == li && b > ti) => true,
-                                                _ => false,
-                                            }
-                                        }
-                                    >
-                                        {match broken {
-                                            Some(at) => view! {
-                                                <span class="pre">{text[..at].to_string()}</span>
-                                                <span class="hy">"-"</span>
-                                                <span class="post">{text[at..].to_string()}</span>
-                                                {space(gap)}
-                                            }.into_any(),
-                                            None => view! { <span class="pre">{text}{space(gap)}</span> }.into_any(),
-                                        }}
-                                        {cites.into_iter().map(|cite| {
-                                            view! { <span class="cite">{cite}</span> }
-                                        }).collect_view()}
+                                        >
+                                            {match broken {
+                                                Some(at) => view! {
+                                                    <span class="pre">{text[..at].to_string()}</span>
+                                                    <span class="hy">"-"</span>
+                                                    <span class="post">{text[at..].to_string()}</span>
+                                                    {space(gap)}
+                                                }.into_any(),
+                                                None => view! { <span class="pre">{text}{space(gap)}</span> }.into_any(),
+                                            }}
+                                            {cites.into_iter().map(|cite| {
+                                                view! { <span class="cite">{cite}</span> }
+                                            }).collect_view()}
+                                        </span>
+                                        {cite_break.then(|| view! { <br class="after-cite"/> })}
                                     </span>
                                 }
                             }).collect_view()}
@@ -244,44 +253,25 @@ fn apply_roll(
 }
 
 /// Negative pixels to translate a line's body. `active` is the sung body
-/// word; `None` means the line is finished, so only its last wrap stays.
+/// word; `None` means the line is finished, so the wrap with the last
+/// citation (else the last wrap) stays.
 fn shift_px(script: &Script, line: usize, active: Option<usize>, window: usize) -> i32 {
-    let Some(body) = line_body(line) else {
+    let Some((html, body)) = line_body(line) else {
         return 0;
     };
-    let pad = body
-        .owner_document()
-        .and_then(|d| d.default_view())
-        .and_then(|w| w.get_computed_style(&body).ok().flatten())
-        .and_then(|s| s.get_property_value("padding-right").ok())
-        .and_then(|v| v.trim_end_matches("px").parse::<f32>().ok())
-        .unwrap_or(0.0);
-    let width = body.client_width() as f32 - pad;
-    if width <= 0.0 {
-        return 0;
+    let restore_display = html.client_width() == 0;
+    if restore_display {
+        let _ = html.style().set_property("display", "block");
     }
-    let nodes = body.children();
-    let mut widths = Vec::new();
-    for i in 0..nodes.length() {
-        let Some(n) = nodes.item(i).and_then(|n| n.dyn_into::<web_sys::Element>().ok()) else {
-            continue;
-        };
-        if n.class_list().contains("cite") {
-            continue;
-        }
-        let box_w = n.get_bounding_client_rect().width() as f32;
-        let margin = n
-            .owner_document()
-            .and_then(|d| d.default_view())
-            .and_then(|w| w.get_computed_style(&n).ok().flatten())
-            .and_then(|s| s.get_property_value("margin-right").ok())
-            .and_then(|v| v.trim_end_matches("px").parse::<f32>().ok())
-            .unwrap_or(0.0);
-        widths.push(box_w + margin);
-    }
-    let rows = wrap_rows(&widths, width);
-    let body_i = match active {
-        Some(ti) => script
+    let _ = html.style().set_property("max-height", "none");
+    let _ = html.style().set_property("overflow", "visible");
+    let saved_transform = body.style().get_property_value("transform").unwrap_or_default();
+    let _ = body.style().set_property("transform", "none");
+    let _ = body.offset_height();
+
+    let y = if let Some(ti) = active {
+        let (rows, line_h) = wrap_from_dom(&body);
+        let body_i = script
             .lines
             .get(line)
             .map(|line| {
@@ -292,48 +282,105 @@ fn shift_px(script: &Script, line: usize, active: Option<usize>, window: usize) 
                     .count()
                     .saturating_sub(1)
             })
-            .unwrap_or(0),
-        None => rows.len().saturating_sub(1),
-    };
-    let shift = if active.is_some() {
-        roll_shift(&rows, body_i, window)
+            .unwrap_or(0);
+        let shift = roll_shift(&rows, body_i, window);
+        if shift == 0 || line_h <= 0.0 {
+            0
+        } else {
+            -((shift as f32) * line_h).round() as i32
+        }
     } else {
-        last_row(&rows).saturating_sub(window - 1)
+        -cited_wrap_top(&body)
     };
-    let line_h = line_height_px(&body);
-    if shift == 0 || line_h <= 0.0 {
-        0
+
+    if saved_transform.is_empty() {
+        let _ = body.style().remove_property("transform");
     } else {
-        -((shift as f32) * line_h).round() as i32
+        let _ = body.style().set_property("transform", &saved_transform);
     }
+    let _ = html.style().remove_property("max-height");
+    let _ = html.style().remove_property("overflow");
+    if restore_display {
+        let _ = html.style().remove_property("display");
+    }
+    y
 }
 
-fn line_body(line: usize) -> Option<web_sys::HtmlElement> {
+/// Pixel offset of the last cited wrap (else the last wrap), so `.prev`
+/// keeps `[Prop. 1.1]` instead of rolling to “joined.” Viewport rects,
+/// because `offsetTop` is relative to `.chunk` and is always 0.
+fn cited_wrap_top(body: &web_sys::HtmlElement) -> i32 {
+    let origin = body.get_bounding_client_rect().top();
+    let words = body.get_elements_by_class_name("word");
+    let mut last = 0.0;
+    let mut cited = None;
+    for i in 0..words.length() {
+        let Some(n) = words.item(i).and_then(|n| n.dyn_into::<web_sys::HtmlElement>().ok()) else {
+            continue;
+        };
+        let top = n.get_bounding_client_rect().top() - origin;
+        last = top;
+        if n.class_list().contains("cite-break") || n.get_elements_by_class_name("cite").length() > 0
+        {
+            cited = Some(top);
+        }
+    }
+    cited.unwrap_or(last).round() as i32
+}
+
+fn line_body(line: usize) -> Option<(web_sys::HtmlElement, web_sys::HtmlElement)> {
     let doc = web_sys::window()?.document()?;
     let lines = doc.get_elements_by_class_name("line");
     let line_el = lines.item(line as u32)?.dyn_into::<web_sys::Element>().ok()?;
-    // A finished line is display:none until it becomes .prev, so its wrap
-    // width is 0 unless we measure it laid out.
-    let html = line_el.dyn_ref::<web_sys::HtmlElement>()?;
-    let hidden = html.client_width() == 0;
-    if hidden {
-        let _ = html.style().set_property("display", "block");
-    }
-    let body = line_el.get_elements_by_class_name("body").item(0)?;
+    let html = line_el.dyn_into::<web_sys::HtmlElement>().ok()?;
+    let body = html.get_elements_by_class_name("body").item(0)?;
     let body = body.dyn_into::<web_sys::HtmlElement>().ok()?;
-    if hidden {
-        let _ = html.style().remove_property("display");
-    }
-    Some(body)
+    Some((html, body))
 }
 
-fn line_height_px(body: &web_sys::HtmlElement) -> f32 {
-    body.owner_document()
-        .and_then(|d| d.default_view())
-        .and_then(|w| w.get_computed_style(body).ok().flatten())
-        .and_then(|s| s.get_property_value("line-height").ok())
-        .and_then(|v| v.trim_end_matches("px").parse().ok())
-        .unwrap_or(0.0)
+/// Wrap rows from laid-out word tops. A `.cite-break` starts a new row
+/// even if `offsetTop` missed the `<br>` (`display: contents`).
+fn wrap_from_dom(body: &web_sys::HtmlElement) -> (Vec<usize>, f32) {
+    let origin = body.get_bounding_client_rect().top();
+    let words = body.get_elements_by_class_name("word");
+    let mut rows = Vec::new();
+    let mut row = 0usize;
+    let mut last_top: Option<i32> = None;
+    let mut after_cite = false;
+    let mut step = 0i32;
+    for i in 0..words.length() {
+        let Some(n) = words.item(i).and_then(|n| n.dyn_into::<web_sys::HtmlElement>().ok()) else {
+            continue;
+        };
+        let top = (n.get_bounding_client_rect().top() - origin).round() as i32;
+        let visual = last_top.map(|p| top - p > 2).unwrap_or(false);
+        if visual {
+            let d = top - last_top.unwrap();
+            if d > step {
+                step = d;
+            }
+        }
+        if visual || after_cite {
+            row += 1;
+        }
+        after_cite = false;
+        rows.push(row);
+        last_top = Some(top);
+        if n.class_list().contains("cite-break") {
+            after_cite = true;
+        }
+    }
+    let line_h = if step > 1 {
+        step as f32
+    } else {
+        words
+            .item(0)
+            .and_then(|n| n.dyn_into::<web_sys::HtmlElement>().ok())
+            .map(|n| n.offset_height() as f32)
+            .filter(|h| *h > 1.0)
+            .unwrap_or(0.0)
+    };
+    (rows, line_h)
 }
 
 fn space(spaced: bool) -> &'static str {

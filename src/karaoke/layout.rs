@@ -46,6 +46,19 @@ pub fn last_row(rows: &[usize]) -> usize {
     rows.last().copied().unwrap_or(0)
 }
 
+/// Wrap to keep in the one-line previous slot: the wrap of the last
+/// cited word, so a margin cite is not clipped when the sentence
+/// continues (`[Prop. 1.1]` on *DE,* then “and let *FC*…”).
+pub fn prev_row(rows: &[usize], cited: &[bool]) -> usize {
+    cited
+        .iter()
+        .zip(rows.iter())
+        .rev()
+        .find(|(c, _)| **c)
+        .map(|(_, r)| *r)
+        .unwrap_or_else(|| last_row(rows))
+}
+
 /// `rows[i]` is the wrap row of token `i`. `active` is the token being
 /// sung. Returns how many wrap rows to shift up so the active row sits
 /// on the last line of the window (or at its natural row, if it already
@@ -193,6 +206,19 @@ mod tests {
         let rows = vec![0, 0, 1];
         assert_eq!(roll_shift(&rows, 2, 2), 0);
         assert_eq!(last_row(&rows), 1);
+    }
+
+    #[test]
+    fn finished_prev_keeps_the_wrap_with_the_cite() {
+        // I.11 demo breaks after the cite, so [Prop. 1.1] is wrap 1
+        // and “and let FC have been joined.” is wrap 2.
+        let rows = vec![0, 0, 1, 1, 2];
+        let cited = vec![false, true, false, true, false];
+        assert_eq!(prev_row(&rows, &cited), 1);
+        assert_eq!(last_row(&rows), 2);
+        let cited_last = vec![false, false, false, false, true];
+        assert_eq!(prev_row(&rows, &cited_last), 2);
+        assert_eq!(prev_row(&rows, &[false, false, false, false, false]), 2);
     }
 
     #[test]
