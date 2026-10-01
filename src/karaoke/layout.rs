@@ -755,4 +755,55 @@ mod tests {
             "less than two right-angles. (Which is) the very thing it was required to show."
         ));
     }
+
+    #[test]
+    fn i18_fitzpatrick_paragraphs() {
+        let i18 = layout_of(1, 18);
+        assert_eq!(i18.len(), 4, "I.18 has four Fitzpatrick paragraphs");
+        assert!(cites(&i18[0]).is_empty());
+        assert_eq!(cites(&i18[1]), vec!["[Prop. 1.3]"]);
+        assert_eq!(cites(&i18[2]), vec!["[Prop. 1.16]", "[Prop. 1.5]"]);
+        assert!(cites(&i18[3]).is_empty());
+        let given = para_text(&i18[0]);
+        assert!(given.contains("For let ABC be a triangle having side AC greater than AB."));
+        assert!(given.contains("angle ABC is also greater than BCA."));
+        let construction = para_text(&i18[1]);
+        assert!(construction.contains(
+            "equal to AB, [Prop. 1.3] \nand let BD have been joined."
+        ));
+        let proof = para_text(&i18[2]);
+        assert!(proof.contains("opposite (angle) DCB. [Prop. 1.16] \nBut ADB (is) equal"));
+        assert!(proof.contains("equal to side AD. [Prop. 1.5] \nThus, ABD is also greater"));
+        assert!(
+            proof.contains("greater than ACB. Thus, ABC is much greater than ACB."),
+            "plain full stops stay: {proof}"
+        );
+        let qed = para_text(&i18[3]);
+        assert!(qed.contains(
+            "the greater angle. (Which is) the very thing it was required to show."
+        ));
+    }
+
+    #[test]
+    fn i19_fitzpatrick_paragraphs() {
+        let i19 = layout_of(1, 19);
+        assert_eq!(i19.len(), 3, "I.19 has three Fitzpatrick paragraphs");
+        assert!(cites(&i19[0]).is_empty());
+        assert_eq!(cites(&i19[1]), vec!["[Prop. 1.5]", "[Prop. 1.18]"]);
+        assert!(cites(&i19[2]).is_empty());
+        let given = para_text(&i19[0]);
+        assert!(given.contains("Let ABC be a triangle having the angle ABC greater than BCA."));
+        assert!(given.contains("side AC is also greater than side AB."));
+        let proof = para_text(&i19[1]);
+        assert!(proof.contains("equal to ACB. [Prop. 1.5] \nBut it is not."));
+        assert!(proof.contains("less than ACB. [Prop. 1.18] \nBut it is not."));
+        assert!(
+            proof.contains("not equal to AB. Neither, indeed, is AC less than AB."),
+            "plain full stops stay: {proof}"
+        );
+        let qed = para_text(&i19[2]);
+        assert!(qed.contains(
+            "by the greater side. (Which is) the very thing it was required to show."
+        ));
+    }
 }

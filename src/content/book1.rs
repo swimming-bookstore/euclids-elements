@@ -3,7 +3,7 @@ use crate::figure::{
     book1_prop1, book1_prop2, book1_prop3, book1_prop4, book1_prop5, book1_prop6,
     book1_prop7, book1_prop8, book1_prop9, book1_prop10, book1_prop11,
     book1_prop12, book1_prop13, book1_prop14, book1_prop15, book1_prop16,
-    book1_prop17,
+    book1_prop17, book1_prop18, book1_prop19,
 };
 
 pub const PROP_1: Proposition = Proposition {
@@ -411,7 +411,49 @@ pub const PROP_17: Proposition = Proposition {
     ],
 };
 
+pub const PROP_18: Proposition = Proposition {
+    book: 1,
+    number: 18,
+    enunciation: "In any triangle, the greater side subtends the greater angle.",
+    figure: book1_prop18,
+    phrases: &[
+        s(1, "For let *ABC* be a triangle having side *AC* greater than *AB*."),
+        s(1, "I say that angle *ABC* is also greater than *BCA*."),
+        s(2, "For since *AC* is greater than *AB*, let *AD* be made equal to *AB*,{[Prop. 1.3]} and let *BD* have been joined."),
+        s(3, "And since angle *ADB* is external to triangle *BCD*, it is greater than the internal and opposite (angle) *DCB*.{[Prop. 1.16]}"),
+        s(3, "But *ADB* (is) equal to *ABD*, since side *AB* is also equal to side *AD*.{[Prop. 1.5]}"),
+        s(3, "Thus, *ABD* is also greater than *ACB*."),
+        s(3, "Thus, *ABC* is much greater than *ACB*."),
+        s(4, "Thus, in any triangle, the greater side subtends the greater angle."),
+        s(4, "(Which is) the very thing it was required to show."),
+    ],
+};
+
+pub const PROP_19: Proposition = Proposition {
+    book: 1,
+    number: 19,
+    enunciation: "In any triangle, the greater angle is subtended by the greater side.",
+    figure: book1_prop19,
+    phrases: &[
+        s(1, "Let *ABC* be a triangle having the angle *ABC* greater than *BCA*."),
+        s(1, "I say that side *AC* is also greater than side *AB*."),
+        s(2, "For if not, *AC* is certainly either equal to, or less than, *AB*."),
+        s(2, "In fact, *AC* is not equal to *AB*."),
+        s(2, "For then angle *ABC* would also have been equal to *ACB*.{[Prop. 1.5]}"),
+        s(2, "But it is not."),
+        s(2, "Thus, *AC* is not equal to *AB*."),
+        s(2, "Neither, indeed, is *AC* less than *AB*."),
+        s(2, "For then angle *ABC* would also have been less than *ACB*.{[Prop. 1.18]}"),
+        s(2, "But it is not."),
+        s(2, "Thus, *AC* is not less than *AB*."),
+        s(2, "But it was shown that (*AC*) is not equal (to *AB*) either."),
+        s(2, "Thus, *AC* is greater than *AB*."),
+        s(3, "Thus, in any triangle, the greater angle is subtended by the greater side."),
+        s(3, "(Which is) the very thing it was required to show."),
+    ],
+};
+
 pub const PROPOSITIONS: &[Proposition] = &[
     PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6, PROP_7, PROP_8, PROP_9, PROP_10, PROP_11,
-    PROP_12, PROP_13, PROP_14, PROP_15, PROP_16, PROP_17,
+    PROP_12, PROP_13, PROP_14, PROP_15, PROP_16, PROP_17, PROP_18, PROP_19,
 ];
