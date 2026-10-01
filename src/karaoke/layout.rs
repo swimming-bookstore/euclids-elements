@@ -46,6 +46,19 @@ pub fn last_row(rows: &[usize]) -> usize {
     rows.last().copied().unwrap_or(0)
 }
 
+/// Wrap to keep in the one-line previous slot: the wrap of the last
+/// cited word, so a margin cite is not clipped when the sentence
+/// continues (`[Prop. 1.1]` on *DE,* then “and let *FC*…”).
+pub fn prev_row(rows: &[usize], cited: &[bool]) -> usize {
+    cited
+        .iter()
+        .zip(rows.iter())
+        .rev()
+        .find(|(c, _)| **c)
+        .map(|(_, r)| *r)
+        .unwrap_or_else(|| last_row(rows))
+}
+
 /// `rows[i]` is the wrap row of token `i`. `active` is the token being
 /// sung. Returns how many wrap rows to shift up so the active row sits
 /// on the last line of the window (or at its natural row, if it already
@@ -193,6 +206,19 @@ mod tests {
         let rows = vec![0, 0, 1];
         assert_eq!(roll_shift(&rows, 2, 2), 0);
         assert_eq!(last_row(&rows), 1);
+    }
+
+    #[test]
+    fn finished_prev_keeps_the_wrap_with_the_cite() {
+        // I.11 demo breaks after the cite, so [Prop. 1.1] is wrap 1
+        // and “and let FC have been joined.” is wrap 2.
+        let rows = vec![0, 0, 1, 1, 2];
+        let cited = vec![false, true, false, true, false];
+        assert_eq!(prev_row(&rows, &cited), 1);
+        assert_eq!(last_row(&rows), 2);
+        let cited_last = vec![false, false, false, false, true];
+        assert_eq!(prev_row(&rows, &cited_last), 2);
+        assert_eq!(prev_row(&rows, &[false, false, false, false, false]), 2);
     }
 
     #[test]
@@ -753,6 +779,57 @@ mod tests {
         let qed = para_text(&i17[3]);
         assert!(qed.contains(
             "less than two right-angles. (Which is) the very thing it was required to show."
+        ));
+    }
+
+    #[test]
+    fn i18_fitzpatrick_paragraphs() {
+        let i18 = layout_of(1, 18);
+        assert_eq!(i18.len(), 4, "I.18 has four Fitzpatrick paragraphs");
+        assert!(cites(&i18[0]).is_empty());
+        assert_eq!(cites(&i18[1]), vec!["[Prop. 1.3]"]);
+        assert_eq!(cites(&i18[2]), vec!["[Prop. 1.16]", "[Prop. 1.5]"]);
+        assert!(cites(&i18[3]).is_empty());
+        let given = para_text(&i18[0]);
+        assert!(given.contains("For let ABC be a triangle having side AC greater than AB."));
+        assert!(given.contains("angle ABC is also greater than BCA."));
+        let construction = para_text(&i18[1]);
+        assert!(construction.contains(
+            "equal to AB, [Prop. 1.3] \nand let BD have been joined."
+        ));
+        let proof = para_text(&i18[2]);
+        assert!(proof.contains("opposite (angle) DCB. [Prop. 1.16] \nBut ADB (is) equal"));
+        assert!(proof.contains("equal to side AD. [Prop. 1.5] \nThus, ABD is also greater"));
+        assert!(
+            proof.contains("greater than ACB. Thus, ABC is much greater than ACB."),
+            "plain full stops stay: {proof}"
+        );
+        let qed = para_text(&i18[3]);
+        assert!(qed.contains(
+            "the greater angle. (Which is) the very thing it was required to show."
+        ));
+    }
+
+    #[test]
+    fn i19_fitzpatrick_paragraphs() {
+        let i19 = layout_of(1, 19);
+        assert_eq!(i19.len(), 3, "I.19 has three Fitzpatrick paragraphs");
+        assert!(cites(&i19[0]).is_empty());
+        assert_eq!(cites(&i19[1]), vec!["[Prop. 1.5]", "[Prop. 1.18]"]);
+        assert!(cites(&i19[2]).is_empty());
+        let given = para_text(&i19[0]);
+        assert!(given.contains("Let ABC be a triangle having the angle ABC greater than BCA."));
+        assert!(given.contains("side AC is also greater than side AB."));
+        let proof = para_text(&i19[1]);
+        assert!(proof.contains("equal to ACB. [Prop. 1.5] \nBut it is not."));
+        assert!(proof.contains("less than ACB. [Prop. 1.18] \nBut it is not."));
+        assert!(
+            proof.contains("not equal to AB. Neither, indeed, is AC less than AB."),
+            "plain full stops stay: {proof}"
+        );
+        let qed = para_text(&i19[2]);
+        assert!(qed.contains(
+            "by the greater side. (Which is) the very thing it was required to show."
         ));
     }
 }

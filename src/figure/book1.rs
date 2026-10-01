@@ -341,3 +341,33 @@ pub fn book1_prop17() -> Diagram {
     d.dots(&["A", "B", "C", "D"]);
     d
 }
+
+/// I.18 — Fitzpatrick plate (Elements p. 22): triangle ABC, AC > AB; D on AC
+/// with AD = AB; BD joined. BC `level`. One scale: AB/BC = 0.940, AC/BC = 1.698.
+pub fn book1_prop18() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("B", V2::new(0.0, 0.0), Place::Deg(-136.1));
+    d.level("C", "B", 100.0, Place::Deg(-3.7));
+    d.put("A", V2::new(-50.0, 79.632), Place::Deg(102.5));
+    d.ray("D", "A", "C", 94.0279502, Place::Deg(46.5));
+    d.join("A", "B");
+    d.chain(&["A", "D", "C"]);
+    d.join("B", "C");
+    d.join("B", "D");
+    d.dots(&["A", "B", "C", "D"]);
+    d
+}
+
+/// I.19 — Fitzpatrick plate (Elements p. 23): triangle ABC, ∠ABC > ∠BCA.
+/// A sits on the column of C (`plumb`). One scale: AB/AC = 0.485, BC/AC = 0.807.
+pub fn book1_prop19() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("C", V2::new(0.0, 0.0), Place::Deg(-94.1));
+    d.plumb("A", "C", 100.0, Place::Deg(94.1));
+    d.put("B", V2::new(-38.737, 70.737), Place::Deg(159.4));
+    d.join("A", "B");
+    d.join("B", "C");
+    d.join("A", "C");
+    d.dots(&["A", "B", "C"]);
+    d
+}

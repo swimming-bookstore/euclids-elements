@@ -1103,6 +1103,66 @@ def book1_prop17() -> Fig:
     return f
 
 
+def book1_prop18() -> Fig:
+    # Fitzpatrick p. 22 English plate. ABC with AC > AB; D on AC with AD = AB;
+    # BD joined. BC one base (`level`); D on AC (not a letter-row).
+    # One scale BC = 100. Ink: AB/BC = 0.940, AC/BC = 1.698, AD = AB.
+    bc = 100.0
+    s = Sketch()
+    s.put("B", 0.0, 0.0)
+    s.level("C", "B", bc)
+    s.put("A", -0.50000 * bc, 0.79632 * bc)
+    s.ray("D", "A", "C", s.dist("A", "B"))
+    s.require_eq("A", "D", "A", "B")
+    s.require_ratio("A", "B", "B", "C", 0.9403, eps=0.001)
+    s.require_ratio("A", "C", "B", "C", 1.6983, eps=0.001)
+    s.letters(A=102.5, B=-136.1, C=-3.7, D=46.5)
+    f = Fig(
+        "book1_prop18",
+        "I.18 — Fitzpatrick plate (Elements p. 22): triangle ABC, AC > AB; D on AC\n"
+        "with AD = AB; BD joined. BC `level`. One scale: AB/BC = 0.940, AC/BC = 1.698.",
+        sketch=s,
+    )
+    f.put("B", *s.at("B"))
+    f.level("C", "B", s.at("C")[0])
+    f.put("A", *s.at("A"))
+    f.ray("D", "A", "C", s.dist("A", "D"))
+    f.join("A", "B")
+    f.chain("A", "D", "C")
+    f.join("B", "C")
+    f.join("B", "D")
+    f.dots("A", "B", "C", "D")
+    return f
+
+
+def book1_prop19() -> Fig:
+    # Fitzpatrick p. 23 English plate (upper). ABC only; ∠ABC > ∠BCA so AC > AB.
+    # A and C share a letter-column (`plumb`). One scale AC = 100.
+    # Ink: AB/AC = 0.485, BC/AC = 0.807.
+    ac = 100.0
+    s = Sketch()
+    s.put("C", 0.0, 0.0)
+    s.plumb("A", "C", ac)
+    s.put("B", -0.38737 * ac, 0.70737 * ac)
+    s.require_ratio("A", "B", "A", "C", 0.4855, eps=0.001)
+    s.require_ratio("B", "C", "A", "C", 0.8065, eps=0.001)
+    s.letters(A=94.1, B=159.4, C=-94.1)
+    f = Fig(
+        "book1_prop19",
+        "I.19 — Fitzpatrick plate (Elements p. 23): triangle ABC, ∠ABC > ∠BCA.\n"
+        "A sits on the column of C (`plumb`). One scale: AB/AC = 0.485, BC/AC = 0.807.",
+        sketch=s,
+    )
+    f.put("C", *s.at("C"))
+    f.plumb("A", "C", s.at("A")[1])
+    f.put("B", *s.at("B"))
+    f.join("A", "B")
+    f.join("B", "C")
+    f.join("A", "C")
+    f.dots("A", "B", "C")
+    return f
+
+
 PLATES = [
     book1_prop1,
     book1_prop2,
@@ -1121,6 +1181,8 @@ PLATES = [
     book1_prop15,
     book1_prop16,
     book1_prop17,
+    book1_prop18,
+    book1_prop19,
 ]
 
 

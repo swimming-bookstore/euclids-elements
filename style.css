@@ -194,6 +194,16 @@ h1 {
   font-style: italic;
 }
 
+/* Same as read mode: a cited clause ends the wrap; the next words
+   start on a new lyric line so the margin cite stays with its clause. */
+.karaoke .chunk {
+  display: inline;
+}
+
+.karaoke .after-cite {
+  display: block;
+}
+
 /* Nested in the cited word so `top: auto` keeps the static wrap
    (I.10 [Prop. 1.9] beside `CD.`). `right` is against `.body`. */
 .karaoke .word .cite {
@@ -207,6 +217,8 @@ h1 {
   line-height: inherit;
   white-space: nowrap;
   color: #333;
+  /* Smaller type sits high in the lyric line box. */
+  transform: translateY(0.38em);
 }
 
 .empty {
@@ -367,9 +379,9 @@ footer {
   stroke-width: 2.3px;
 }
 
-/* Record fills the viewport; keep type (and the em offset) from scaling with it. */
+/* Same letter type as read. The old 2.4cqmin clamp sat at 15px on the demo plate. */
 .stage.record .letter-layer .letter {
-  font-size: clamp(15px, 2.4cqmin, 20px);
+  font-size: clamp(18px, 4.2cqmin, 24px);
 }
 
 /* Two lines, even when the sentence wraps. Older wraps roll up. */

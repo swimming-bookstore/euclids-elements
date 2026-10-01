@@ -472,6 +472,7 @@ mod tests {
         book1_prop1, book1_prop2, book1_prop3, book1_prop4, book1_prop5, book1_prop6,
         book1_prop7, book1_prop8, book1_prop9, book1_prop10, book1_prop11, book1_prop12,
         book1_prop13, book1_prop14, book1_prop15, book1_prop16, book1_prop17,
+        book1_prop18, book1_prop19,
     };
 
     fn has(v: &[String], id: &str) -> bool {
@@ -1177,6 +1178,104 @@ mod tests {
         assert!(bdx < -0.2 && bdy > 0.5, "B below-left of the tip, --dx={bdx} --dy={bdy}");
         assert!(cdx.abs() < 0.15 && cdy > 0.7, "C below the tip, --dx={cdx} --dy={cdy}");
         assert!(ddx > 0.2 && ddy > 0.5, "D below-right of the tip, --dx={ddx} --dy={ddy}");
+    }
+
+    #[test]
+    fn prop18_paths() {
+        let d = book1_prop18();
+        let abc = d.highlight("ABC");
+        assert!(
+            (has(&abc, "ab") || has(&abc, "ba"))
+                && has(&abc, "bc")
+                && (has(&abc, "ac") || has(&abc, "ca") || has(&abc, "ad") || has(&abc, "dc")),
+            "ABC: {abc:?}"
+        );
+        let adc = d.highlight("ADC");
+        assert!(
+            (has(&adc, "ad") || has(&adc, "da")) && (has(&adc, "dc") || has(&adc, "cd")),
+            "ADC through D: {adc:?}"
+        );
+        let bcd = d.highlight("BCD");
+        assert!(
+            has(&bcd, "bc") && (has(&bcd, "bd") || has(&bcd, "db")) && (has(&bcd, "cd") || has(&bcd, "dc")),
+            "BCD: {bcd:?}"
+        );
+        let adb = d.highlight_angle("ADB");
+        assert!(
+            (has(&adb, "ad") || has(&adb, "da")) && (has(&adb, "bd") || has(&adb, "db")),
+            "∠ADB: {adb:?}"
+        );
+        let dcb = d.highlight_angle("DCB");
+        assert!(
+            (has(&dcb, "dc") || has(&dcb, "cd")) && has(&dcb, "bc"),
+            "∠DCB: {dcb:?}"
+        );
+        let a = d.at("A");
+        let b = d.at("B");
+        let c = d.at("C");
+        let dd = d.at("D");
+        assert!((b.y - c.y).abs() < 1e-9, "BC horizontal");
+        assert!(dd.on_seg(a, c, 1e-4), "D on AC");
+        assert!((a.dist(dd) - a.dist(b)).abs() < 1e-6, "AD = AB");
+        assert!(a.dist(c) > a.dist(b), "AC > AB");
+        assert!((a.dist(b) / b.dist(c) - 0.9403).abs() < 0.002, "AB/BC");
+        assert!((a.dist(c) / b.dist(c) - 1.6983).abs() < 0.002, "AC/BC");
+        let abc_deg = angle_at(&d, "A", "B", "C").to_degrees();
+        let bca_deg = angle_at(&d, "B", "C", "A").to_degrees();
+        let adb_deg = angle_at(&d, "A", "D", "B").to_degrees();
+        let dcb_deg = angle_at(&d, "D", "C", "B").to_degrees();
+        assert!(abc_deg > bca_deg, "greater side subtends greater angle");
+        assert!(adb_deg > dcb_deg, "external ADB greater than opposite DCB");
+        let html = d.svg(&[] as &[String]);
+        let (adx, ady) = letter_offset(&html, "A");
+        assert!(adx < -0.1 && ady < -0.6, "A above-left of the tip, --dx={adx} --dy={ady}");
+        let (bdx, bdy) = letter_offset(&html, "B");
+        assert!(bdx < -0.4 && bdy > 0.4, "B below-left of the tip, --dx={bdx} --dy={bdy}");
+        let (cdx, cdy) = letter_offset(&html, "C");
+        assert!(cdx > 0.7 && cdy.abs() < 0.2, "C right of the tip, --dx={cdx} --dy={cdy}");
+        let (ddx, ddy) = letter_offset(&html, "D");
+        assert!(ddx > 0.4 && ddy < -0.4, "D above-right of the tip, --dx={ddx} --dy={ddy}");
+    }
+
+    #[test]
+    fn prop19_paths() {
+        let d = book1_prop19();
+        let abc = d.highlight("ABC");
+        assert!(
+            (has(&abc, "ab") || has(&abc, "ba"))
+                && (has(&abc, "bc") || has(&abc, "cb"))
+                && (has(&abc, "ac") || has(&abc, "ca")),
+            "ABC: {abc:?}"
+        );
+        let abc_ang = d.highlight_angle("ABC");
+        assert!(
+            (has(&abc_ang, "ab") || has(&abc_ang, "ba")) && (has(&abc_ang, "bc") || has(&abc_ang, "cb")),
+            "∠ABC: {abc_ang:?}"
+        );
+        let bca = d.highlight_angle("BCA");
+        assert!(
+            (has(&bca, "bc") || has(&bca, "cb")) && (has(&bca, "ac") || has(&bca, "ca")),
+            "∠BCA: {bca:?}"
+        );
+        let a = d.at("A");
+        let b = d.at("B");
+        let c = d.at("C");
+        assert!((a.x - c.x).abs() < 1e-9, "A on the column of C");
+        assert!(a.dist(c) > a.dist(b), "AC > AB");
+        assert!((a.dist(b) / a.dist(c) - 0.4855).abs() < 0.002, "AB/AC");
+        assert!((b.dist(c) / a.dist(c) - 0.8065).abs() < 0.002, "BC/AC");
+        let abc_deg = angle_at(&d, "A", "B", "C").to_degrees();
+        let bca_deg = angle_at(&d, "B", "C", "A").to_degrees();
+        assert!((abc_deg - 98.36).abs() < 0.05, "∠ABC from the plate, got {abc_deg}");
+        assert!((bca_deg - 28.71).abs() < 0.05, "∠BCA from the plate, got {bca_deg}");
+        assert!(abc_deg > bca_deg, "greater angle opposite greater side");
+        let html = d.svg(&[] as &[String]);
+        let (adx, ady) = letter_offset(&html, "A");
+        assert!(adx.abs() < 0.15 && ady < -0.7, "A above the tip, --dx={adx} --dy={ady}");
+        let (bdx, bdy) = letter_offset(&html, "B");
+        assert!(bdx < -0.6 && bdy < 0.0, "B above-left of the tip, --dx={bdx} --dy={bdy}");
+        let (cdx, cdy) = letter_offset(&html, "C");
+        assert!(cdx.abs() < 0.15 && cdy > 0.7, "C below the tip, --dx={cdx} --dy={cdy}");
     }
 
     fn letter_offset(html: &str, id: &str) -> (f64, f64) {
