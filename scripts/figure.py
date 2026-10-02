@@ -1163,6 +1163,38 @@ def book1_prop19() -> Fig:
     return f
 
 
+def book1_prop20() -> Fig:
+    # Fitzpatrick p. 23 English plate (lower). ABC; BA produced through A to D
+    # with AD = CA; DC joined. BC one base (`level`). One scale BC = 100.
+    # Ink: AB/BC = 0.509, AC/BC = 0.857.
+    bc = 100.0
+    s = Sketch()
+    s.put("B", 0.0, 0.0)
+    s.level("C", "B", bc)
+    s.put("A", 0.26221 * bc, 0.43619 * bc)
+    s.polar("D", "A", s.dist("A", "C"), s.heading("B", "A"))
+    s.require_eq("A", "D", "A", "C")
+    s.require_ratio("A", "B", "B", "C", 0.5089, eps=0.001)
+    s.require_ratio("A", "C", "B", "C", 0.8571, eps=0.001)
+    s.letters(A=137.4, B=-136.3, C=-41.3, D=70.1)
+    f = Fig(
+        "book1_prop20",
+        "I.20 — Fitzpatrick plate (Elements p. 23): triangle ABC, BA produced to D\n"
+        "with AD = CA; DC joined. BC `level`. One scale: AB/BC = 0.509, AC/BC = 0.857.",
+        sketch=s,
+    )
+    f.put("B", *s.at("B"))
+    f.level("C", "B", s.at("C")[0])
+    f.put("A", *s.at("A"))
+    f.polar("D", "A", s.dist("A", "D"), s.heading("B", "A"))
+    f.chain("B", "A", "D")
+    f.join("A", "C")
+    f.join("B", "C")
+    f.join("D", "C")
+    f.dots("A", "B", "C", "D")
+    return f
+
+
 PLATES = [
     book1_prop1,
     book1_prop2,
@@ -1183,6 +1215,7 @@ PLATES = [
     book1_prop17,
     book1_prop18,
     book1_prop19,
+    book1_prop20,
 ]
 
 

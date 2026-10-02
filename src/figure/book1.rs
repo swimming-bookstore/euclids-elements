@@ -371,3 +371,19 @@ pub fn book1_prop19() -> Diagram {
     d.dots(&["A", "B", "C"]);
     d
 }
+
+/// I.20 — Fitzpatrick plate (Elements p. 23): triangle ABC, BA produced to D
+/// with AD = CA; DC joined. BC `level`. One scale: AB/BC = 0.509, AC/BC = 0.857.
+pub fn book1_prop20() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("B", V2::new(0.0, 0.0), Place::Deg(-136.3));
+    d.level("C", "B", 100.0, Place::Deg(-41.3));
+    d.put("A", V2::new(26.221, 43.619), Place::Deg(137.4));
+    d.polar("D", "A", 85.7085643, 58.9883615, Place::Deg(70.1));
+    d.chain(&["B", "A", "D"]);
+    d.join("A", "C");
+    d.join("B", "C");
+    d.join("D", "C");
+    d.dots(&["A", "B", "C", "D"]);
+    d
+}

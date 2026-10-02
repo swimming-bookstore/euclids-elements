@@ -3,7 +3,7 @@ use crate::figure::{
     book1_prop1, book1_prop2, book1_prop3, book1_prop4, book1_prop5, book1_prop6,
     book1_prop7, book1_prop8, book1_prop9, book1_prop10, book1_prop11,
     book1_prop12, book1_prop13, book1_prop14, book1_prop15, book1_prop16,
-    book1_prop17, book1_prop18, book1_prop19,
+    book1_prop17, book1_prop18, book1_prop19, book1_prop20,
 };
 
 pub const PROP_1: Proposition = Proposition {
@@ -453,7 +453,28 @@ pub const PROP_19: Proposition = Proposition {
     ],
 };
 
+pub const PROP_20: Proposition = Proposition {
+    book: 1,
+    number: 20,
+    enunciation: "In any triangle, (the sum of) two sides taken together in any (possible way) is greater than the remaining (side).",
+    figure: book1_prop20,
+    phrases: &[
+        s(1, "For let *ABC* be a triangle."),
+        s(1, "I say that in triangle *ABC* (the sum of) two sides taken together in any (possible way) is greater than the remaining (side)."),
+        s(1, "(So), (the sum of) *BA* and *AC* (is greater) than *BC*, (the sum of) *AB* and *BC* than *AC*, and (the sum of) *BC* and *CA* than *AB*."),
+        s(2, "For let *BA* have been drawn through to point *D*, and let *AD* be made equal to *CA*,{[Prop. 1.3]} and let *DC* have been joined."),
+        s(3, "Therefore, since *DA* is equal to *AC*, the angle *ADC* is also equal to *ACD*.{[Prop. 1.5]}"),
+        s(3, "Thus, *BCD* is greater than *ADC*."),
+        s(3, "And since *DCB* is a triangle having the angle *BCD* greater than *BDC*, and the greater angle subtends the greater side,{[Prop. 1.19]} *DB* is thus greater than *BC*."),
+        s(3, "But *DA* is equal to *AC*."),
+        s(3, "Thus, (the sum of) *BA* and *AC* is greater than *BC*."),
+        s(3, "Similarly, we can show that (the sum of) *AB* and *BC* is also greater than *CA*, and (the sum of) *BC* and *CA* than *AB*."),
+        s(4, "Thus, in any triangle, (the sum of) two sides taken together in any (possible way) is greater than the remaining (side)."),
+        s(4, "(Which is) the very thing it was required to show."),
+    ],
+};
+
 pub const PROPOSITIONS: &[Proposition] = &[
     PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6, PROP_7, PROP_8, PROP_9, PROP_10, PROP_11,
-    PROP_12, PROP_13, PROP_14, PROP_15, PROP_16, PROP_17, PROP_18, PROP_19,
+    PROP_12, PROP_13, PROP_14, PROP_15, PROP_16, PROP_17, PROP_18, PROP_19, PROP_20,
 ];
