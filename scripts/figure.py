@@ -340,6 +340,14 @@ class Fig:
     def circle(self, letters: str, center: str, through: str) -> None:
         self._add(f'    d.circle("{letters}", "{center}", "{through}");')
 
+    def circle_r(self, letters: str, center: str, r: float) -> None:
+        """Named circle of a given radius. The plate's circle is not always the compass circle through the named point."""
+        self._add(f'    d.circle_r("{letters}", "{center}", {f64(r)});')
+
+    def circle_arc(self, letters: str, center: str, on: str) -> None:
+        """The named circle, drawn in full as on the plate."""
+        self.circle(letters, center, on)
+
     def on_circle(
         self, name: str, center: str, through: str, deg: float, inside: bool = False
     ) -> None:
@@ -358,10 +366,21 @@ class Fig:
             f'    d.on_line("{name}", "{a}", "{b}", {f64(t)}, {self._place(name, place)});'
         )
 
-    def named_line(self, letters: str, a: str, b: str) -> None:
+    def named_line(self, letters: str, a: str, b: str, place=None) -> None:
+        """The spoken stroke. A letter at `place` (t, side) overrides the midpoint.
+
+        `place=False` draws the stroke only — the letter is placed elsewhere
+        (I.22's given lines, letter at the left end).
+        """
         self._add(f'    d.named_line("{letters}", "{a}", "{b}");')
-        # Letter at the midpoint, above the stroke (I.3’s C).
-        self.on_line(letters, a, b, 0.5, "above")
+        if place is False:
+            return
+        if place is None:
+            # Letter at the midpoint, above the stroke (I.3’s C).
+            self.on_line(letters, a, b, 0.5, "above")
+        else:
+            t, side = place
+            self.on_line(letters, a, b, t, side)
 
     def arc(self, a: str, b: str, x: float, y: float) -> None:
         self._add(
@@ -1195,6 +1214,113 @@ def book1_prop20() -> Fig:
     return f
 
 
+def book1_prop21() -> Fig:
+    # Fitzpatrick p. 24 English plate. Triangle ABC; internal BD, DC from the
+    # ends of BC; BD produced through D to E on AC. BC one base (`level`).
+    # One scale BC = 100. Ink: AB/BC = 0.600, AC/BC = 0.894, BD/BC = 0.464,
+    # DC/BC = 0.760. E is the meet of BD and AC.
+    bc = 100.0
+    s = Sketch()
+    s.put("B", 0.0, 0.0)
+    s.level("C", "B", bc)
+    s.put("A", 0.2806 * bc, 0.5306 * bc)
+    s.put("D", 0.3192 * bc, 0.3370 * bc)
+    s.meet("E", "B", "D", "A", "C")
+    s.require_ratio("A", "B", "B", "C", 0.6003, eps=0.001)
+    s.require_ratio("A", "C", "B", "C", 0.8945, eps=0.001)
+    s.require_ratio("B", "D", "B", "C", 0.4641, eps=0.001)
+    s.require_ratio("D", "C", "B", "C", 0.7601, eps=0.001)
+    s.letters(A=84.6, B=-169.3, C=-13.5, D=136.8, E=43.5)
+    f = Fig(
+        "book1_prop21",
+        "I.21 — Fitzpatrick plate (Elements p. 24): triangle ABC; internal BD, DC\n"
+        "from the ends of BC; BD produced to E on AC. BC `level`. One scale:\n"
+        "AB/BC = 0.600, AC/BC = 0.894, BD/BC = 0.464, DC/BC = 0.760.",
+        sketch=s,
+    )
+    f.put("B", *s.at("B"))
+    f.level("C", "B", s.at("C")[0])
+    f.put("A", *s.at("A"))
+    f.put("D", *s.at("D"))
+    f.meet("E", "B", "D", "A", "C")
+    f.join("A", "B")
+    f.chain("A", "E", "C")
+    f.chain("B", "D", "E")
+    f.join("B", "C")
+    f.join("D", "C")
+    f.dots("A", "B", "C", "D", "E")
+    return f
+
+
+def book1_prop22() -> Fig:
+    # Fitzpatrick p. 25 English plate, ink tips at 200 dpi, D at the origin, y up.
+    # Given strokes left-aligned, 94 px left of D, pitch 27, 197 px down to DE:
+    # A 192, B 160, C 102. The letters stand at the left end of each stroke.
+    # The construction is not a compass copy of those strokes. Circle DKL is
+    # center F radius FD. Circle KLH is center G0 (6 px below the spoken G)
+    # radius 105; H is its right-hand cut of DE, not the radius. K is the upper
+    # crossing. DFGHE `level`.
+    s = Sketch()
+    s.put("D", 0.0, 0.0)
+    s.level("F", "D", 194.15)
+    s.level("G", "D", 362.0)
+    s.level("H", "D", 467.03)
+    s.level("E", "D", 529.0)
+    s.put("G0", 362.0, -6.0)
+    r_dkl, r_klh = 194.18, 105.2
+    s.put("K", 361.08, 99.20)
+    s.put("L", 353.57, -110.86)
+    assert abs(s.dist("F", "K") - s.dist("F", "D")) < 0.05
+    assert abs(s.dist("G0", "K") - r_klh) < 0.5
+    assert abs(s.dist("G0", "L") - r_klh) < 0.05
+    assert abs(s.dist("G0", "H") - r_klh) < 0.05
+    rule_x, pitch, gap = -94.0, 27.0, 197.0
+    top = gap + 2 * pitch
+    s.put("A0", rule_x, top)
+    s.level("A1", "A0", rule_x + 192.0)
+    s.put("B0", rule_x, top - pitch)
+    s.level("B1", "B0", rule_x + 160.0)
+    s.put("C0", rule_x, top - 2 * pitch)
+    s.level("C1", "C0", rule_x + 102.0)
+    s.letters(D=150.8, F=-100.1, G=-90.1, H=-140.0, E=4.5, K=72.5)
+    f = Fig(
+        "book1_prop22",
+        "I.22 — Fitzpatrick plate (Elements p. 25), measured at 200 dpi.\n"
+        "Given strokes at the left, left-aligned, letters at the left end:\n"
+        "A 192, B 160, C 102. Circle DKL center F through D; circle KLH center\n"
+        "just below G, radius shorter than GH; K their upper crossing. DFGHE `level`.",
+        sketch=s,
+    )
+    f.pin("A0", *s.at("A0"))
+    f.pin("A1", *s.at("A1"))
+    f.named_line("A", "A0", "A1", False)
+    f.put_line_end("A", *s.at("A0"), left=True)
+    f.pin("B0", *s.at("B0"))
+    f.pin("B1", *s.at("B1"))
+    f.named_line("B", "B0", "B1", False)
+    f.put_line_end("B", *s.at("B0"), left=True)
+    f.pin("C0", *s.at("C0"))
+    f.pin("C1", *s.at("C1"))
+    f.named_line("C", "C0", "C1", False)
+    f.put_line_end("C", *s.at("C0"), left=True)
+    f.put("D", *s.at("D"))
+    f.level("F", "D", s.at("F")[0])
+    f.pin("G0", *s.at("G0"))
+    f.level("G", "D", s.at("G")[0])
+    f.level("H", "D", s.at("H")[0])
+    f.level("E", "D", s.at("E")[0])
+    f.put("K", *s.at("K"))
+    f.pin("L", *s.at("L"))
+    f.chain("D", "F", "G", "H", "E")
+    f.circle_r("DKL", "F", r_dkl)
+    f.circle_r("KLH", "G0", r_klh)
+    f.join("K", "F")
+    f.join("K", "G")
+    f.dots("D", "F", "G", "H", "E", "K")
+    return f
+
+
+
 PLATES = [
     book1_prop1,
     book1_prop2,
@@ -1216,6 +1342,8 @@ PLATES = [
     book1_prop18,
     book1_prop19,
     book1_prop20,
+    book1_prop21,
+    book1_prop22,
 ]
 
 
@@ -1276,7 +1404,8 @@ def _figure_letters(html: str) -> list[tuple[str, float, float, float, float]]:
         if x0 < ENG_X0_PT or not re.fullmatch(r"[A-Z]", w):
             continue
         ww, hh = x1 - x0, y1 - y0
-        if hh < 6.5 or hh > 10.5 or ww < 5.0:
+        # Plate capitals are ~6 pt; body letters in the proof are ~9 pt.
+        if hh < 5.5 or hh > 9.0 or ww < 4.0:
             continue
         marks.append((w, (x0 + x1) / 2.0, (y0 + y1) / 2.0, ww, hh))
     if not marks:

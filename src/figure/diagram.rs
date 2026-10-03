@@ -249,7 +249,13 @@ impl Diagram {
     /// Circle named by three letters, center `center`, through `through`.
     pub fn circle(&mut self, letters: &'static str, center: &str, through: &str) -> &mut Self {
         let c = self.at(center);
-        let r = c.dist(self.at(through));
+        self.circle_r(letters, center, c.dist(self.at(through)))
+    }
+
+    /// Circle named by three letters, center `center`, given radius.
+    /// The plate's circle is not always the compass circle through the named point.
+    pub fn circle_r(&mut self, letters: &'static str, center: &str, r: f64) -> &mut Self {
+        let c = self.at(center);
         let id = format!("circ-{}", letters.to_ascii_lowercase());
         self.fig.circle(&id, c, r);
         self.circles.push(Circ {
@@ -265,6 +271,8 @@ impl Diagram {
         self.fig.arc(&id, self.at(a), self.at(b), via);
         self
     }
+
+    
 
     /// Circular bow on chord `a`–`b`. `sag` is signed along the left normal
     /// of `a` → `b` (y-up). Negative sag hangs **below** a left-to-right chord.
@@ -472,7 +480,7 @@ mod tests {
         book1_prop1, book1_prop2, book1_prop3, book1_prop4, book1_prop5, book1_prop6,
         book1_prop7, book1_prop8, book1_prop9, book1_prop10, book1_prop11, book1_prop12,
         book1_prop13, book1_prop14, book1_prop15, book1_prop16, book1_prop17,
-        book1_prop18, book1_prop19, book1_prop20,
+        book1_prop18, book1_prop19, book1_prop20, book1_prop21, book1_prop22,
     };
 
     fn has(v: &[String], id: &str) -> bool {
@@ -1332,6 +1340,111 @@ mod tests {
         assert!(cdx > 0.4 && cdy > 0.4, "C below-right of the tip, --dx={cdx} --dy={cdy}");
         let (ddx, ddy) = letter_offset(&html, "D");
         assert!(ddx > 0.2 && ddy < -0.6, "D above-right of the tip, --dx={ddx} --dy={ddy}");
+    }
+
+    #[test]
+    fn prop21_paths() {
+        let d = book1_prop21();
+        let abc = d.highlight("ABC");
+        assert!(
+            (has(&abc, "ab") || has(&abc, "ba"))
+                && has(&abc, "bc")
+                && (has(&abc, "ac") || has(&abc, "ae") || has(&abc, "ec")),
+            "ABC: {abc:?}"
+        );
+        let bdc = d.highlight_angle("BDC");
+        assert!(
+            (has(&bdc, "bd") || has(&bdc, "db")) && (has(&bdc, "dc") || has(&bdc, "cd")),
+            "∠BDC: {bdc:?}"
+        );
+        let bac = d.highlight_angle("BAC");
+        assert!(
+            (has(&bac, "ba") || has(&bac, "ab")) && (has(&bac, "ac") || has(&bac, "ae")),
+            "∠BAC: {bac:?}"
+        );
+        let a = d.at("A");
+        let b = d.at("B");
+        let c = d.at("C");
+        let dd = d.at("D");
+        let e = d.at("E");
+        assert!((b.y - c.y).abs() < 1e-9, "BC horizontal");
+        assert!(e.on_seg(a, c, 1e-4), "E on AC");
+        assert!(dd.on_seg(b, e, 1e-4), "D on BE");
+        assert!(b.dist(a) + a.dist(c) > b.dist(dd) + dd.dist(c), "BA + AC > BD + DC");
+        assert!(
+            angle_at(&d, "B", "D", "C").to_degrees() > angle_at(&d, "B", "A", "C").to_degrees(),
+            "∠BDC > ∠BAC"
+        );
+        assert!((a.dist(b) / b.dist(c) - 0.6003).abs() < 0.002, "AB/BC");
+        assert!((a.dist(c) / b.dist(c) - 0.8945).abs() < 0.002, "AC/BC");
+        assert!((b.dist(dd) / b.dist(c) - 0.4641).abs() < 0.002, "BD/BC");
+        assert!((dd.dist(c) / b.dist(c) - 0.7601).abs() < 0.002, "DC/BC");
+        let html = d.svg(&[] as &[String]);
+        let (adx, ady) = letter_offset(&html, "A");
+        assert!(adx.abs() < 0.2 && ady < -0.7, "A above the tip, --dx={adx} --dy={ady}");
+        let (bdx, bdy) = letter_offset(&html, "B");
+        assert!(bdx < -0.7 && bdy.abs() < 0.2, "B left of the tip, --dx={bdx} --dy={bdy}");
+        let (cdx, cdy) = letter_offset(&html, "C");
+        assert!(cdx > 0.6 && cdy < 0.3, "C right of the tip, --dx={cdx} --dy={cdy}");
+        let (ddx, ddy) = letter_offset(&html, "D");
+        assert!(ddx < -0.5 && ddy < -0.4, "D above-left of the tip, --dx={ddx} --dy={ddy}");
+        let (edx, edy) = letter_offset(&html, "E");
+        assert!(edx > 0.4 && edy < -0.4, "E above-right of the tip, --dx={edx} --dy={edy}");
+    }
+
+    #[test]
+    fn prop22_paths() {
+        let d = book1_prop22();
+        let a = d.highlight("A");
+        assert!(has(&a, "seg-a"), "given line A: {a:?}");
+        let de = d.highlight("DE");
+        assert!(
+            has(&de, "df") && has(&de, "fg") && has(&de, "gh") && has(&de, "he"),
+            "DE along the base: {de:?}"
+        );
+        let dkl = d.highlight("DKL");
+        assert!(has(&dkl, "circ-dkl"), "circle DKL: {dkl:?}");
+        let klh = d.highlight("KLH");
+        assert!(has(&klh, "circ-klh"), "circle KLH: {klh:?}");
+        let kfg = d.highlight("KFG");
+        assert!(
+            (has(&kfg, "kf") || has(&kfg, "fk"))
+                && has(&kfg, "fg")
+                && (has(&kfg, "kg") || has(&kfg, "gk")),
+            "KFG: {kfg:?}"
+        );
+        assert!((d.at("F").dist(d.at("K")) - 194.18).abs() < 0.05, "K on circle DKL");
+        assert!((d.at("G0").dist(d.at("L")) - 105.2).abs() < 0.05, "L on circle KLH");
+        assert!((d.at("G0").dist(d.at("K")) - 105.2).abs() < 0.5, "K on circle KLH");
+        assert!(d.at("K").y > d.at("D").y && d.at("L").y < d.at("D").y, "K above, L below");
+        let df = d.at("D").dist(d.at("F"));
+        let fg = d.at("F").dist(d.at("G"));
+        let gh = d.at("G").dist(d.at("H"));
+        assert!((df - 194.15).abs() < 0.02, "DF from the plate");
+        assert!((d.at("F").y - d.at("E").y).abs() < 1e-9, "DFGHE level");
+        assert!((fg / df - 167.85 / 194.15).abs() < 0.01, "FG/DF");
+        assert!((gh / df - 105.03 / 194.15).abs() < 0.02, "GH/DF");
+        assert!(df + fg > gh && df + gh > fg && fg + gh > df, "triangle inequality");
+        let html = d.svg(&[] as &[String]);
+        let (ddx, ddy) = letter_offset(&html, "D");
+        assert!(ddx < -0.6 && ddy < -0.3, "D above-left of the tip, --dx={ddx} --dy={ddy}");
+        let (fdx, fdy) = letter_offset(&html, "F");
+        assert!(fdx < 0.2 && fdy > 0.6, "F below the tip, --dx={fdx} --dy={fdy}");
+        let (gdx, gdy) = letter_offset(&html, "G");
+        assert!(gdx.abs() < 0.15 && gdy > 0.7, "G below the tip, --dx={gdx} --dy={gdy}");
+        let (hdx, hdy) = letter_offset(&html, "H");
+        assert!(hdx < -0.4 && hdy > 0.4, "H below-left of the tip, --dx={hdx} --dy={hdy}");
+        let (edx, edy) = letter_offset(&html, "E");
+        assert!(edx > 0.7 && edy.abs() < 0.15, "E right of the tip, --dx={edx} --dy={edy}");
+        let (kdx, kdy) = letter_offset(&html, "K");
+        assert!(kdx > 0.15 && kdy < -0.7, "K above the tip, --dx={kdx} --dy={kdy}");
+        for id in ["A", "B", "C"] {
+            let (dx, dy) = letter_offset(&html, id);
+            assert!(
+                dx < -0.5 && dy < -0.5,
+                "{id} at the left of its stroke, --dx={dx} --dy={dy}"
+            );
+        }
     }
 
     fn letter_offset(html: &str, id: &str) -> (f64, f64) {
