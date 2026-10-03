@@ -156,7 +156,12 @@ impl Figure {
                     ));
                 }
                 Mark::Arc { id, a, b, via } => {
-                    if let Some(d) = arc_d(*a, *b, *via, y) {
+                    let d = if id.starts_with("circ-") {
+                        arc_upper_d(*a, *b, *via, y)
+                    } else {
+                        arc_d(*a, *b, *via, y)
+                    };
+                    if let Some(d) = d {
                         // Decorative bows stay stroke-only; never fill, never dim.
                         out.push_str(&format!(
                             r##"<path class="{}" d="{}" fill="none"/>"##,
@@ -297,18 +302,38 @@ fn circle3(a: V2, b: V2, c: V2) -> Option<(V2, f64)> {
     Some((o, o.dist(a)))
 }
 
+fn arc_upper_d(a: V2, b: V2, via: V2, y: impl Fn(f64) -> f64) -> Option<String> {
+    let (c, r) = circle3(a, b, via)?;
+    let _ = c;
+    // SVG y grows down, so the upper (y-up) arc takes sweep-flag 1.
+    let chord = a.dist(b);
+    let large = if via.y - a.y > chord / 2.0 { 1 } else { 0 };
+    Some(format!(
+        "M {} {} A {} {} 0 {} 1 {} {}",
+        n(a.x),
+        n(y(a.y)),
+        n(r),
+        n(r),
+        large,
+        n(b.x),
+        n(y(b.y))
+    ))
+}
+
 fn arc_d(a: V2, b: V2, via: V2, y: impl Fn(f64) -> f64) -> Option<String> {
     let (c, r) = circle3(a, b, via)?;
     let ang = |p: V2| (p.y - c.y).atan2(p.x - c.x);
     let mut sweep = (ang(b) - ang(a)).rem_euclid(std::f64::consts::TAU);
     let via_off = (ang(via) - ang(a)).rem_euclid(std::f64::consts::TAU);
-    if via_off > sweep {
+    let short = via_off <= sweep;
+    if !short {
         sweep = std::f64::consts::TAU - sweep;
     }
     let large = if sweep > std::f64::consts::PI { 1 } else { 0 };
-    // y-up CCW becomes clockwise in SVG (y-down).
+    // y-up CCW becomes clockwise in SVG (y-down). Flip when the via-point
+    // lies on the long way around.
     let ccw = (b.x - a.x) * (via.y - a.y) - (b.y - a.y) * (via.x - a.x) > 0.0;
-    let sweep_flag = if ccw { 1 } else { 0 };
+    let sweep_flag = if ccw == short { 1 } else { 0 };
     Some(format!(
         "M {} {} A {} {} 0 {} {} {} {}",
         n(a.x),

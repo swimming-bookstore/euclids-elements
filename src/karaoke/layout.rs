@@ -832,4 +832,50 @@ mod tests {
             "by the greater side. (Which is) the very thing it was required to show."
         ));
     }
+
+    #[test]
+    fn i21_fitzpatrick_paragraphs() {
+        let i21 = layout_of(1, 21);
+        assert_eq!(i21.len(), 4, "I.21 has four Fitzpatrick paragraphs");
+        assert!(cites(&i21[0]).is_empty());
+        assert_eq!(cites(&i21[1]), vec!["[Prop. 1.20]"]);
+        assert_eq!(cites(&i21[2]), vec!["[Prop. 1.16]"]);
+        assert!(cites(&i21[3]).is_empty());
+        let given = para_text(&i21[0]);
+        assert!(given.contains("straight-lines BD and DC have been constructed"));
+        assert!(given.contains("angle BDC greater than BAC."));
+        let sides = para_text(&i21[1]);
+        assert!(sides.contains("remaining (side), [Prop. 1.20] \nin triangle ABE"));
+        assert!(sides.contains("much greater than (the sum of) BD and DC."));
+        let angles = para_text(&i21[2]);
+        assert!(angles.contains("opposite (angles), [Prop. 1.16] \nin triangle CDE"));
+        assert!(angles.contains("Thus, BDC is much greater than BAC."));
+        let qed = para_text(&i21[3]);
+        assert!(qed.contains(
+            "a greater angle. (Which is) the very thing it was required to show."
+        ));
+    }
+
+    #[test]
+    fn i22_fitzpatrick_paragraphs() {
+        let i22 = layout_of(1, 22);
+        assert_eq!(i22.len(), 4, "I.22 has four Fitzpatrick paragraphs");
+        assert!(cites(&i22[0]).is_empty());
+        assert_eq!(cites(&i22[1]), vec!["[Prop. 1.3]"]);
+        assert!(cites(&i22[2]).is_empty());
+        assert!(cites(&i22[3]).is_empty());
+        let given = para_text(&i22[0]);
+        assert!(given.contains("Let A, B, and C be the three given straight-lines"));
+        assert!(given.contains("equal to A, B, and C."));
+        let construction = para_text(&i22[1]);
+        assert!(construction.contains("equal to C. [Prop. 1.3] \nAnd let the circle DKL"));
+        assert!(construction.contains("triangle KFG has been constructed"));
+        let proof = para_text(&i22[2]);
+        assert!(proof.contains("FD is equal to FK."));
+        assert!(proof.contains("equal to A, B, and C (respectively)."));
+        let qed = para_text(&i22[3]);
+        assert!(qed.contains(
+            "(respectively). (Which is) the very thing it was required to do."
+        ));
+    }
 }

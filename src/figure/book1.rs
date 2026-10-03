@@ -387,3 +387,57 @@ pub fn book1_prop20() -> Diagram {
     d.dots(&["A", "B", "C", "D"]);
     d
 }
+
+/// I.21 — Fitzpatrick plate (Elements p. 24): triangle ABC; internal BD, DC
+/// from the ends of BC; BD produced to E on AC. BC `level`. One scale:
+/// AB/BC = 0.600, AC/BC = 0.894, BD/BC = 0.464, DC/BC = 0.760.
+pub fn book1_prop21() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("B", V2::new(0.0, 0.0), Place::Deg(-169.3));
+    d.level("C", "B", 100.0, Place::Deg(-13.5));
+    d.put("A", V2::new(28.06, 53.06), Place::Deg(84.6));
+    d.put("D", V2::new(31.92, 33.7), Place::Deg(136.8));
+    d.meet("E", "B", "D", "A", "C", Place::Deg(43.5));
+    d.join("A", "B");
+    d.chain(&["A", "E", "C"]);
+    d.chain(&["B", "D", "E"]);
+    d.join("B", "C");
+    d.join("D", "C");
+    d.dots(&["A", "B", "C", "D", "E"]);
+    d
+}
+
+/// I.22 — Fitzpatrick plate (Elements p. 25), measured at 200 dpi.
+/// Given strokes at the left, left-aligned, letters at the left end:
+/// A 192, B 160, C 102. Circle DKL center F through D; circle KLH center
+/// just below G, radius shorter than GH; K their upper crossing. DFGHE `level`.
+pub fn book1_prop22() -> Diagram {
+    let mut d = Diagram::new();
+    d.pin("A0", V2::new(-94.0, 251.0));
+    d.pin("A1", V2::new(98.0, 251.0));
+    d.named_line("A", "A0", "A1");
+    d.put_line_end("A", V2::new(-94.0, 251.0), true);
+    d.pin("B0", V2::new(-94.0, 224.0));
+    d.pin("B1", V2::new(66.0, 224.0));
+    d.named_line("B", "B0", "B1");
+    d.put_line_end("B", V2::new(-94.0, 224.0), true);
+    d.pin("C0", V2::new(-94.0, 197.0));
+    d.pin("C1", V2::new(8.0, 197.0));
+    d.named_line("C", "C0", "C1");
+    d.put_line_end("C", V2::new(-94.0, 197.0), true);
+    d.put("D", V2::new(0.0, 0.0), Place::Deg(150.8));
+    d.level("F", "D", 194.15, Place::Deg(-100.1));
+    d.pin("G0", V2::new(362.0, -6.0));
+    d.level("G", "D", 362.0, Place::Deg(-90.1));
+    d.level("H", "D", 467.03, Place::Deg(-140.0));
+    d.level("E", "D", 529.0, Place::Deg(4.5));
+    d.put("K", V2::new(361.08, 99.2), Place::Deg(72.5));
+    d.pin("L", V2::new(353.57, -110.86));
+    d.chain(&["D", "F", "G", "H", "E"]);
+    d.circle_r("DKL", "F", 194.18);
+    d.circle_r("KLH", "G0", 105.2);
+    d.join("K", "F");
+    d.join("K", "G");
+    d.dots(&["D", "F", "G", "H", "E", "K"]);
+    d
+}

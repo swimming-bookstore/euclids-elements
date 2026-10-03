@@ -3,7 +3,8 @@ use crate::figure::{
     book1_prop1, book1_prop2, book1_prop3, book1_prop4, book1_prop5, book1_prop6,
     book1_prop7, book1_prop8, book1_prop9, book1_prop10, book1_prop11,
     book1_prop12, book1_prop13, book1_prop14, book1_prop15, book1_prop16,
-    book1_prop17, book1_prop18, book1_prop19, book1_prop20,
+    book1_prop17, book1_prop18, book1_prop19, book1_prop20, book1_prop21,
+    book1_prop22,
 };
 
 pub const PROP_1: Proposition = Proposition {
@@ -474,7 +475,61 @@ pub const PROP_20: Proposition = Proposition {
     ],
 };
 
+pub const PROP_21: Proposition = Proposition {
+    book: 1,
+    number: 21,
+    enunciation: "If two internal straight-lines are constructed on one of the sides of a triangle, from its ends, the constructed (straight-lines) will be less than the two remaining sides of the triangle, but will encompass a greater angle.",
+    figure: book1_prop21,
+    phrases: &[
+        s(1, "For let the two internal straight-lines *BD* and *DC* have been constructed on one of the sides *BC* of the triangle *ABC*, from its ends *B* and *C* (respectively)."),
+        s(1, "I say that *BD* and *DC* are less than the (sum of the) two remaining sides of the triangle *BA* and *AC*, but encompass an angle *BDC* greater than *BAC*."),
+        s(2, "For let *BD* have been drawn through to *E*."),
+        s(2, "And since in any triangle (the sum of any) two sides is greater than the remaining (side),{[Prop. 1.20]} in triangle *ABE* the (sum of the) two sides *AB* and *AE* is thus greater than *BE*."),
+        s(2, "Let *EC* have been added to both."),
+        s(2, "Thus, (the sum of) *BA* and *AC* is greater than (the sum of) *BE* and *EC*."),
+        s(2, "Again, since in triangle *CED* the (sum of the) two sides *CE* and *ED* is greater than *CD*, let *DB* have been added to both."),
+        s(2, "Thus, (the sum of) *CE* and *EB* is greater than (the sum of) *CD* and *DB*."),
+        s(2, "But, (the sum of) *BA* and *AC* was shown (to be) greater than (the sum of) *BE* and *EC*."),
+        s(2, "Thus, (the sum of) *BA* and *AC* is much greater than (the sum of) *BD* and *DC*."),
+        s(3, "Again, since in any triangle the external angle is greater than the internal and opposite (angles),{[Prop. 1.16]} in triangle *CDE* the external angle *BDC* is thus greater than *CED*."),
+        s(3, "Accordingly, for the same (reason), the external angle *CEB* of the triangle *ABE* is also greater than *BAC*."),
+        s(3, "But, *BDC* was shown (to be) greater than *CEB*."),
+        s(3, "Thus, *BDC* is much greater than *BAC*."),
+        s(4, "Thus, if two internal straight-lines are constructed on one of the sides of a triangle, from its ends, the constructed (straight-lines) are less than the two remaining sides of the triangle, but encompass a greater angle."),
+        s(4, "(Which is) the very thing it was required to show."),
+    ],
+};
+
+pub const PROP_22: Proposition = Proposition {
+    book: 1,
+    number: 22,
+    enunciation: "To construct a triangle from three straight-lines which are equal to three given [straight-lines]. It is necessary for (the sum of) two (of the straight-lines) taken together in any (possible way) to be greater than the remaining (one), [on account of the (fact that) in any triangle (the sum of) two sides taken together in any (possible way) is greater than the remaining (one) [Prop. 1.20]].",
+    figure: book1_prop22,
+    phrases: &[
+        s(1, "Let *A*, *B*, and *C* be the three given straight-lines, of which let (the sum of) two taken together in any (possible way) be greater than the remaining (one)."),
+        s(1, "(Thus), (the sum of) *A* and *B* (is greater) than *C*, (the sum of) *A* and *C* than *B*, and also (the sum of) *B* and *C* than *A*."),
+        s(1, "So it is required to construct a triangle from (straight-lines) equal to *A*, *B*, and *C*."),
+        s(2, "Let some straight-line *DE* be set out, terminated at *D*, and infinite in the direction of *E*."),
+        s(2, "And let *DF* made equal to *A*, and *FG* equal to *B*, and *GH* equal to *C*.{[Prop. 1.3]}"),
+        s(2, "And let the circle *DKL* have been drawn with center *F* and radius *FD*."),
+        s(2, "Again, let the circle *KLH* have been drawn with center *G* and radius *GH*."),
+        s(2, "And let *KF* and *KG* have been joined."),
+        s(2, "I say that the triangle *KFG* has been constructed from three straight-lines equal to *A*, *B*, and *C*."),
+        s(3, "For since point *F* is the center of the circle *DKL*, *FD* is equal to *FK*."),
+        s(3, "But, *FD* is equal to *A*."),
+        s(3, "Thus, *KF* is also equal to *A*."),
+        s(3, "Again, since point *G* is the center of the circle *LKH*, *GH* is equal to *GK*."),
+        s(3, "But, *GH* is equal to *C*."),
+        s(3, "Thus, *KG* is also equal to *C*."),
+        s(3, "And *FG* is also equal to *B*."),
+        s(3, "Thus, the three straight-lines *KF*, *FG*, and *GK* are equal to *A*, *B*, and *C* (respectively)."),
+        s(4, "Thus, the triangle *KFG* has been constructed from the three straight-lines *KF*, *FG*, and *GK*, which are equal to the three given straight-lines *A*, *B*, and *C* (respectively)."),
+        s(4, "(Which is) the very thing it was required to do."),
+    ],
+};
+
 pub const PROPOSITIONS: &[Proposition] = &[
     PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6, PROP_7, PROP_8, PROP_9, PROP_10, PROP_11,
-    PROP_12, PROP_13, PROP_14, PROP_15, PROP_16, PROP_17, PROP_18, PROP_19, PROP_20,
+    PROP_12, PROP_13, PROP_14, PROP_15, PROP_16, PROP_17, PROP_18, PROP_19, PROP_20, PROP_21,
+    PROP_22,
 ];
