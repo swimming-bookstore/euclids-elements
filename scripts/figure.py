@@ -1320,6 +1320,86 @@ def book1_prop22() -> Fig:
     return f
 
 
+def book1_prop23() -> Fig:
+    # Fitzpatrick p. 26 English plate. Stroke endpoints (not glyph boxes),
+    # PDF y down, then y-up with A at the origin. AB is the given line
+    # (`level`). Angle DCE stands above the left; triangle AFG on AB.
+    # The plate does not make CD = AF (66.0 vs 62.6): D and E stop short
+    # of the joins. One scale AB = 100.
+    s = Sketch()
+    s.put("A", 0.0, 0.0)
+    s.level("B", "A", 155.02)
+    s.put("F", 42.75, 45.77)
+    s.level("G", "A", 83.76)
+    s.put("C", 6.04, 114.86)
+    s.put("D", 66.93, 140.33)
+    s.put("E", 86.35, 94.99)
+    s.letters(A=-171.8, B=143.9, C=-159.9, D=96.3, E=-87.3, F=87.5, G=44.0)
+    f = Fig(
+        "book1_prop23",
+        "I.23 — Fitzpatrick plate (Elements p. 26). Given line AB; angle DCE\n"
+        "above the left; triangle AFG on AB. AB `level`. D and E stop short of\n"
+        "the joins, so CD is not AF on the plate. One scale AB = 100.",
+        sketch=s,
+    )
+    f.put("A", *s.at("A"))
+    f.level("B", "A", s.at("B")[0])
+    f.put("F", *s.at("F"))
+    f.level("G", "A", s.at("G")[0])
+    f.put("C", *s.at("C"))
+    f.put("D", *s.at("D"))
+    f.put("E", *s.at("E"))
+    f.base("A", "B")
+    f.join("C", "D")
+    f.join("C", "E")
+    f.join("D", "E")
+    f.join("A", "F")
+    f.join("A", "G")
+    f.join("F", "G")
+    f.dots("A", "B", "C", "D", "E", "F", "G")
+    return f
+
+
+def book1_prop24() -> Fig:
+    # Fitzpatrick p. 27 English plate. Stroke endpoints, y-up, C at the
+    # origin. Triangle ABC on the left; DEF on the right with G inside,
+    # EG and FG joined. DF is not collinear with DG, and the plate does
+    # not make AB = DE. One scale BC = 100.
+    s = Sketch()
+    s.put("C", 0.0, 0.0)
+    s.put("B", 54.70, 28.01)
+    s.put("A", 6.12, 119.03)
+    s.put("D", 54.01, 120.47)
+    s.put("E", 130.11, 41.28)
+    s.put("G", 92.68, 1.21)
+    s.put("F", 118.14, 10.94)
+    s.letters(A=90.7, B=-16.8, C=-90.8, D=104.2, E=-13.9, F=-60.9, G=-147.8)
+    f = Fig(
+        "book1_prop24",
+        "I.24 — Fitzpatrick plate (Elements p. 27): triangles ABC and DEF;\n"
+        "G inside DEF, EG and FG joined. DF is not on DG. One scale BC = 100.\n"
+        "Plate ratios: AB/BC = 1.679, AC/BC = 1.939, DE/BC = 1.797.",
+        sketch=s,
+    )
+    f.put("C", *s.at("C"))
+    f.put("B", *s.at("B"))
+    f.put("A", *s.at("A"))
+    f.put("D", *s.at("D"))
+    f.put("E", *s.at("E"))
+    f.put("G", *s.at("G"))
+    f.put("F", *s.at("F"))
+    f.join("A", "B")
+    f.join("B", "C")
+    f.join("C", "A")
+    f.join("D", "E")
+    f.join("E", "F")
+    f.join("F", "D")
+    f.join("E", "G")
+    f.join("F", "G")
+    f.join("D", "G")
+    f.dots("A", "B", "C", "D", "E", "F", "G")
+    return f
+
 
 PLATES = [
     book1_prop1,
@@ -1344,6 +1424,8 @@ PLATES = [
     book1_prop20,
     book1_prop21,
     book1_prop22,
+    book1_prop23,
+    book1_prop24,
 ]
 
 

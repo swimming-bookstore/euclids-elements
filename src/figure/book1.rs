@@ -441,3 +441,51 @@ pub fn book1_prop22() -> Diagram {
     d.dots(&["D", "F", "G", "H", "E", "K"]);
     d
 }
+
+/// I.23 — Fitzpatrick plate (Elements p. 26). Given line AB; angle DCE
+/// above the left; triangle AFG on AB. AB `level`. D and E stop short of
+/// the joins, so CD is not AF on the plate. One scale AB = 100.
+pub fn book1_prop23() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("A", V2::new(0.0, 0.0), Place::Deg(-171.8));
+    d.level("B", "A", 155.02, Place::Deg(143.9));
+    d.put("F", V2::new(42.75, 45.77), Place::Deg(87.5));
+    d.level("G", "A", 83.76, Place::Deg(44.0));
+    d.put("C", V2::new(6.04, 114.86), Place::Deg(-159.9));
+    d.put("D", V2::new(66.93, 140.33), Place::Deg(96.3));
+    d.put("E", V2::new(86.35, 94.99), Place::Deg(-87.3));
+    d.base("A", "B");
+    d.join("C", "D");
+    d.join("C", "E");
+    d.join("D", "E");
+    d.join("A", "F");
+    d.join("A", "G");
+    d.join("F", "G");
+    d.dots(&["A", "B", "C", "D", "E", "F", "G"]);
+    d
+}
+
+/// I.24 — Fitzpatrick plate (Elements p. 27): triangles ABC and DEF;
+/// G inside DEF, EG and FG joined. DF is not on DG. One scale BC = 100.
+/// Plate ratios: AB/BC = 1.679, AC/BC = 1.939, DE/BC = 1.797.
+pub fn book1_prop24() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("C", V2::new(0.0, 0.0), Place::Deg(-90.8));
+    d.put("B", V2::new(54.7, 28.01), Place::Deg(-16.8));
+    d.put("A", V2::new(6.12, 119.03), Place::Deg(90.7));
+    d.put("D", V2::new(54.01, 120.47), Place::Deg(104.2));
+    d.put("E", V2::new(130.11, 41.28), Place::Deg(-13.9));
+    d.put("G", V2::new(92.68, 1.21), Place::Deg(-147.8));
+    d.put("F", V2::new(118.14, 10.94), Place::Deg(-60.9));
+    d.join("A", "B");
+    d.join("B", "C");
+    d.join("C", "A");
+    d.join("D", "E");
+    d.join("E", "F");
+    d.join("F", "D");
+    d.join("E", "G");
+    d.join("F", "G");
+    d.join("D", "G");
+    d.dots(&["A", "B", "C", "D", "E", "F", "G"]);
+    d
+}
