@@ -1321,25 +1321,28 @@ def book1_prop22() -> Fig:
 
 
 def book1_prop23() -> Fig:
-    # Fitzpatrick p. 26 English plate. Stroke endpoints (not glyph boxes),
-    # PDF y down, then y-up with A at the origin. AB is the given line
-    # (`level`). Angle DCE stands above the left; triangle AFG on AB.
-    # The plate does not make CD = AF (66.0 vs 62.6): D and E stop short
-    # of the joins. One scale AB = 100.
+    # Fitzpatrick p. 26 English plate, 150 dpi, letters blanked. Vertices are
+    # ink tips (y-up, A at the origin). AB is the given line (`level`). Angle
+    # DCE stands above the left; triangle AFG on AB.
+    # The plate produces CD and CE past the letter tips — the stroke does not
+    # stop at D or E. D0 and E0 are those ink ends (not letters). DE itself
+    # stops at the tips. One scale AB = 100.
     s = Sketch()
     s.put("A", 0.0, 0.0)
-    s.level("B", "A", 155.02)
-    s.put("F", 42.75, 45.77)
-    s.level("G", "A", 83.76)
-    s.put("C", 6.04, 114.86)
-    s.put("D", 66.93, 140.33)
-    s.put("E", 86.35, 94.99)
-    s.letters(A=-171.8, B=143.9, C=-159.9, D=96.3, E=-87.3, F=87.5, G=44.0)
+    s.level("B", "A", 149.22)
+    s.put("F", 42.48, 45.54)
+    s.level("G", "A", 83.16)
+    s.put("C", 6.84, 114.84)
+    s.put("D", 70.11, 141.57)
+    s.put("E", 92.88, 93.42)
+    s.ray("D0", "C", "D", 146.01)
+    s.ray("E0", "C", "E", 174.77)
+    s.letters(A=172.8, B=87.2, C=-178.2, D=125.3, E=-136.1, F=86.7, G=49.1)
     f = Fig(
         "book1_prop23",
         "I.23 — Fitzpatrick plate (Elements p. 26). Given line AB; angle DCE\n"
-        "above the left; triangle AFG on AB. AB `level`. D and E stop short of\n"
-        "the joins, so CD is not AF on the plate. One scale AB = 100.",
+        "above the left; triangle AFG on AB. AB `level`. CD and CE are produced\n"
+        "past the letter tips (D0, E0); DE stops at D and E. One scale AB = 100.",
         sketch=s,
     )
     f.put("A", *s.at("A"))
@@ -1349,9 +1352,11 @@ def book1_prop23() -> Fig:
     f.put("C", *s.at("C"))
     f.put("D", *s.at("D"))
     f.put("E", *s.at("E"))
+    f.pin("D0", *s.at("D0"))
+    f.pin("E0", *s.at("E0"))
     f.base("A", "B")
-    f.join("C", "D")
-    f.join("C", "E")
+    f.chain("C", "D", "D0")
+    f.chain("C", "E", "E0")
     f.join("D", "E")
     f.join("A", "F")
     f.join("A", "G")
