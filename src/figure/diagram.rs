@@ -1479,18 +1479,18 @@ mod tests {
         let cd = d.at("C").dist(d.at("D"));
         let ce = d.at("C").dist(d.at("E"));
         assert!(
-            d.at("C").dist(d.at("D0")) > cd + 20.0,
-            "CD produced past D"
+            d.at("C").dist(d.at("D0")) > cd + 10.0 && d.at("C").dist(d.at("D0")) < cd + 25.0,
+            "CD produced a short way past D"
         );
         assert!(
-            d.at("C").dist(d.at("E0")) > ce + 20.0,
-            "CE produced past E"
+            d.at("C").dist(d.at("E0")) > ce + 10.0 && d.at("C").dist(d.at("E0")) < ce + 28.0,
+            "CE produced a short way past E"
         );
         let html = d.svg(&[] as &[String]);
         let (adx, ady) = letter_offset(&html, "A");
         assert!(adx < -0.7 && ady.abs() < 0.2, "A left of the tip, --dx={adx} --dy={ady}");
         let (bdx, bdy) = letter_offset(&html, "B");
-        assert!(bdx.abs() < 0.15 && bdy < -0.7, "B above the tip, --dx={bdx} --dy={bdy}");
+        assert!(bdx > 0.1 && bdx < 0.45 && bdy < -0.7, "B above the tip, --dx={bdx} --dy={bdy}");
         let (cdx, cdy) = letter_offset(&html, "C");
         assert!(cdx < -0.7 && cdy.abs() < 0.15, "C left of the tip, --dx={cdx} --dy={cdy}");
         let (ddx, ddy) = letter_offset(&html, "D");

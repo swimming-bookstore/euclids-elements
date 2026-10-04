@@ -1321,28 +1321,30 @@ def book1_prop22() -> Fig:
 
 
 def book1_prop23() -> Fig:
-    # Fitzpatrick p. 26 English plate, 150 dpi, letters blanked. Vertices are
-    # ink tips (y-up, A at the origin). AB is the given line (`level`). Angle
-    # DCE stands above the left; triangle AFG on AB.
-    # The plate produces CD and CE past the letter tips — the stroke does not
-    # stop at D or E. D0 and E0 are those ink ends (not letters). DE itself
-    # stops at the tips. One scale AB = 100.
+    # Fitzpatrick p. 26 English plate, 300 dpi, letters blanked. Vertices are
+    # the ink nearest each glyph (y-up, A at the origin). AB is the given line
+    # (`level`). Angle DCE stands above the left; triangle AFG on AB.
+    # The plate produces CD and CE only a short way past the letter tips
+    # (300 dpi: 27.9 pt past D, 29.7 pt past E — not out to the margin).
+    # D0 and E0 are those ink ends (not letters). DE stops at the tips.
+    # One scale AB = 100.
     s = Sketch()
     s.put("A", 0.0, 0.0)
-    s.level("B", "A", 149.22)
-    s.put("F", 42.48, 45.54)
-    s.level("G", "A", 83.16)
-    s.put("C", 6.84, 114.84)
-    s.put("D", 70.11, 141.57)
-    s.put("E", 92.88, 93.42)
-    s.ray("D0", "C", "D", 146.01)
-    s.ray("E0", "C", "E", 174.77)
-    s.letters(A=172.8, B=87.2, C=-178.2, D=125.3, E=-136.1, F=86.7, G=49.1)
+    s.level("B", "A", 100.0)
+    s.put("F", 28.93, 31.04)
+    s.level("G", "A", 56.2)
+    s.put("C", 4.71, 77.79)
+    s.put("D", 48.75, 96.37)
+    s.put("E", 62.73, 63.38)
+    s.ray("D0", "C", "D", 66.71)
+    s.ray("E0", "C", "E", 79.88)
+    s.letters(A=172.0, B=70.6, C=-178.4, D=139.8, E=-133.8, F=87.6, G=44.8)
     f = Fig(
         "book1_prop23",
-        "I.23 — Fitzpatrick plate (Elements p. 26). Given line AB; angle DCE\n"
-        "above the left; triangle AFG on AB. AB `level`. CD and CE are produced\n"
-        "past the letter tips (D0, E0); DE stops at D and E. One scale AB = 100.",
+        "I.23 — Fitzpatrick plate (Elements p. 26), measured at 300 dpi.\n"
+        "Given line AB; angle DCE above the left; triangle AFG on AB. AB `level`.\n"
+        "CD and CE are produced a short way past the letter tips (D0, E0);\n"
+        "DE stops at D and E. One scale AB = 100.",
         sketch=s,
     )
     f.put("A", *s.at("A"))

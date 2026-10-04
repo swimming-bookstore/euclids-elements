@@ -442,20 +442,21 @@ pub fn book1_prop22() -> Diagram {
     d
 }
 
-/// I.23 — Fitzpatrick plate (Elements p. 26). Given line AB; angle DCE
-/// above the left; triangle AFG on AB. AB `level`. CD and CE are produced
-/// past the letter tips (D0, E0); DE stops at D and E. One scale AB = 100.
+/// I.23 — Fitzpatrick plate (Elements p. 26), measured at 300 dpi.
+/// Given line AB; angle DCE above the left; triangle AFG on AB. AB `level`.
+/// CD and CE are produced a short way past the letter tips (D0, E0);
+/// DE stops at D and E. One scale AB = 100.
 pub fn book1_prop23() -> Diagram {
     let mut d = Diagram::new();
-    d.put("A", V2::new(0.0, 0.0), Place::Deg(172.8));
-    d.level("B", "A", 149.22, Place::Deg(87.2));
-    d.put("F", V2::new(42.48, 45.54), Place::Deg(86.7));
-    d.level("G", "A", 83.16, Place::Deg(49.1));
-    d.put("C", V2::new(6.84, 114.84), Place::Deg(-178.2));
-    d.put("D", V2::new(70.11, 141.57), Place::Deg(125.3));
-    d.put("E", V2::new(92.88, 93.42), Place::Deg(-136.1));
-    d.pin("D0", V2::new(141.339457, 171.662673));
-    d.pin("E0", V2::new(176.433463, 72.6190331));
+    d.put("A", V2::new(0.0, 0.0), Place::Deg(172.0));
+    d.level("B", "A", 100.0, Place::Deg(70.6));
+    d.put("F", V2::new(28.93, 31.04), Place::Deg(87.6));
+    d.level("G", "A", 56.2, Place::Deg(44.8));
+    d.put("C", V2::new(4.71, 77.79), Place::Deg(-178.4));
+    d.put("D", V2::new(48.75, 96.37), Place::Deg(139.8));
+    d.put("E", V2::new(62.73, 63.38), Place::Deg(-133.8));
+    d.pin("D0", V2::new(66.1738908, 103.720951));
+    d.pin("E0", V2::new(82.2347582, 58.5357469));
     d.base("A", "B");
     d.chain(&["C", "D", "D0"]);
     d.chain(&["C", "E", "E0"]);
