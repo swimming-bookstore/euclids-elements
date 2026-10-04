@@ -878,4 +878,54 @@ mod tests {
             "(respectively). (Which is) the very thing it was required to do."
         ));
     }
+
+    #[test]
+    fn i23_fitzpatrick_paragraphs() {
+        let i23 = layout_of(1, 23);
+        assert_eq!(i23.len(), 4, "I.23 has four Fitzpatrick paragraphs");
+        assert!(cites(&i23[0]).is_empty());
+        assert_eq!(cites(&i23[1]), vec!["[Prop. 1.22]"]);
+        assert_eq!(cites(&i23[2]), vec!["[Prop. 1.8]"]);
+        assert!(cites(&i23[3]).is_empty());
+        let given = para_text(&i23[0]);
+        assert!(given.contains("Let AB be the given straight-line"));
+        assert!(given.contains("on the given straight-line AB."));
+        let construction = para_text(&i23[1]);
+        assert!(construction.contains("and let DE have been joined. And let the triangle AFG"));
+        assert!(construction.contains("DE to FG. [Prop. 1.22]"));
+        let proof = para_text(&i23[2]);
+        assert!(proof.contains("the angle DCE is thus equal to the angle FAG. [Prop. 1.8]"));
+        let qed = para_text(&i23[3]);
+        assert!(qed.contains(
+            "AB. (Which is) the very thing it was required to do."
+        ));
+    }
+
+    #[test]
+    fn i24_fitzpatrick_paragraphs() {
+        let i24 = layout_of(1, 24);
+        assert_eq!(i24.len(), 4, "I.24 has four Fitzpatrick paragraphs");
+        assert!(cites(&i24[0]).is_empty());
+        assert_eq!(cites(&i24[1]), vec!["[Prop. 1.23]", "[Prop. 1.3]"]);
+        assert_eq!(
+            cites(&i24[2]),
+            vec!["[Prop. 1.4]", "[Prop. 1.5]", "[Prop. 1.19]"]
+        );
+        assert!(cites(&i24[3]).is_empty());
+        let given = para_text(&i24[0]);
+        assert!(given.contains("Let ABC and DEF be two triangles"));
+        assert!(given.contains("greater than the base EF."));
+        let construction = para_text(&i24[1]);
+        assert!(construction.contains("on the straight-line DE. [Prop. 1.23] \nAnd let DG"));
+        assert!(construction.contains("AC or DF, [Prop. 1.3] \nand let EG and FG have been joined."));
+        let proof = para_text(&i24[2]);
+        assert!(proof.contains("the base BC is equal to the base EG. [Prop. 1.4] \nAgain"));
+        assert!(proof.contains("angle DFG. [Prop. 1.5] \nThus, DFG"));
+        assert!(proof.contains("greater side, [Prop. 1.19] \nside EG"));
+        assert!(proof.contains("Thus, BC (is) also greater than EF."));
+        let qed = para_text(&i24[3]);
+        assert!(qed.contains(
+            "(of the latter). (Which is) the very thing it was required to show."
+        ));
+    }
 }

@@ -441,3 +441,54 @@ pub fn book1_prop22() -> Diagram {
     d.dots(&["D", "F", "G", "H", "E", "K"]);
     d
 }
+
+/// I.23 — Fitzpatrick plate (Elements p. 26), measured at 300 dpi.
+/// Given line AB; angle DCE above the left; triangle AFG on AB. AB `level`.
+/// CD and CE are produced a short way past the letter tips (D0, E0);
+/// DE stops at D and E. One scale AB = 100.
+pub fn book1_prop23() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("A", V2::new(0.0, 0.0), Place::Deg(172.0));
+    d.level("B", "A", 100.0, Place::Deg(70.6));
+    d.put("F", V2::new(28.93, 31.04), Place::Deg(87.6));
+    d.level("G", "A", 56.2, Place::Deg(44.8));
+    d.put("C", V2::new(4.71, 77.79), Place::Deg(-178.4));
+    d.put("D", V2::new(48.75, 96.37), Place::Deg(139.8));
+    d.put("E", V2::new(62.73, 63.38), Place::Deg(-133.8));
+    d.pin("D0", V2::new(66.1738908, 103.720951));
+    d.pin("E0", V2::new(82.2347582, 58.5357469));
+    d.base("A", "B");
+    d.chain(&["C", "D", "D0"]);
+    d.chain(&["C", "E", "E0"]);
+    d.join("D", "E");
+    d.join("A", "F");
+    d.join("A", "G");
+    d.join("F", "G");
+    d.dots(&["A", "B", "C", "D", "E", "F", "G"]);
+    d
+}
+
+/// I.24 — Fitzpatrick plate (Elements p. 27): triangles ABC and DEF;
+/// G inside DEF, EG and FG joined. DF is not on DG. One scale BC = 100.
+/// Plate ratios: AB/BC = 1.679, AC/BC = 1.939, DE/BC = 1.797.
+pub fn book1_prop24() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("C", V2::new(0.0, 0.0), Place::Deg(-90.8));
+    d.put("B", V2::new(54.7, 28.01), Place::Deg(-16.8));
+    d.put("A", V2::new(6.12, 119.03), Place::Deg(90.7));
+    d.put("D", V2::new(54.01, 120.47), Place::Deg(104.2));
+    d.put("E", V2::new(130.11, 41.28), Place::Deg(-13.9));
+    d.put("G", V2::new(92.68, 1.21), Place::Deg(-147.8));
+    d.put("F", V2::new(118.14, 10.94), Place::Deg(-60.9));
+    d.join("A", "B");
+    d.join("B", "C");
+    d.join("C", "A");
+    d.join("D", "E");
+    d.join("E", "F");
+    d.join("F", "D");
+    d.join("E", "G");
+    d.join("F", "G");
+    d.join("D", "G");
+    d.dots(&["A", "B", "C", "D", "E", "F", "G"]);
+    d
+}

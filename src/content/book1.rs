@@ -4,7 +4,7 @@ use crate::figure::{
     book1_prop7, book1_prop8, book1_prop9, book1_prop10, book1_prop11,
     book1_prop12, book1_prop13, book1_prop14, book1_prop15, book1_prop16,
     book1_prop17, book1_prop18, book1_prop19, book1_prop20, book1_prop21,
-    book1_prop22,
+    book1_prop22, book1_prop23, book1_prop24,
 };
 
 pub const PROP_1: Proposition = Proposition {
@@ -528,8 +528,50 @@ pub const PROP_22: Proposition = Proposition {
     ],
 };
 
+pub const PROP_23: Proposition = Proposition {
+    book: 1,
+    number: 23,
+    enunciation: "To construct a rectilinear angle equal to a given rectilinear angle at a (given) point on a given straight-line.",
+    figure: book1_prop23,
+    phrases: &[
+        s(1, "Let *AB* be the given straight-line, *A* the (given) point on it, and *DCE* the given rectilinear angle."),
+        s(1, "So it is required to construct a rectilinear angle equal to the given rectilinear angle *DCE* at the (given) point *A* on the given straight-line *AB*."),
+        s(2, "Let the points *D* and *E* have been taken at random on each of the (straight-lines) *CD* and *CE* (respectively), and let *DE* have been joined."),
+        s(2, "And let the triangle *AFG* have been constructed from three straight-lines which are equal to *CD*, *DE*, and *CE*, such that *CD* is equal to *AF*, *CE* to *AG*, and further *DE* to *FG*.{[Prop. 1.22]}"),
+        s(3, "Therefore, since the two (straight-lines) *DC*, *CE* are equal to the two (straight-lines) *FA*, *AG*, respectively, and the base *DE* is equal to the base *FG*, the angle *DCE* is thus equal to the angle *FAG*.{[Prop. 1.8]}"),
+        s(4, "Thus, the rectilinear angle *FAG*, equal to the given rectilinear angle *DCE*, has been constructed at the (given) point *A* on the given straight-line *AB*."),
+        s(4, "(Which is) the very thing it was required to do."),
+    ],
+};
+
+pub const PROP_24: Proposition = Proposition {
+    book: 1,
+    number: 24,
+    enunciation: "If two triangles have two sides equal to two sides, respectively, but (one) has the angle encompassed by the equal straight-lines greater than the (corresponding) angle (in the other), (then the former triangle) will also have a base greater than the base (of the latter).",
+    figure: book1_prop24,
+    phrases: &[
+        s(1, "Let *ABC* and *DEF* be two triangles having the two sides *AB* and *AC* equal to the two sides *DE* and *DF*, respectively."),
+        s(1, "(That is), *AB* (equal) to *DE*, and *AC* to *DF*."),
+        s(1, "Let them also have the angle at *A* greater than the angle at *D*."),
+        s(1, "I say that the base *BC* is also greater than the base *EF*."),
+        s(2, "For since angle *BAC* is greater than angle *EDF*, let (angle) *EDG*, equal to angle *BAC*, have been constructed at the point *D* on the straight-line *DE*.{[Prop. 1.23]}"),
+        s(2, "And let *DG* have been made equal to either of *AC* or *DF*,{[Prop. 1.3]} and let *EG* and *FG* have been joined."),
+        s(3, "Therefore, since *AB* is equal to *DE* and *AC* to *DG*, the two (straight-lines) *BA*, *AC* are equal to the two (straight-lines) *ED*, *DG*, respectively."),
+        s(3, "Also the angle *BAC* is equal to the angle *EDG*."),
+        s(3, "Thus, the base *BC* is equal to the base *EG*.{[Prop. 1.4]}"),
+        s(3, "Again, since *DF* is equal to *DG*, angle *DGF* is also equal to angle *DFG*.{[Prop. 1.5]}"),
+        s(3, "Thus, *DFG* (is) greater than *EGF*."),
+        s(3, "Thus, *EFG* is much greater than *EGF*."),
+        s(3, "And since triangle *EFG* has angle *EFG* greater than *EGF*, and the greater angle is subtended by the greater side,{[Prop. 1.19]} side *EG* (is) thus also greater than *EF*."),
+        s(3, "But *EG* (is) equal to *BC*."),
+        s(3, "Thus, *BC* (is) also greater than *EF*."),
+        s(4, "Thus, if two triangles have two sides equal to two sides, respectively, but (one) has the angle encompassed by the equal straight-lines greater than the (corresponding) angle (in the other), (then the former triangle) will also have a base greater than the base (of the latter)."),
+        s(4, "(Which is) the very thing it was required to show."),
+    ],
+};
+
 pub const PROPOSITIONS: &[Proposition] = &[
     PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6, PROP_7, PROP_8, PROP_9, PROP_10, PROP_11,
     PROP_12, PROP_13, PROP_14, PROP_15, PROP_16, PROP_17, PROP_18, PROP_19, PROP_20, PROP_21,
-    PROP_22,
+    PROP_22, PROP_23, PROP_24,
 ];

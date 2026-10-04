@@ -1320,6 +1320,93 @@ def book1_prop22() -> Fig:
     return f
 
 
+def book1_prop23() -> Fig:
+    # Fitzpatrick p. 26 English plate, 300 dpi, letters blanked. Vertices are
+    # the ink nearest each glyph (y-up, A at the origin). AB is the given line
+    # (`level`). Angle DCE stands above the left; triangle AFG on AB.
+    # The plate produces CD and CE only a short way past the letter tips
+    # (300 dpi: 27.9 pt past D, 29.7 pt past E — not out to the margin).
+    # D0 and E0 are those ink ends (not letters). DE stops at the tips.
+    # One scale AB = 100.
+    s = Sketch()
+    s.put("A", 0.0, 0.0)
+    s.level("B", "A", 100.0)
+    s.put("F", 28.93, 31.04)
+    s.level("G", "A", 56.2)
+    s.put("C", 4.71, 77.79)
+    s.put("D", 48.75, 96.37)
+    s.put("E", 62.73, 63.38)
+    s.ray("D0", "C", "D", 66.71)
+    s.ray("E0", "C", "E", 79.88)
+    s.letters(A=172.0, B=70.6, C=-178.4, D=139.8, E=-133.8, F=87.6, G=44.8)
+    f = Fig(
+        "book1_prop23",
+        "I.23 — Fitzpatrick plate (Elements p. 26), measured at 300 dpi.\n"
+        "Given line AB; angle DCE above the left; triangle AFG on AB. AB `level`.\n"
+        "CD and CE are produced a short way past the letter tips (D0, E0);\n"
+        "DE stops at D and E. One scale AB = 100.",
+        sketch=s,
+    )
+    f.put("A", *s.at("A"))
+    f.level("B", "A", s.at("B")[0])
+    f.put("F", *s.at("F"))
+    f.level("G", "A", s.at("G")[0])
+    f.put("C", *s.at("C"))
+    f.put("D", *s.at("D"))
+    f.put("E", *s.at("E"))
+    f.pin("D0", *s.at("D0"))
+    f.pin("E0", *s.at("E0"))
+    f.base("A", "B")
+    f.chain("C", "D", "D0")
+    f.chain("C", "E", "E0")
+    f.join("D", "E")
+    f.join("A", "F")
+    f.join("A", "G")
+    f.join("F", "G")
+    f.dots("A", "B", "C", "D", "E", "F", "G")
+    return f
+
+
+def book1_prop24() -> Fig:
+    # Fitzpatrick p. 27 English plate. Stroke endpoints, y-up, C at the
+    # origin. Triangle ABC on the left; DEF on the right with G inside,
+    # EG and FG joined. DF is not collinear with DG, and the plate does
+    # not make AB = DE. One scale BC = 100.
+    s = Sketch()
+    s.put("C", 0.0, 0.0)
+    s.put("B", 54.70, 28.01)
+    s.put("A", 6.12, 119.03)
+    s.put("D", 54.01, 120.47)
+    s.put("E", 130.11, 41.28)
+    s.put("G", 92.68, 1.21)
+    s.put("F", 118.14, 10.94)
+    s.letters(A=90.7, B=-16.8, C=-90.8, D=104.2, E=-13.9, F=-60.9, G=-147.8)
+    f = Fig(
+        "book1_prop24",
+        "I.24 — Fitzpatrick plate (Elements p. 27): triangles ABC and DEF;\n"
+        "G inside DEF, EG and FG joined. DF is not on DG. One scale BC = 100.\n"
+        "Plate ratios: AB/BC = 1.679, AC/BC = 1.939, DE/BC = 1.797.",
+        sketch=s,
+    )
+    f.put("C", *s.at("C"))
+    f.put("B", *s.at("B"))
+    f.put("A", *s.at("A"))
+    f.put("D", *s.at("D"))
+    f.put("E", *s.at("E"))
+    f.put("G", *s.at("G"))
+    f.put("F", *s.at("F"))
+    f.join("A", "B")
+    f.join("B", "C")
+    f.join("C", "A")
+    f.join("D", "E")
+    f.join("E", "F")
+    f.join("F", "D")
+    f.join("E", "G")
+    f.join("F", "G")
+    f.join("D", "G")
+    f.dots("A", "B", "C", "D", "E", "F", "G")
+    return f
+
 
 PLATES = [
     book1_prop1,
@@ -1344,6 +1431,8 @@ PLATES = [
     book1_prop20,
     book1_prop21,
     book1_prop22,
+    book1_prop23,
+    book1_prop24,
 ]
 
 
