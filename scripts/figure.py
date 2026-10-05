@@ -1408,6 +1408,86 @@ def book1_prop24() -> Fig:
     return f
 
 
+def book1_prop25() -> Fig:
+    # Fitzpatrick printed p. 28 (PDF p. 28). Two triangles only — the
+    # reductio is not drawn. B and E share a column (`plumb`); EF `level`.
+    # One scale EF = 100. Ink: BC/EF = 1.003, AB/DE = 1.011, AC/DF = 1.009.
+    s = Sketch()
+    s.put("B", 0.0, 0.0)
+    s.put("A", 40.079, 64.047)
+    s.put("C", 91.945, 40.079)
+    s.put("D", 61.886, 6.287)
+    s.plumb("E", "B", -35.560)
+    s.level("F", "E", 100.0)
+    s.letters(A=93.7, B=-154.0, C=-4.5, D=70.5, E=-135.6, F=-41.8)
+    f = Fig(
+        "book1_prop25",
+        "I.25 — Fitzpatrick plate (Elements p. 28): triangles ABC and DEF.\n"
+        "No construction marks. B and E `plumb`; EF `level`. One scale EF = 100.\n"
+        "Plate: BC/EF = 1.003, AB/DE = 1.011, AC/DF = 1.009.",
+        sketch=s,
+    )
+    f.put("B", *s.at("B"))
+    f.put("A", *s.at("A"))
+    f.put("C", *s.at("C"))
+    f.put("D", *s.at("D"))
+    f.plumb("E", "B", s.at("E")[1])
+    f.level("F", "E", s.at("F")[0])
+    f.join("A", "B")
+    f.join("B", "C")
+    f.join("C", "A")
+    f.join("D", "E")
+    f.join("E", "F")
+    f.join("F", "D")
+    f.dots("A", "B", "C", "D", "E", "F")
+    return f
+
+
+def book1_prop26() -> Fig:
+    # Fitzpatrick printed p. 29 (PDF p. 29). Triangles ABC and DEF.
+    # G on AB (BG = DE); GC joined. H on BC (BH = EF); AH joined.
+    # B, C, H share a row (`level`). One scale BC = 100.
+    # Ink: AB/DE = 1.000, AC/DF = 0.999, EF/BC = 1.003.
+    s = Sketch()
+    s.put("B", 0.0, 0.0)
+    s.put("A", 15.072, 66.377)
+    s.level("C", "B", 100.0)
+    s.put("G", 8.116, 36.232)
+    s.level("H", "B", 78.550)
+    s.put("D", 141.594, 99.420)
+    s.put("E", 126.376, 33.043)
+    s.put("F", 226.666, 32.753)
+    s.letters(
+        A=92.4, B=-151.1, C=-23.5, D=90.3, E=-156.0, F=-25.8, G=134.5, H=-89.2
+    )
+    f = Fig(
+        "book1_prop26",
+        "I.26 — Fitzpatrick plate (Elements p. 29): triangles ABC and DEF.\n"
+        "G on AB with GC joined; H on BC with AH joined. B, C, H `level`.\n"
+        "One scale BC = 100. Plate: AB/DE = 1.000, AC/DF = 0.999, EF/BC = 1.003.",
+        sketch=s,
+    )
+    f.put("B", *s.at("B"))
+    f.put("A", *s.at("A"))
+    f.level("C", "B", s.at("C")[0])
+    f.put("G", *s.at("G"))
+    f.level("H", "B", s.at("H")[0])
+    f.put("D", *s.at("D"))
+    f.put("E", *s.at("E"))
+    f.put("F", *s.at("F"))
+    f.chain("A", "G", "B")
+    f.join("B", "C")
+    f.join("C", "A")
+    f.join("G", "C")
+    f.chain("B", "H", "C")
+    f.join("A", "H")
+    f.join("D", "E")
+    f.join("E", "F")
+    f.join("F", "D")
+    f.dots("A", "B", "C", "D", "E", "F", "G", "H")
+    return f
+
+
 PLATES = [
     book1_prop1,
     book1_prop2,
@@ -1433,6 +1513,8 @@ PLATES = [
     book1_prop22,
     book1_prop23,
     book1_prop24,
+    book1_prop25,
+    book1_prop26,
 ]
 
 

@@ -492,3 +492,50 @@ pub fn book1_prop24() -> Diagram {
     d.dots(&["A", "B", "C", "D", "E", "F", "G"]);
     d
 }
+
+/// I.25 — Fitzpatrick plate (Elements p. 28): triangles ABC and DEF.
+/// No construction marks. B and E `plumb`; EF `level`. One scale EF = 100.
+/// Plate: BC/EF = 1.003, AB/DE = 1.011, AC/DF = 1.009.
+pub fn book1_prop25() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("B", V2::new(0.0, 0.0), Place::Deg(-154.0));
+    d.put("A", V2::new(40.079, 64.047), Place::Deg(93.7));
+    d.put("C", V2::new(91.945, 40.079), Place::Deg(-4.5));
+    d.put("D", V2::new(61.886, 6.287), Place::Deg(70.5));
+    d.plumb("E", "B", -35.56, Place::Deg(-135.6));
+    d.level("F", "E", 100.0, Place::Deg(-41.8));
+    d.join("A", "B");
+    d.join("B", "C");
+    d.join("C", "A");
+    d.join("D", "E");
+    d.join("E", "F");
+    d.join("F", "D");
+    d.dots(&["A", "B", "C", "D", "E", "F"]);
+    d
+}
+
+/// I.26 — Fitzpatrick plate (Elements p. 29): triangles ABC and DEF.
+/// G on AB with GC joined; H on BC with AH joined. B, C, H `level`.
+/// One scale BC = 100. Plate: AB/DE = 1.000, AC/DF = 0.999, EF/BC = 1.003.
+pub fn book1_prop26() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("B", V2::new(0.0, 0.0), Place::Deg(-151.1));
+    d.put("A", V2::new(15.072, 66.377), Place::Deg(92.4));
+    d.level("C", "B", 100.0, Place::Deg(-23.5));
+    d.put("G", V2::new(8.116, 36.232), Place::Deg(134.5));
+    d.level("H", "B", 78.55, Place::Deg(-89.2));
+    d.put("D", V2::new(141.594, 99.42), Place::Deg(90.3));
+    d.put("E", V2::new(126.376, 33.043), Place::Deg(-156.0));
+    d.put("F", V2::new(226.666, 32.753), Place::Deg(-25.8));
+    d.chain(&["A", "G", "B"]);
+    d.join("B", "C");
+    d.join("C", "A");
+    d.join("G", "C");
+    d.chain(&["B", "H", "C"]);
+    d.join("A", "H");
+    d.join("D", "E");
+    d.join("E", "F");
+    d.join("F", "D");
+    d.dots(&["A", "B", "C", "D", "E", "F", "G", "H"]);
+    d
+}

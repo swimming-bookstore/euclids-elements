@@ -481,7 +481,7 @@ mod tests {
         book1_prop7, book1_prop8, book1_prop9, book1_prop10, book1_prop11, book1_prop12,
         book1_prop13, book1_prop14, book1_prop15, book1_prop16, book1_prop17,
         book1_prop18, book1_prop19, book1_prop20, book1_prop21, book1_prop22,
-        book1_prop23, book1_prop24,
+        book1_prop23, book1_prop24, book1_prop25, book1_prop26,
     };
 
     fn has(v: &[String], id: &str) -> bool {
@@ -1561,6 +1561,61 @@ mod tests {
         assert!(fdx > 0.3 && fdy > 0.5, "F below-right of the tip, --dx={fdx} --dy={fdy}");
         let (gdx, gdy) = letter_offset(&html, "G");
         assert!(gdx < -0.5 && gdy > 0.4, "G below-left of the tip, --dx={gdx} --dy={gdy}");
+    }
+
+    #[test]
+    fn prop25_paths() {
+        let d = book1_prop25();
+        let abc = d.highlight("ABC");
+        assert!(
+            (has(&abc, "ab") || has(&abc, "ba"))
+                && (has(&abc, "bc") || has(&abc, "cb"))
+                && (has(&abc, "ac") || has(&abc, "ca")),
+            "ABC: {abc:?}"
+        );
+        let def = d.highlight("DEF");
+        assert!(
+            (has(&def, "de") || has(&def, "ed"))
+                && (has(&def, "ef") || has(&def, "fe"))
+                && (has(&def, "df") || has(&def, "fd")),
+            "DEF: {def:?}"
+        );
+        let bac = d.highlight_angle("BAC");
+        assert!(
+            (has(&bac, "ba") || has(&bac, "ab")) && (has(&bac, "ac") || has(&bac, "ca")),
+            "∠BAC: {bac:?}"
+        );
+        let edf = d.highlight_angle("EDF");
+        assert!(
+            (has(&edf, "de") || has(&edf, "ed")) && (has(&edf, "df") || has(&edf, "fd")),
+            "∠EDF: {edf:?}"
+        );
+        assert!(d.at("B").dist(d.at("C")) > d.at("E").dist(d.at("F")));
+    }
+
+    #[test]
+    fn prop26_paths() {
+        let d = book1_prop26();
+        let ab = d.highlight("AB");
+        assert!(has(&ab, "ag") && has(&ab, "gb"), "AB via G: {ab:?}");
+        let bc = d.highlight("BC");
+        assert!(has(&bc, "bh") && has(&bc, "hc"), "BC via H: {bc:?}");
+        let gc = d.highlight("GC");
+        assert!(has(&gc, "gc") || has(&gc, "cg"), "GC: {gc:?}");
+        let ah = d.highlight("AH");
+        assert!(has(&ah, "ah") || has(&ah, "ha"), "AH: {ah:?}");
+        let gbc = d.highlight_angle("GBC");
+        assert!(
+            has(&gbc, "gb") && (has(&gbc, "bc") || has(&gbc, "bh")),
+            "∠GBC: {gbc:?}"
+        );
+        let bha = d.highlight_angle("BHA");
+        assert!(
+            has(&bha, "bh") && (has(&bha, "ah") || has(&bha, "ha")),
+            "∠BHA: {bha:?}"
+        );
+        assert!(d.at("G").on_seg(d.at("A"), d.at("B"), 1e-3), "G on AB");
+        assert!(d.at("H").on_seg(d.at("B"), d.at("C"), 1e-3), "H on BC");
     }
 
     fn letter_offset(html: &str, id: &str) -> (f64, f64) {
