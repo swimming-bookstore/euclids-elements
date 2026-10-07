@@ -197,6 +197,13 @@ impl Diagram {
         p
     }
 
+    /// Letter measured from `at`, not from the named point (plate label that
+    /// does not sit on the stroke end).
+    pub fn label_at(&mut self, name: &'static str, at: V2, place: Place) -> &mut Self {
+        self.fig.label_at(name, at, place);
+        self
+    }
+
     pub fn dots(&mut self, names: &[&'static str]) -> &mut Self {
         for name in names {
             let p = self.at(name);
@@ -481,7 +488,8 @@ mod tests {
         book1_prop7, book1_prop8, book1_prop9, book1_prop10, book1_prop11, book1_prop12,
         book1_prop13, book1_prop14, book1_prop15, book1_prop16, book1_prop17,
         book1_prop18, book1_prop19, book1_prop20, book1_prop21, book1_prop22,
-        book1_prop23, book1_prop24, book1_prop25, book1_prop26,
+        book1_prop23, book1_prop24, book1_prop25, book1_prop26, book1_prop27,
+        book1_prop28,
     };
 
     fn has(v: &[String], id: &str) -> bool {
@@ -1616,6 +1624,95 @@ mod tests {
         );
         assert!(d.at("G").on_seg(d.at("A"), d.at("B"), 1e-3), "G on AB");
         assert!(d.at("H").on_seg(d.at("B"), d.at("C"), 1e-3), "H on BC");
+    }
+
+    #[test]
+    fn prop27_paths() {
+        let d = book1_prop27();
+        let ab = d.highlight("AB");
+        assert!(has(&ab, "ab") || has(&ab, "ba"), "AB: {ab:?}");
+        let cd = d.highlight("CD");
+        assert!(has(&cd, "cd") || has(&cd, "dc"), "CD: {cd:?}");
+        let ef = d.highlight("EF");
+        assert!(has(&ef, "ef") || has(&ef, "fe"), "EF: {ef:?}");
+        let bg = d.highlight("BG");
+        assert!(has(&bg, "bg") || has(&bg, "gb"), "AB produced to G: {bg:?}");
+        let dg = d.highlight("DG");
+        assert!(has(&dg, "dg") || has(&dg, "gd"), "CD produced to G: {dg:?}");
+        let aef = d.highlight_angle("AEF");
+        assert!(
+            (has(&aef, "ef") || has(&aef, "fe")),
+            "∠AEF lights the transversal: {aef:?}"
+        );
+        assert!((d.at("A").y - d.at("B").y).abs() < 1e-9, "B level with A");
+        assert!((d.at("C").y - d.at("D").y).abs() < 1e-9, "D level with C");
+        assert!((d.at("A").x - d.at("C").x).abs() < 1e-9, "A plumb with C");
+        assert!(d.at("A").y > d.at("C").y, "AB above CD");
+        // G is the meeting of AB and CD produced, on the B/D side.
+        assert!(d.at("G").x > d.at("B").x && d.at("G").x > d.at("D").x, "G beyond B and D");
+        let ab_len = d.at("A").dist(d.at("B"));
+        assert!((d.at("C").dist(d.at("D")) / ab_len - 1.083).abs() < 0.01, "CD/AB");
+        // EF crosses both parallels; E and F are the crossings, not the tips.
+        assert!((d.at("E").x - d.at("F").x).abs() > 10.0, "EF should lean");
+        assert!(d.at("E").y > d.at("A").y && d.at("F").y < d.at("C").y, "EF crosses both");
+        // G sits off the wedge, on the side away from EF.
+        let html = d.svg(&[] as &[String]);
+        let (gdx, gdy) = letter_offset(&html, "G");
+        assert!(gdx > 0.3, "G right of the meeting, --dx={gdx} --dy={gdy}");
+        // English plate: E on AB, glyph above the line; F on CD, glyph below.
+        // CSS y is down. E at 90° points up the page (negative dy); F at -90°
+        // points down (positive dy).
+        let (edx, edy) = letter_offset(&html, "E");
+        assert!(edy < -0.5 && edx.abs() < 0.2, "E above AB, --dx={edx} --dy={edy}");
+        let (fdx, fdy) = letter_offset(&html, "F");
+        assert!(fdy > 0.5 && fdx.abs() < 0.2, "F below CD, --dx={fdx} --dy={fdy}");
+    }
+
+    #[test]
+    fn prop28_paths() {
+        let d = book1_prop28();
+        let ab = d.highlight("AB");
+        assert!(has(&ab, "ag") && has(&ab, "gb"), "AB via G: {ab:?}");
+        let cd = d.highlight("CD");
+        assert!(has(&cd, "ch") && has(&cd, "hd"), "CD via H: {cd:?}");
+        let ef = d.highlight("EF");
+        assert!(
+            has(&ef, "eg") && has(&ef, "gh") && has(&ef, "hf"),
+            "EF via G, H: {ef:?}"
+        );
+        let egb = d.highlight_angle("EGB");
+        assert!(
+            has(&egb, "eg") && has(&egb, "gb"),
+            "∠EGB: {egb:?}"
+        );
+        let ghd = d.highlight_angle("GHD");
+        assert!(
+            has(&ghd, "gh") && has(&ghd, "hd"),
+            "∠GHD: {ghd:?}"
+        );
+        let agh = d.highlight_angle("AGH");
+        assert!(
+            has(&agh, "ag") && has(&agh, "gh"),
+            "∠AGH: {agh:?}"
+        );
+        let bgh = d.highlight_angle("BGH");
+        assert!(
+            has(&bgh, "gb") && has(&bgh, "gh"),
+            "∠BGH: {bgh:?}"
+        );
+        assert!(d.at("G").on_seg(d.at("A"), d.at("B"), 1e-3), "G on AB");
+        assert!(d.at("H").on_seg(d.at("C"), d.at("D"), 1e-3), "H on CD");
+        assert!(d.at("G").on_seg(d.at("E"), d.at("F"), 1e-3), "G on EF");
+        assert!(d.at("H").on_seg(d.at("E"), d.at("F"), 1e-3), "H on EF");
+        assert!((d.at("A").x - d.at("C").x).abs() < 1e-9, "A plumb with C");
+        assert!((d.at("B").x - d.at("D").x).abs() < 1e-9, "B plumb with D");
+        let cd_len = d.at("C").dist(d.at("D"));
+        let html = d.svg(&[] as &[String]);
+        let (gdx, gdy) = letter_offset(&html, "G");
+        let (edx, edy) = letter_offset(&html, "E");
+        assert!(gdx > 0.15 && gdy < -0.45, "G above-right of the crossing, --dx={gdx} --dy={gdy}");
+        assert!(edx > 0.2 && edy > 0.2, "E below-right of the tip, --dx={edx} --dy={edy}");
+        assert!((d.at("A").dist(d.at("B")) / cd_len - 1.0).abs() < 0.01, "AB/CD");
     }
 
     fn letter_offset(html: &str, id: &str) -> (f64, f64) {

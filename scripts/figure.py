@@ -64,6 +64,10 @@ class Sketch:
 
     def meet(self, name: str, a: str, b: str, c: str, d: str) -> tuple[float, float]:
         """`name` at the intersection of lines `a``b` and `c``d`."""
+        return self.put(name, *self.meet_point(a, b, c, d))
+
+    def meet_point(self, a: str, b: str, c: str, d: str) -> tuple[float, float]:
+        """Intersection of lines `a``b` and `c``d`, without naming a point."""
         ax, ay = self.pts[a]
         bx, by = self.pts[b]
         cx, cy = self.pts[c]
@@ -72,7 +76,7 @@ class Sketch:
         if abs(den) < 1e-12:
             raise SystemExit(f"{a}{b} ∥ {c}{d}")
         t = ((ax - cx) * (cy - dy) - (ay - cy) * (cx - dx)) / den
-        return self.put(name, ax + t * (bx - ax), ay + t * (by - ay))
+        return (ax + t * (bx - ax), ay + t * (by - ay))
 
     def level(self, name: str, of: str, x: float) -> tuple[float, float]:
         """`name` at (`x`, y of `of`) — same height as a plate letter-row."""
@@ -315,6 +319,12 @@ class Fig:
 
     def pin(self, name: str, x: float, y: float) -> None:
         self._add(f'    d.pin("{name}", V2::new({f64(x)}, {f64(y)}));')
+
+    def label_at(self, name: str, x: float, y: float, place=None) -> None:
+        """Letter whose center is measured from (`x`, `y`), not from the point."""
+        self._add(
+            f'    d.label_at("{name}", V2::new({f64(x)}, {f64(y)}), {self._place(name, place)});'
+        )
 
     def polar(self, name: str, origin: str, r: float, deg: float, place=None) -> None:
         self._add(
@@ -1488,6 +1498,100 @@ def book1_prop26() -> Fig:
     return f
 
 
+def book1_prop27() -> Fig:
+    # Fitzpatrick Greek plate, printed p. 30 (PDF p. 30). The English plate
+    # stops at B and D; the Greek one — the figure the proof describes —
+    # produces AB and CD in the direction of B and D until they meet at G.
+    # Strokes (300 dpi, pt, y down): AB y=527.40 x 67.68..210.00,
+    # CD y=576.72 x 67.68..221.76, EF (163.08, 498.00)..(101.88, 600.00),
+    # meeting G (284.6, 548.64). One scale AB = 100, origin A, y-up.
+    # Plate: CD/AB = 1.083.
+    s = Sketch()
+    s.put("A", 0.0, 0.0)
+    s.level("B", "A", 100.0)
+    s.put("C", 0.0, -34.65)
+    s.level("D", "C", 108.26)
+    s.put("E", 67.03, 20.66)
+    s.put("F", 24.03, -51.01)
+    s.put("G", 152.42, -14.92)
+    # English plate: E on AB, F on CD, clear of the transversal.
+    s.letters(A=90.0, B=90.0, C=-90.0, D=-90.0, E=90.0, F=-90.0, G=28.0)
+    f = Fig(
+        "book1_prop27",
+        "I.27 — Fitzpatrick Greek plate (Elements p. 30): AB ∥ CD, transversal EF,\n"
+        "produced in the direction of B and D to meet at G. A, B `level`; C, D\n"
+        "`level`. On the English plate E sits on AB (same height as A, B) and F\n"
+        "on CD (same height as C, D), in the open stretch clear of the transversal.\n"
+        "One scale AB = 100. Plate: CD/AB = 1.083. Letter x from the PDF word\n"
+        "boxes: E is 0.531 of AB from A, F is 0.320 of CD from C.",
+        sketch=s,
+    )
+    f.put("A", *s.at("A"))
+    f.level("B", "A", s.at("B")[0])
+    f.put("C", *s.at("C"))
+    f.level("D", "C", s.at("D")[0])
+    f.put("E", *s.at("E"))
+    f.put("F", *s.at("F"))
+    f.put("G", *s.at("G"))
+    f.chain("A", "B", "G")
+    f.chain("C", "D", "G")
+    f.join("E", "F")
+    # English plate (PDF p. 30): E shares AB's height, F shares CD's. Both sit
+    # in the open stretch of the parallel, clear of the transversal, and the
+    # glyph points back at the line. x from the page word boxes.
+    ax, ay = s.at("A")
+    bx, _by = s.at("B")
+    cx, cy = s.at("C")
+    dx, _dy = s.at("D")
+    f.label_at("E", ax + 0.53079 * (bx - ax), ay, 90.0)
+    f.label_at("F", cx + 0.32035 * (dx - cx), cy, -90.0)
+    f.dots("A", "B", "C", "D", "E", "F", "G")
+    return f
+
+
+def book1_prop28() -> Fig:
+    # Fitzpatrick printed p. 31 (PDF p. 31). AB ∥ CD. Transversal EF cuts AB
+    # at G and CD at H. A, G, B `level`; C, H, D `level`; A, C `plumb`;
+    # B, D `plumb`. One scale CD = 100. Plate strokes (300 dpi, letters
+    # blanked): AB/CD = 1, AC/CD = 0.452, EF slope 1.636. Free tips of EF are
+    # measured with letters left in (blanking swallows the E tip).
+    s = Sketch()
+    s.put("C", 0.0, 0.0)
+    s.plumb("A", "C", 45.20)
+    s.level("B", "A", 100.0)
+    s.plumb("D", "B", 0.0)
+    # E, F free tips of the transversal, letters left in (300 dpi). The tip is
+    # the stroke end, not the nearest ink to the glyph — that lands inside E.
+    s.put("E", 19.21, 61.62)
+    s.put("F", 71.19, -23.44)
+    s.meet("G", "A", "B", "E", "F")
+    s.meet("H", "C", "D", "E", "F")
+    # E just under the tip (right of the stroke). G a little above-right, not
+    # straight above the crossing. F beside the lower tip, not under it.
+    s.letters(A=151.0, B=29.1, C=151.1, D=27.9, E=-55.0, F=55.0, G=62.0, H=50.3)
+    f = Fig(
+        "book1_prop28",
+        "I.28 — Fitzpatrick plate (Elements p. 31): AB ∥ CD, transversal EF\n"
+        "cutting AB at G and CD at H. A, G, B and C, H, D `level`; A plumb with C,\n"
+        "B plumb with D. One scale CD = 100. Plate: GH/CD = 0.530. E sits just under\n"
+        "the free tip, right of the stroke. G is a little above-right of the crossing.",
+        sketch=s,
+    )
+    f.put("C", *s.at("C"))
+    f.plumb("A", "C", s.at("A")[1])
+    f.level("B", "A", s.at("B")[0])
+    f.plumb("D", "B", s.at("D")[1])
+    f.put("E", *s.at("E"))
+    f.put("F", *s.at("F"))
+    f.meet("G", "A", "B", "E", "F")
+    f.meet("H", "C", "D", "E", "F")
+    f.chain("A", "G", "B")
+    f.chain("C", "H", "D")
+    f.chain("E", "G", "H", "F")
+    f.dots("A", "B", "C", "D", "E", "F", "G", "H")
+    return f
+
+
 PLATES = [
     book1_prop1,
     book1_prop2,
@@ -1515,6 +1619,8 @@ PLATES = [
     book1_prop24,
     book1_prop25,
     book1_prop26,
+    book1_prop27,
+    book1_prop28,
 ]
 
 
@@ -1659,7 +1765,7 @@ def _blank_letters(
 ) -> None:
     """Paint each capital white so the glyph is not the stroke."""
     for _n, cx, cy, ww, hh in letters:
-        pad = 1.4
+        pad = max(ww, hh) * 0.85
         x0 = max(0, int((cx - ww / 2 - pad) * sx))
         x1 = min(w - 1, int((cx + ww / 2 + pad) * sx))
         y0 = max(0, int((cy - hh / 2 - pad) * sy))
@@ -1671,7 +1777,8 @@ def _blank_letters(
 
 
 def _ink(gray: bytes, w: int, x: int, y: int) -> bool:
-    return gray[y * w + x] < 110
+    # Fitzpatrick strokes are thin gray hairlines (~140), not solid black.
+    return gray[y * w + x] < 180
 
 
 def _nearest_ink(
@@ -1791,7 +1898,7 @@ def measure_page(pdf: Path, page: int, dpi: int = 200) -> None:
     # Ink vertices in PDF pt (y down). Search ~3 em from each glyph.
     pts: dict[str, tuple[float, float]] = {}
     for n, cx, cy, ww, hh in letters:
-        hit = _nearest_ink(gray, w, h, cx * sx, cy * sy, rmax=max(ww, hh) * sx * 2.4)
+        hit = _nearest_ink(gray, w, h, cx * sx, cy * sy, rmax=max(ww, hh) * sx * 4.5)
         if hit is None:
             raise SystemExit(f"no ink near letter {n}")
         pts[n] = (hit[0] / sx, hit[1] / sy)
