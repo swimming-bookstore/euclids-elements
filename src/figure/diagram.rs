@@ -197,6 +197,13 @@ impl Diagram {
         p
     }
 
+    /// Letter measured from `at`, not from the named point (plate label that
+    /// does not sit on the stroke end).
+    pub fn label_at(&mut self, name: &'static str, at: V2, place: Place) -> &mut Self {
+        self.fig.label_at(name, at, place);
+        self
+    }
+
     pub fn dots(&mut self, names: &[&'static str]) -> &mut Self {
         for name in names {
             let p = self.at(name);
@@ -1623,26 +1630,42 @@ mod tests {
     fn prop27_paths() {
         let d = book1_prop27();
         let ab = d.highlight("AB");
-        assert!(has(&ab, "ae") && has(&ab, "eb"), "AB via E: {ab:?}");
+        assert!(has(&ab, "ab") || has(&ab, "ba"), "AB: {ab:?}");
         let cd = d.highlight("CD");
-        assert!(has(&cd, "cf") && has(&cd, "fd"), "CD via F: {cd:?}");
+        assert!(has(&cd, "cd") || has(&cd, "dc"), "CD: {cd:?}");
         let ef = d.highlight("EF");
         assert!(has(&ef, "ef") || has(&ef, "fe"), "EF: {ef:?}");
+        let bg = d.highlight("BG");
+        assert!(has(&bg, "bg") || has(&bg, "gb"), "AB produced to G: {bg:?}");
+        let dg = d.highlight("DG");
+        assert!(has(&dg, "dg") || has(&dg, "gd"), "CD produced to G: {dg:?}");
         let aef = d.highlight_angle("AEF");
         assert!(
-            has(&aef, "ae") && (has(&aef, "ef") || has(&aef, "fe")),
-            "∠AEF: {aef:?}"
+            (has(&aef, "ef") || has(&aef, "fe")),
+            "∠AEF lights the transversal: {aef:?}"
         );
-        let efd = d.highlight_angle("EFD");
-        assert!(
-            has(&efd, "fd") && (has(&efd, "ef") || has(&efd, "fe")),
-            "∠EFD: {efd:?}"
-        );
-        assert!((d.at("A").y - d.at("E").y).abs() < 1e-9, "E on AB");
-        assert!((d.at("C").y - d.at("F").y).abs() < 1e-9, "F on CD");
+        assert!((d.at("A").y - d.at("B").y).abs() < 1e-9, "B level with A");
+        assert!((d.at("C").y - d.at("D").y).abs() < 1e-9, "D level with C");
+        assert!((d.at("A").x - d.at("C").x).abs() < 1e-9, "A plumb with C");
         assert!(d.at("A").y > d.at("C").y, "AB above CD");
+        // G is the meeting of AB and CD produced, on the B/D side.
+        assert!(d.at("G").x > d.at("B").x && d.at("G").x > d.at("D").x, "G beyond B and D");
         let ab_len = d.at("A").dist(d.at("B"));
-        assert!((d.at("C").dist(d.at("D")) / ab_len - 1.116).abs() < 0.01, "CD/AB");
+        assert!((d.at("C").dist(d.at("D")) / ab_len - 1.083).abs() < 0.01, "CD/AB");
+        // EF crosses both parallels; E and F are the crossings, not the tips.
+        assert!((d.at("E").x - d.at("F").x).abs() > 10.0, "EF should lean");
+        assert!(d.at("E").y > d.at("A").y && d.at("F").y < d.at("C").y, "EF crosses both");
+        // G sits off the wedge, on the side away from EF.
+        let html = d.svg(&[] as &[String]);
+        let (gdx, gdy) = letter_offset(&html, "G");
+        assert!(gdx > 0.3, "G right of the meeting, --dx={gdx} --dy={gdy}");
+        // English plate: E on AB, glyph above the line; F on CD, glyph below.
+        // CSS y is down. E at 90° points up the page (negative dy); F at -90°
+        // points down (positive dy).
+        let (edx, edy) = letter_offset(&html, "E");
+        assert!(edy < -0.5 && edx.abs() < 0.2, "E above AB, --dx={edx} --dy={edy}");
+        let (fdx, fdy) = letter_offset(&html, "F");
+        assert!(fdy > 0.5 && fdx.abs() < 0.2, "F below CD, --dx={fdx} --dy={fdy}");
     }
 
     #[test]
@@ -1684,6 +1707,11 @@ mod tests {
         assert!((d.at("A").x - d.at("C").x).abs() < 1e-9, "A plumb with C");
         assert!((d.at("B").x - d.at("D").x).abs() < 1e-9, "B plumb with D");
         let cd_len = d.at("C").dist(d.at("D"));
+        let html = d.svg(&[] as &[String]);
+        let (gdx, gdy) = letter_offset(&html, "G");
+        let (edx, edy) = letter_offset(&html, "E");
+        assert!(gdx > 0.15 && gdy < -0.45, "G above-right of the crossing, --dx={gdx} --dy={gdy}");
+        assert!(edx > 0.2 && edy > 0.2, "E below-right of the tip, --dx={edx} --dy={edy}");
         assert!((d.at("A").dist(d.at("B")) / cd_len - 1.0).abs() < 0.01, "AB/CD");
     }
 

@@ -59,6 +59,11 @@ impl Figure {
 
     pub(crate) fn label_at(&mut self, id: impl Into<String>, at: V2, place: Place) {
         let id = id.into();
+        if let Some(lab) = self.labels.iter_mut().find(|l| l.id == id) {
+            lab.at = at;
+            lab.place = place;
+            return;
+        }
         self.labels.push(Label {
             text: id.clone(),
             id,

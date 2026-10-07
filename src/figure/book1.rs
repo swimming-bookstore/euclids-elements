@@ -540,38 +540,49 @@ pub fn book1_prop26() -> Diagram {
     d
 }
 
-/// I.27 — Fitzpatrick plate (Elements p. 30): AB ∥ CD, transversal EF.
-/// G is where the lines would meet if produced (not drawn). A, E, B `level`;
-/// C, F, D `level`. One scale AB = 100. Plate: CD/AB = 1.116.
+/// I.27 — Fitzpatrick Greek plate (Elements p. 30): AB ∥ CD, transversal EF,
+/// produced in the direction of B and D to meet at G. A, B `level`; C, D
+/// `level`. The stroke is the free transversal. On the English plate E sits
+/// on AB, above the line, and F on CD, below the line — the same height as
+/// A, B and C, D — in the open stretch clear of the transversal. AB = 100.
+/// Plate: CD/AB = 1.083. Letter x from the PDF word boxes (p. 30):
+/// E is 0.531 of AB from A, F is 0.320 of CD from C.
 pub fn book1_prop27() -> Diagram {
     let mut d = Diagram::new();
-    d.put("A", V2::new(0.0, 0.0), Place::Deg(91.0));
-    d.level("E", "A", 54.45, Place::Deg(90.0));
+    d.put("A", V2::new(0.0, 0.0), Place::Deg(90.0));
     d.level("B", "A", 100.0, Place::Deg(90.0));
-    d.put("C", V2::new(-3.35, -37.43), Place::Deg(-90.0));
-    d.level("F", "C", 28.38, Place::Deg(-90.0));
-    d.level("D", "C", 108.24, Place::Deg(-90.0));
-    d.put("G", V2::new(158.33, -16.13), Place::Deg(-8.0));
-    d.chain(&["A", "E", "B"]);
-    d.chain(&["C", "F", "D"]);
+    d.put("C", V2::new(0.0, -34.65), Place::Deg(-90.0));
+    d.level("D", "C", 108.26, Place::Deg(-90.0));
+    d.put("E", V2::new(67.03, 20.66), Place::Deg(90.0));
+    d.put("F", V2::new(24.03, -51.01), Place::Deg(-90.0));
+    d.put("G", V2::new(152.42, -14.92), Place::Deg(28.0));
+    d.chain(&["A", "B", "G"]);
+    d.chain(&["C", "D", "G"]);
     d.join("E", "F");
+    // English plate (PDF p. 30): E shares AB's height, F shares CD's. Both
+    // sit in the open stretch of the parallel, clear of the transversal, and
+    // the glyph points back at the line. Measured from the page word boxes:
+    // E at 0.531 of AB from A, F at 0.320 of CD from C.
+    d.label_at("E", V2::new(53.08, 0.0), Place::Deg(90.0));
+    d.label_at("F", V2::new(34.68, -34.65), Place::Deg(-90.0));
     d.dots(&["A", "B", "C", "D", "E", "F", "G"]);
     d
 }
 
 /// I.28 — Fitzpatrick plate (Elements p. 31): AB ∥ CD, transversal EF
 /// cutting AB at G and CD at H. A, G, B and C, H, D `level`; A plumb with C,
-/// B plumb with D. One scale CD = 100. Plate: AB/CD = 1.000.
+/// B plumb with D. One scale CD = 100. Plate: GH/CD = 0.530. E sits just under
+/// the free tip, right of the stroke. G is a little above-right of the crossing.
 pub fn book1_prop28() -> Diagram {
     let mut d = Diagram::new();
-    d.put("C", V2::new(0.0, 0.0), Place::Deg(-90.0));
-    d.plumb("A", "C", 39.96, Place::Deg(91.0));
-    d.level("B", "A", 100.0, Place::Deg(90.0));
-    d.plumb("D", "B", 0.0, Place::Deg(-90.0));
-    d.put("E", V2::new(19.89, 60.61), Place::Deg(43.0));
-    d.put("F", V2::new(72.22, -24.93), Place::Deg(46.0));
-    d.meet("G", "A", "B", "E", "F", Place::Deg(90.0));
-    d.meet("H", "C", "D", "E", "F", Place::Deg(-90.0));
+    d.put("C", V2::new(0.0, 0.0), Place::Deg(151.1));
+    d.plumb("A", "C", 45.2, Place::Deg(151.0));
+    d.level("B", "A", 100.0, Place::Deg(29.1));
+    d.plumb("D", "B", 0.0, Place::Deg(27.9));
+    d.put("E", V2::new(19.21, 61.62), Place::Deg(-55.0));
+    d.put("F", V2::new(71.19, -23.44), Place::Deg(55.0));
+    d.meet("G", "A", "B", "E", "F", Place::Deg(62.0));
+    d.meet("H", "C", "D", "E", "F", Place::Deg(50.3));
     d.chain(&["A", "G", "B"]);
     d.chain(&["C", "H", "D"]);
     d.chain(&["E", "G", "H", "F"]);
