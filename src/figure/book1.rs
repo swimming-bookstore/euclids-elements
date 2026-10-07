@@ -539,3 +539,42 @@ pub fn book1_prop26() -> Diagram {
     d.dots(&["A", "B", "C", "D", "E", "F", "G", "H"]);
     d
 }
+
+/// I.27 — Fitzpatrick plate (Elements p. 30): AB ∥ CD, transversal EF.
+/// G is where the lines would meet if produced (not drawn). A, E, B `level`;
+/// C, F, D `level`. One scale AB = 100. Plate: CD/AB = 1.116.
+pub fn book1_prop27() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("A", V2::new(0.0, 0.0), Place::Deg(91.0));
+    d.level("E", "A", 54.45, Place::Deg(90.0));
+    d.level("B", "A", 100.0, Place::Deg(90.0));
+    d.put("C", V2::new(-3.35, -37.43), Place::Deg(-90.0));
+    d.level("F", "C", 28.38, Place::Deg(-90.0));
+    d.level("D", "C", 108.24, Place::Deg(-90.0));
+    d.put("G", V2::new(158.33, -16.13), Place::Deg(-8.0));
+    d.chain(&["A", "E", "B"]);
+    d.chain(&["C", "F", "D"]);
+    d.join("E", "F");
+    d.dots(&["A", "B", "C", "D", "E", "F", "G"]);
+    d
+}
+
+/// I.28 — Fitzpatrick plate (Elements p. 31): AB ∥ CD, transversal EF
+/// cutting AB at G and CD at H. A, G, B and C, H, D `level`; A plumb with C,
+/// B plumb with D. One scale CD = 100. Plate: AB/CD = 1.000.
+pub fn book1_prop28() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("C", V2::new(0.0, 0.0), Place::Deg(-90.0));
+    d.plumb("A", "C", 39.96, Place::Deg(91.0));
+    d.level("B", "A", 100.0, Place::Deg(90.0));
+    d.plumb("D", "B", 0.0, Place::Deg(-90.0));
+    d.put("E", V2::new(19.89, 60.61), Place::Deg(43.0));
+    d.put("F", V2::new(72.22, -24.93), Place::Deg(46.0));
+    d.meet("G", "A", "B", "E", "F", Place::Deg(90.0));
+    d.meet("H", "C", "D", "E", "F", Place::Deg(-90.0));
+    d.chain(&["A", "G", "B"]);
+    d.chain(&["C", "H", "D"]);
+    d.chain(&["E", "G", "H", "F"]);
+    d.dots(&["A", "B", "C", "D", "E", "F", "G", "H"]);
+    d
+}

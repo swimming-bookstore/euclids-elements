@@ -1488,6 +1488,76 @@ def book1_prop26() -> Fig:
     return f
 
 
+def book1_prop27() -> Fig:
+    # Fitzpatrick printed p. 30 (PDF p. 30). AB ∥ CD, transversal EF.
+    # The reductio meets them, produced, at G (not drawn). A, E, B `level`;
+    # C, F, D `level`. One scale AB = 100. Plate: CD/AB = 1.116, EF not on AB.
+    s = Sketch()
+    s.put("A", 0.0, 0.0)
+    s.level("E", "A", 54.45)
+    s.level("B", "A", 100.0)
+    s.put("C", -3.35, -37.43)
+    s.level("F", "C", 28.38)
+    s.level("D", "C", 108.24)
+    s.put("G", 158.33, -16.13)
+    s.letters(A=91.0, B=90.0, C=-90.0, D=-90.0, E=90.0, F=-90.0, G=-8.0)
+    f = Fig(
+        "book1_prop27",
+        "I.27 — Fitzpatrick plate (Elements p. 30): AB ∥ CD, transversal EF.\n"
+        "G is where the lines would meet if produced (not drawn). A, E, B `level`;\n"
+        "C, F, D `level`. One scale AB = 100. Plate: CD/AB = 1.116.",
+        sketch=s,
+    )
+    f.put("A", *s.at("A"))
+    f.level("E", "A", s.at("E")[0])
+    f.level("B", "A", s.at("B")[0])
+    f.put("C", *s.at("C"))
+    f.level("F", "C", s.at("F")[0])
+    f.level("D", "C", s.at("D")[0])
+    f.put("G", *s.at("G"))
+    f.chain("A", "E", "B")
+    f.chain("C", "F", "D")
+    f.join("E", "F")
+    f.dots("A", "B", "C", "D", "E", "F", "G")
+    return f
+
+
+def book1_prop28() -> Fig:
+    # Fitzpatrick printed p. 31 (PDF p. 31). AB ∥ CD. Transversal EF cuts AB
+    # at G and CD at H. A, G, B `level`; C, H, D `level`; A, C `plumb`;
+    # B, D `plumb`. One scale CD = 100. Plate: AB/CD = 1.000, GH/CD = 0.400.
+    s = Sketch()
+    s.put("C", 0.0, 0.0)
+    s.plumb("A", "C", 39.96)
+    s.level("B", "A", 100.0)
+    s.plumb("D", "B", 0.0)
+    s.put("E", 19.89, 60.61)
+    s.put("F", 72.22, -24.93)
+    s.meet("G", "A", "B", "E", "F")
+    s.meet("H", "C", "D", "E", "F")
+    s.letters(A=91.0, B=90.0, C=-90.0, D=-90.0, E=43.0, F=46.0, G=90.0, H=-90.0)
+    f = Fig(
+        "book1_prop28",
+        "I.28 — Fitzpatrick plate (Elements p. 31): AB ∥ CD, transversal EF\n"
+        "cutting AB at G and CD at H. A, G, B and C, H, D `level`; A plumb with C,\n"
+        "B plumb with D. One scale CD = 100. Plate: AB/CD = 1.000.",
+        sketch=s,
+    )
+    f.put("C", *s.at("C"))
+    f.plumb("A", "C", s.at("A")[1])
+    f.level("B", "A", s.at("B")[0])
+    f.plumb("D", "B", s.at("D")[1])
+    f.put("E", *s.at("E"))
+    f.put("F", *s.at("F"))
+    f.meet("G", "A", "B", "E", "F")
+    f.meet("H", "C", "D", "E", "F")
+    f.chain("A", "G", "B")
+    f.chain("C", "H", "D")
+    f.chain("E", "G", "H", "F")
+    f.dots("A", "B", "C", "D", "E", "F", "G", "H")
+    return f
+
+
 PLATES = [
     book1_prop1,
     book1_prop2,
@@ -1515,6 +1585,8 @@ PLATES = [
     book1_prop24,
     book1_prop25,
     book1_prop26,
+    book1_prop27,
+    book1_prop28,
 ]
 
 

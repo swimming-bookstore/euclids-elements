@@ -5,6 +5,7 @@ use crate::figure::{
     book1_prop12, book1_prop13, book1_prop14, book1_prop15, book1_prop16,
     book1_prop17, book1_prop18, book1_prop19, book1_prop20, book1_prop21,
     book1_prop22, book1_prop23, book1_prop24, book1_prop25, book1_prop26,
+    book1_prop27, book1_prop28,
 };
 
 pub const PROP_1: Proposition = Proposition {
@@ -651,8 +652,50 @@ pub const PROP_26: Proposition = Proposition {
     ],
 };
 
+pub const PROP_27: Proposition = Proposition {
+    book: 1,
+    number: 27,
+    enunciation: "If a straight-line falling across two straight-lines makes the alternate angles equal to one another then the (two) straight-lines will be parallel to one another.",
+    figure: book1_prop27,
+    phrases: &[
+        s(1, "For let the straight-line *EF*, falling across the two straight-lines *AB* and *CD*, make the alternate angles *AEF* and *EFD* equal to one another."),
+        s(1, "I say that *AB* and *CD* are parallel."),
+        s(2, "For if not, being produced, *AB* and *CD* will certainly meet together: either in the direction of *B* and *D*, or (in the direction) of *A* and *C*.{[Def. 1.23]}"),
+        s(2, "Let them have been produced, and let them meet together in the direction of *B* and *D* at (point) *G*."),
+        s(2, "So, for the triangle *GEF*, the external angle *AEF* is equal to the interior and opposite (angle) *EFG*."),
+        s(2, "The very thing is impossible.{[Prop. 1.16]}"),
+        s(2, "Thus, being produced, *AB* and *CD* will not meet together in the direction of *B* and *D*."),
+        s(2, "Similarly, it can be shown that neither (will they meet together) in (the direction of) *A* and *C*."),
+        s(2, "But (straight-lines) meeting in neither direction are parallel.{[Def. 1.23]}"),
+        s(2, "Thus, *AB* and *CD* are parallel."),
+        s(3, "Thus, if a straight-line falling across two straight-lines makes the alternate angles equal to one another then the (two) straight-lines will be parallel (to one another)."),
+        s(3, "(Which is) the very thing it was required to show."),
+    ],
+};
+
+pub const PROP_28: Proposition = Proposition {
+    book: 1,
+    number: 28,
+    enunciation: "If a straight-line falling across two straight-lines makes the external angle equal to the internal and opposite angle on the same side, or (makes) the (sum of the) internal (angles) on the same side equal to two right-angles, then the (two) straight-lines will be parallel to one another.",
+    figure: book1_prop28,
+    phrases: &[
+        s(1, "For let *EF*, falling across the two straight-lines *AB* and *CD*, make the external angle *EGB* equal to the internal and opposite angle *GHD*, or the (sum of the) internal (angles) on the same side, *BGH* and *GHD*, equal to two right-angles."),
+        s(1, "I say that *AB* is parallel to *CD*."),
+        s(2, "For since (in the first case) *EGB* is equal to *GHD*, but *EGB* is equal to *AGH*,{[Prop. 1.15]} *AGH* is thus also equal to *GHD*."),
+        s(2, "And they are alternate (angles)."),
+        s(2, "Thus, *AB* is parallel to *CD*.{[Prop. 1.27]}"),
+        s(3, "Again, since (in the second case, the sum of) *BGH* and *GHD* is equal to two right-angles, and (the sum of) *AGH* and *BGH* is also equal to two right-angles,{[Prop. 1.13]} (the sum of) *AGH* and *BGH* is thus equal to (the sum of) *BGH* and *GHD*."),
+        s(3, "Let *BGH* have been subtracted from both."),
+        s(3, "Thus, the remainder *AGH* is equal to the remainder *GHD*."),
+        s(3, "And they are alternate (angles)."),
+        s(3, "Thus, *AB* is parallel to *CD*.{[Prop. 1.27]}"),
+        s(4, "Thus, if a straight-line falling across two straight-lines makes the external angle equal to the internal and opposite angle on the same side, or (makes) the (sum of the) internal (angles) on the same side equal to two right-angles, then the (two) straight-lines will be parallel (to one another)."),
+        s(4, "(Which is) the very thing it was required to show."),
+    ],
+};
+
 pub const PROPOSITIONS: &[Proposition] = &[
     PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6, PROP_7, PROP_8, PROP_9, PROP_10, PROP_11,
     PROP_12, PROP_13, PROP_14, PROP_15, PROP_16, PROP_17, PROP_18, PROP_19, PROP_20, PROP_21,
-    PROP_22, PROP_23, PROP_24, PROP_25, PROP_26,
+    PROP_22, PROP_23, PROP_24, PROP_25, PROP_26, PROP_27, PROP_28,
 ];
