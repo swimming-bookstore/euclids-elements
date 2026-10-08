@@ -5,7 +5,7 @@ use crate::figure::{
     book1_prop12, book1_prop13, book1_prop14, book1_prop15, book1_prop16,
     book1_prop17, book1_prop18, book1_prop19, book1_prop20, book1_prop21,
     book1_prop22, book1_prop23, book1_prop24, book1_prop25, book1_prop26,
-    book1_prop27, book1_prop28,
+    book1_prop27, book1_prop28, book1_prop29, book1_prop30,
 };
 
 pub const PROP_1: Proposition = Proposition {
@@ -694,8 +694,58 @@ pub const PROP_28: Proposition = Proposition {
     ],
 };
 
+pub const PROP_29: Proposition = Proposition {
+    book: 1,
+    number: 29,
+    enunciation: "A straight-line falling across parallel straight-lines makes the alternate angles equal to one another, the external (angle) equal to the internal and opposite (angle), and the (sum of the) internal (angles) on the same side equal to two right-angles.",
+    figure: book1_prop29,
+    phrases: &[
+        s(1, "For let the straight-line *EF* fall across the parallel straight-lines *AB* and *CD*."),
+        s(1, "I say that it makes the alternate angles, *AGH* and *GHD*, equal, the external angle *EGB* equal to the internal and opposite (angle) *GHD*, and the (sum of the) internal (angles) on the same side, *BGH* and *GHD*, equal to two right-angles."),
+        s(2, "For if *AGH* is unequal to *GHD* then one of them is greater."),
+        s(2, "Let *AGH* be greater."),
+        s(2, "Let *BGH* have been added to both."),
+        s(2, "Thus, (the sum of) *AGH* and *BGH* is greater than (the sum of) *BGH* and *GHD*."),
+        s(2, "But, (the sum of) *AGH* and *BGH* is equal to two right-angles.{[Prop. 1.13]}"),
+        s(2, "Thus, (the sum of) *BGH* and *GHD* is also less than two right-angles."),
+        s(2, "But (straight-lines) being produced to infinity from (internal angles whose sum is) less than two right-angles meet together.{[Post. 5]}"),
+        s(2, "Thus, *AB* and *CD*, being produced to infinity, will meet together."),
+        s(2, "But they do not meet, on account of them (initially) being assumed parallel (to one another).{[Def. 1.23]}"),
+        s(2, "Thus, *AGH* is not unequal to *GHD*."),
+        s(2, "Thus, (it is) equal."),
+        s(2, "But, *AGH* is equal to *EGB*.{[Prop. 1.15]}"),
+        s(2, "And *EGB* is thus also equal to *GHD*."),
+        s(2, "Let *BGH* be added to both."),
+        s(2, "Thus, (the sum of) *EGB* and *BGH* is equal to (the sum of) *BGH* and *GHD*."),
+        s(2, "But, (the sum of) *EGB* and *BGH* is equal to two right-angles.{[Prop. 1.13]}"),
+        s(2, "Thus, (the sum of) *BGH* and *GHD* is also equal to two right-angles."),
+        s(3, "Thus, a straight-line falling across parallel straight-lines makes the alternate angles equal to one another, the external (angle) equal to the internal and opposite (angle), and the (sum of the) internal (angles) on the same side equal to two right-angles."),
+        s(3, "(Which is) the very thing it was required to show."),
+    ],
+};
+
+pub const PROP_30: Proposition = Proposition {
+    book: 1,
+    number: 30,
+    enunciation: "(Straight-lines) parallel to the same straight-line are also parallel to one another.",
+    figure: book1_prop30,
+    phrases: &[
+        s(1, "Let each of the (straight-lines) *AB* and *CD* be parallel to *EF*."),
+        s(1, "I say that *AB* is also parallel to *CD*."),
+        s(2, "For let the straight-line *GK* fall across (*AB*, *CD*, and *EF*)."),
+        s(3, "And since the straight-line *GK* has fallen across the parallel straight-lines *AB* and *EF*, (angle) *AGK* (is) thus equal to *GHF*.{[Prop. 1.29]}"),
+        s(3, "Again, since the straight-line *GK* has fallen across the parallel straight-lines *EF* and *CD*, (angle) *GHF* is equal to *GKD*.{[Prop. 1.29]}"),
+        s(3, "But *AGK* was also shown (to be) equal to *GHF*."),
+        s(3, "Thus, *AGK* is also equal to *GKD*."),
+        s(3, "And they are alternate (angles)."),
+        s(3, "Thus, *AB* is parallel to *CD*.{[Prop. 1.27]}"),
+        s(4, "Thus, (straight-lines) parallel to the same straight-line are also parallel to one another."),
+        s(4, "(Which is) the very thing it was required to show."),
+    ],
+};
+
 pub const PROPOSITIONS: &[Proposition] = &[
     PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6, PROP_7, PROP_8, PROP_9, PROP_10, PROP_11,
     PROP_12, PROP_13, PROP_14, PROP_15, PROP_16, PROP_17, PROP_18, PROP_19, PROP_20, PROP_21,
-    PROP_22, PROP_23, PROP_24, PROP_25, PROP_26, PROP_27, PROP_28,
+    PROP_22, PROP_23, PROP_24, PROP_25, PROP_26, PROP_27, PROP_28, PROP_29, PROP_30,
 ];

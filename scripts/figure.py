@@ -1543,8 +1543,8 @@ def book1_prop27() -> Fig:
     bx, _by = s.at("B")
     cx, cy = s.at("C")
     dx, _dy = s.at("D")
-    f.label_at("E", ax + 0.53079 * (bx - ax), ay, 90.0)
-    f.label_at("F", cx + 0.32035 * (dx - cx), cy, -90.0)
+    f.label_at("E", ax + 0.53079 * (bx - ax), ay, s.glyph("E"))
+    f.label_at("F", cx + 0.32035 * (dx - cx), cy, s.glyph("F"))
     f.dots("A", "B", "C", "D", "E", "F", "G")
     return f
 
@@ -1592,6 +1592,96 @@ def book1_prop28() -> Fig:
     return f
 
 
+def book1_prop29() -> Fig:
+    # Fitzpatrick printed p. 32 (PDF p. 32). Same plate as I.28: AB ∥ CD,
+    # transversal EF cutting AB at G and CD at H. A, G, B `level`; C, H, D
+    # `level`; A plumb with C, B plumb with D. One scale CD = 100. Strokes
+    # (300 dpi, glyph boxes blanked): AB y=329.52 x 346.32..526.80, CD y=398.40
+    # same x, EF fit y = 1.63693x − 336.531, free tips (373.2, 274.4) and
+    # (475.6, 442.0). Crossings G x=406.89, H x=448.97.
+    s = Sketch()
+    s.put("C", 0.0, 0.0)
+    s.plumb("A", "C", 38.16)
+    s.level("B", "A", 100.0)
+    s.plumb("D", "B", 0.0)
+    s.put("E", 14.89, 68.71)
+    s.put("F", 71.63, -24.16)
+    s.meet("G", "A", "B", "E", "F")
+    s.meet("H", "C", "D", "E", "F")
+    # Letters sit above both parallels (A, G, B and C, H, D), clear of the
+    # transversal. E is right of the upper tip, off the stroke; F is up-right
+    # of the lower tip. Headings from the plate glyph centers.
+    s.letters(A=70.0, B=110.0, C=70.0, D=110.0, E=-20.0, F=50.0, G=50.0, H=55.0)
+    f = Fig(
+        "book1_prop29",
+        "I.29 — Fitzpatrick plate (Elements p. 32): AB ∥ CD, transversal EF\n"
+        "cutting AB at G and CD at H. A, G, B and C, H, D `level`; A plumb with C,\n"
+        "B plumb with D. One scale CD = 100. Plate: GH/CD = 0.233, AC/CD = 0.382.\n"
+        "Every letter sits above its stroke. E is right of the upper tip, off the line.",
+        sketch=s,
+    )
+    f.put("C", *s.at("C"))
+    f.plumb("A", "C", s.at("A")[1])
+    f.level("B", "A", s.at("B")[0])
+    f.plumb("D", "B", s.at("D")[1])
+    f.put("E", *s.at("E"))
+    f.put("F", *s.at("F"))
+    f.meet("G", "A", "B", "E", "F")
+    f.meet("H", "C", "D", "E", "F")
+    f.chain("A", "G", "B")
+    f.chain("C", "H", "D")
+    f.chain("E", "G", "H", "F")
+    f.dots("A", "B", "C", "D", "E", "F", "G", "H")
+    return f
+
+
+def book1_prop30() -> Fig:
+    # Fitzpatrick printed p. 33 (PDF p. 33). Three parallels AB, EF, CD.
+    # Transversal GK falls across them, cutting AB at G, EF at H, CD at K.
+    # A, G, B `level`; E, H, F `level`; C, K, D `level`; A plumb with E and C,
+    # B plumb with F and D. One scale AB = 100. Strokes (300 dpi, glyph boxes
+    # blanked): AB y=292.32, EF y=332.64, CD y=372.96, each x 350.16..521.28.
+    # GK fit y = −2.33067x + 1336.710 (PDF y down), free tips (400.0, 404.4)
+    # and (461.2, 261.8). Crossings G x=448.11, H x=430.81, K x=413.51.
+    s = Sketch()
+    s.put("A", 0.0, 0.0)
+    s.level("B", "A", 100.0)
+    s.plumb("E", "A", -23.56)
+    s.level("F", "E", 100.0)
+    s.plumb("C", "E", -47.12)
+    s.level("D", "C", 100.0)
+    s.put("G", 64.89, 17.84)
+    s.put("K", 29.13, -65.50)
+    s.meet("H", "E", "F", "G", "K")
+    # Left-end letters sit outside, above-left; right-end letters outside,
+    # above-right. G, H, K sit above-left of their crossings, clear of the
+    # transversal (plate glyph centers, ~124°).
+    s.letters(A=160.0, B=15.0, C=160.0, D=15.0, E=160.0, F=15.0, G=125.0, H=125.0, K=125.0)
+    f = Fig(
+        "book1_prop30",
+        "I.30 — Fitzpatrick plate (Elements p. 33): AB ∥ EF ∥ CD, transversal GK\n"
+        "cutting AB at G, EF at H, and CD at K. A, G, B and E, H, F and C, K, D\n"
+        "`level`; A plumb with E and C, B plumb with F and D. One scale AB = 100.\n"
+        "Plate: AE/AB = 0.236. G, H, K sit above-left of their crossings.",
+        sketch=s,
+    )
+    f.put("A", *s.at("A"))
+    f.level("B", "A", s.at("B")[0])
+    f.plumb("E", "A", s.at("E")[1])
+    f.level("F", "E", s.at("F")[0])
+    f.plumb("C", "E", s.at("C")[1])
+    f.level("D", "C", s.at("D")[0])
+    f.put("G", *s.at("G"))
+    f.put("K", *s.at("K"))
+    f.meet("H", "E", "F", "G", "K")
+    f.chain("A", "G", "B")
+    f.chain("E", "H", "F")
+    f.chain("C", "K", "D")
+    f.chain("G", "H", "K")
+    f.dots("A", "B", "C", "D", "E", "F", "G", "H", "K")
+    return f
+
+
 PLATES = [
     book1_prop1,
     book1_prop2,
@@ -1621,6 +1711,8 @@ PLATES = [
     book1_prop26,
     book1_prop27,
     book1_prop28,
+    book1_prop29,
+    book1_prop30,
 ]
 
 
