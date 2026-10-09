@@ -6,6 +6,7 @@ use crate::figure::{
     book1_prop17, book1_prop18, book1_prop19, book1_prop20, book1_prop21,
     book1_prop22, book1_prop23, book1_prop24, book1_prop25, book1_prop26,
     book1_prop27, book1_prop28, book1_prop29, book1_prop30,
+    book1_prop31, book1_prop32,
 };
 
 pub const PROP_1: Proposition = Proposition {
@@ -744,8 +745,48 @@ pub const PROP_30: Proposition = Proposition {
     ],
 };
 
+pub const PROP_31: Proposition = Proposition {
+    book: 1,
+    number: 31,
+    enunciation: "To draw a straight-line parallel to a given straight-line, through a given point.",
+    figure: book1_prop31,
+    phrases: &[
+        s(1, "Let *A* be the given point, and *BC* the given straight-line."),
+        s(1, "So it is required to draw a straight-line parallel to the straight-line *BC*, through the point *A*."),
+        s(2, "Let the point *D* have been taken at random on *BC*, and let *AD* have been joined."),
+        s(2, "And let (angle) *DAE*, equal to angle *ADC*, have been constructed on the straight-line *DA* at the point *A* on it.{[Prop. 1.23]}"),
+        s(2, "And let the straight-line *AF* have been produced in a straight-line with *EA*."),
+        s(3, "And since the straight-line *AD*, (in) falling across the two straight-lines *BC* and *EF*, has made the alternate angles *EAD* and *ADC* equal to one another, *EAF* is thus parallel to *BC*.{[Prop. 1.27]}"),
+        s(4, "Thus, the straight-line *EAF* has been drawn parallel to the given straight-line *BC*, through the given point *A*."),
+        s(4, "(Which is) the very thing it was required to do."),
+    ],
+};
+
+pub const PROP_32: Proposition = Proposition {
+    book: 1,
+    number: 32,
+    enunciation: "In any triangle, (if) one of the sides (is) produced (then) the external angle is equal to the (sum of the) two internal and opposite (angles), and the (sum of the) three internal angles of the triangle is equal to two right-angles.",
+    figure: book1_prop32,
+    phrases: &[
+        s(1, "Let *ABC* be a triangle, and let one of its sides *BC* have been produced to *D*."),
+        s(1, "I say that the external angle *ACD* is equal to the (sum of the) two internal and opposite angles *CAB* and *ABC*, and the (sum of the) three internal angles of the triangle—*ABC*, *BCA*, and *CAB*—is equal to two right-angles."),
+        s(2, "For let *CE* have been drawn through point *C* parallel to the straight-line *AB*.{[Prop. 1.31]}"),
+        s(3, "And since *AB* is parallel to *CE*, and *AC* has fallen across them, the alternate angles *BAC* and *ACE* are equal to one another.{[Prop. 1.29]}"),
+        s(3, "Again, since *AB* is parallel to *CE*, and the straight-line *BD* has fallen across them, the external angle *ECD* is equal to the internal and opposite (angle) *ABC*.{[Prop. 1.29]}"),
+        s(3, "But *ACE* was also shown (to be) equal to *BAC*."),
+        s(3, "Thus, the whole angle *ACD* is equal to the (sum of the) two internal and opposite (angles) *BAC* and *ABC*."),
+        s(4, "Let *ACB* have been added to both."),
+        s(4, "Thus, (the sum of) *ACD* and *ACB* is equal to the (sum of the) three (angles) *ABC*, *BCA*, and *CAB*."),
+        s(4, "But, (the sum of) *ACD* and *ACB* is equal to two right-angles.{[Prop. 1.13]}"),
+        s(4, "Thus, (the sum of) *ACB*, *CBA*, and *CAB* is also equal to two right-angles."),
+        s(5, "Thus, in any triangle, (if) one of the sides (is) produced (then) the external angle is equal to the (sum of the) two internal and opposite (angles), and the (sum of the) three internal angles of the triangle is equal to two right-angles."),
+        s(5, "(Which is) the very thing it was required to show."),
+    ],
+};
+
 pub const PROPOSITIONS: &[Proposition] = &[
     PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6, PROP_7, PROP_8, PROP_9, PROP_10, PROP_11,
     PROP_12, PROP_13, PROP_14, PROP_15, PROP_16, PROP_17, PROP_18, PROP_19, PROP_20, PROP_21,
     PROP_22, PROP_23, PROP_24, PROP_25, PROP_26, PROP_27, PROP_28, PROP_29, PROP_30,
+    PROP_31, PROP_32,
 ];

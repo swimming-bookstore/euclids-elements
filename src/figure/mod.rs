@@ -14,5 +14,6 @@ pub use book1::{
     book1_prop17, book1_prop18, book1_prop19, book1_prop20, book1_prop21,
     book1_prop22, book1_prop23, book1_prop24, book1_prop25, book1_prop26,
     book1_prop27, book1_prop28, book1_prop29, book1_prop30,
+    book1_prop31, book1_prop32,
 };
 pub use diagram::Diagram;

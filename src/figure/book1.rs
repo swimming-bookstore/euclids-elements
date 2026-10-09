@@ -628,3 +628,50 @@ pub fn book1_prop30() -> Diagram {
     d.dots(&["A", "B", "C", "D", "E", "F", "G", "H", "K"]);
     d
 }
+
+/// I.31 — Fitzpatrick English plate (Elements p. 34): EAF ∥ BC, AD falling
+/// on BC at D. Ink tips, one scale EF = 100. Plate: BC/EF = 1, gap/EF = 0.332.
+/// A is 0.558 of EF from E. AD leans left (D is left of A).
+///
+/// E and B sit just outside the left tips, a hair above the stroke — not
+/// above the line. F and C sit just outside the right tips, the same way.
+/// A sits just above the stroke; D below it, right of the foot.
+pub fn book1_prop31() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("E", V2::new(0.0, 0.0), Place::Deg(168.0));
+    d.level("F", "E", 100.0, Place::Deg(21.0));
+    d.plumb("B", "E", -33.24, Place::Deg(171.0));
+    d.level("C", "B", 100.0, Place::Deg(16.0));
+    d.put("A", V2::new(55.76, 0.0), Place::Deg(90.0));
+    d.put("D", V2::new(35.02, -33.24), Place::Deg(-75.0));
+    d.chain(&["E", "A", "F"]);
+    d.chain(&["B", "D", "C"]);
+    d.join("A", "D");
+    d.dots(&["A", "B", "C", "D", "E", "F"]);
+    d
+}
+
+/// I.32 — Fitzpatrick English plate (Elements p. 34): triangle ABC, BC
+/// produced to D, CE through C parallel to AB. Ink tips, one scale BC = 100.
+/// Plate: AB/BC = 1.394, AC/BC = 1.333, CD/BC = 1.145. ∠ABC = 65.2°,
+/// ∠ACB = 71.8°. B, C sit just under the base. A sits just above the apex,
+/// a hair left. E sits just above the free tip, a hair right. D is not at the
+/// tip: its letter sits under the stroke, just left of the end, on the same
+/// baseline as B and C.
+pub fn book1_prop32() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("B", V2::new(0.0, 0.0), Place::Deg(-98.1));
+    d.level("C", "B", 100.0, Place::Deg(-78.6));
+    d.level("D", "B", 214.46, Place::Deg(-90.0));
+    d.put("A", V2::new(58.43, 126.6), Place::Deg(94.4));
+    d.put("E", V2::new(155.98, 126.54), Place::Deg(81.2));
+    d.chain(&["A", "B"]);
+    d.chain(&["B", "C", "D"]);
+    d.join("A", "C");
+    d.chain(&["E", "C"]);
+    // Plate: D's center is 0.149 of BC left of the tip, and 8.09 below it —
+    // the same drop as B and C. The letter hangs under the stroke, not past the end.
+    d.label_at("D", V2::new(199.54, 0.0), Place::Deg(-90.0));
+    d.dots(&["A", "B", "C", "D", "E"]);
+    d
+}
