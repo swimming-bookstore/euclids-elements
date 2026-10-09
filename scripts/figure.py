@@ -297,15 +297,25 @@ class Fig:
             f'    d.put_line_end("{name}", V2::new({f64(x)}, {f64(y)}), {side});'
         )
 
-    def level(self, name: str, of: str, x: float, place=None) -> None:
-        self._add(
-            f'    d.level("{name}", "{of}", {f64(x)}, {self._place(name, place)});'
-        )
+    def level(self, name: str, of: str, x: float, place=None, r: float | None = None) -> None:
+        if r is None:
+            self._add(
+                f'    d.level("{name}", "{of}", {f64(x)}, {self._place(name, place)});'
+            )
+        else:
+            self._add(
+                f'    d.level_r("{name}", "{of}", {f64(x)}, {self._place(name, place)}, {f64(r)});'
+            )
 
-    def plumb(self, name: str, of: str, y: float, place=None) -> None:
-        self._add(
-            f'    d.plumb("{name}", "{of}", {f64(y)}, {self._place(name, place)});'
-        )
+    def plumb(self, name: str, of: str, y: float, place=None, r: float | None = None) -> None:
+        if r is None:
+            self._add(
+                f'    d.plumb("{name}", "{of}", {f64(y)}, {self._place(name, place)});'
+            )
+        else:
+            self._add(
+                f'    d.plumb_r("{name}", "{of}", {f64(y)}, {self._place(name, place)}, {f64(r)});'
+            )
 
     def corner(self, name: str, x_of: str, y_of: str, place=None) -> None:
         self._add(
@@ -1682,6 +1692,83 @@ def book1_prop30() -> Fig:
     return f
 
 
+def book1_prop31() -> Fig:
+    # Fitzpatrick English plate, printed p. 34. EAF ∥ BC, AD falling left
+    # onto BC. Ink tips at 160 dpi, glyph boxes left in (they are not the
+    # stroke). One scale EF = 100. Plate: BC/EF = 1, gap/EF = 0.332.
+    # A is 0.558 of EF from E. D is left of A.
+    s = Sketch()
+    s.put("E", 0.0, 0.0)
+    s.level("F", "E", 100.0)
+    s.plumb("B", "E", -33.24)
+    s.level("C", "B", 100.0)
+    s.put("A", 55.76, 0.0)
+    s.put("D", 35.02, -33.24)
+    # E, B just outside the left tips, a hair above the stroke. F, C just
+    # outside the right tips. Not above the line.
+    s.letters(A=90.0, B=171.0, C=16.0, D=-75.0, E=168.0, F=21.0)
+    f = Fig(
+        "book1_prop31",
+        "I.31 — Fitzpatrick English plate (Elements p. 34): EAF ∥ BC, AD falling\n"
+        "on BC at D. Ink tips, one scale EF = 100. Plate: BC/EF = 1, gap/EF = 0.332.\n"
+        "A is 0.558 of EF from E. AD leans left (D is left of A).\n"
+        "E and B sit just outside the left tips, a hair above the stroke — not\n"
+        "above the line. F and C sit just outside the right tips, the same way.\n"
+        "A sits just above the stroke; D below it, right of the foot.",
+        sketch=s,
+    )
+    f.put("E", *s.at("E"))
+    f.level("F", "E", s.at("F")[0])
+    f.plumb("B", "E", s.at("B")[1])
+    f.level("C", "B", s.at("C")[0])
+    f.put("A", *s.at("A"))
+    f.put("D", *s.at("D"))
+    f.chain("E", "A", "F")
+    f.chain("B", "D", "C")
+    f.join("A", "D")
+    f.dots("A", "B", "C", "D", "E", "F")
+    return f
+
+
+def book1_prop32() -> Fig:
+    # Fitzpatrick English plate, printed p. 34, under the enunciation.
+    # Triangle ABC, BC produced to D, CE through C parallel to AB.
+    # Ink tips at 160 dpi. One scale BC = 100. AB/BC = 1.394, AC/BC = 1.333,
+    # CD/BC = 1.145. ∠ABC = 65.2°, ∠ACB = 71.8°. D is not at the tip: its
+    # letter hangs under the stroke, just left of the end, on the same
+    # baseline as B and C.
+    s = Sketch()
+    s.put("B", 0.0, 0.0)
+    s.level("C", "B", 100.0)
+    s.level("D", "B", 214.46)
+    s.put("A", 58.43, 126.6)
+    s.put("E", 155.98, 126.54)
+    s.letters(A=94.4, B=-98.1, C=-78.6, D=-90.0, E=81.2)
+    f = Fig(
+        "book1_prop32",
+        "I.32 — Fitzpatrick English plate (Elements p. 34): triangle ABC, BC\n"
+        "produced to D, CE through C parallel to AB. Ink tips, one scale BC = 100.\n"
+        "Plate: AB/BC = 1.394, AC/BC = 1.333, CD/BC = 1.145. ∠ABC = 65.2°,\n"
+        "∠ACB = 71.8°. B, C sit just under the base. A sits just above the apex,\n"
+        "a hair left. E sits just above the free tip, a hair right. D is not at the\n"
+        "tip: its letter hangs under the stroke, just left of the end, on the same\n"
+        "baseline as B and C.",
+        sketch=s,
+    )
+    f.put("B", *s.at("B"))
+    f.level("C", "B", s.at("C")[0])
+    f.level("D", "B", s.at("D")[0])
+    f.put("A", *s.at("A"))
+    f.put("E", *s.at("E"))
+    f.chain("A", "B")
+    f.chain("B", "C", "D")
+    f.join("A", "C")
+    f.chain("E", "C")
+    f.label_at("D", 199.54, 0.0, ("deg", -90.0))
+    f.dots("A", "B", "C", "D", "E")
+    return f
+
+
 PLATES = [
     book1_prop1,
     book1_prop2,
@@ -1713,6 +1800,8 @@ PLATES = [
     book1_prop28,
     book1_prop29,
     book1_prop30,
+    book1_prop31,
+    book1_prop32,
 ]
 
 

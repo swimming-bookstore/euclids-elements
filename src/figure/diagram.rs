@@ -105,9 +105,19 @@ impl Diagram {
         self.put(name, V2::new(x, self.at(of).y), place)
     }
 
+    /// `level`, with the letter center at `r_em` from the mark.
+    pub fn level_r(&mut self, name: &'static str, of: &str, x: f64, place: Place, r_em: f64) -> V2 {
+        self.put_r(name, V2::new(x, self.at(of).y), place, r_em)
+    }
+
     /// Same column as `of` (a Fitzpatrick letter-column).
     pub fn plumb(&mut self, name: &'static str, of: &str, y: f64, place: Place) -> V2 {
         self.put(name, V2::new(self.at(of).x, y), place)
+    }
+
+    /// `plumb`, with the letter center at `r_em` from the mark.
+    pub fn plumb_r(&mut self, name: &'static str, of: &str, y: f64, place: Place, r_em: f64) -> V2 {
+        self.put_r(name, V2::new(self.at(of).x, y), place, r_em)
     }
 
     /// Column of `x_of` × row of `y_of`.
@@ -489,7 +499,7 @@ mod tests {
         book1_prop13, book1_prop14, book1_prop15, book1_prop16, book1_prop17,
         book1_prop18, book1_prop19, book1_prop20, book1_prop21, book1_prop22,
         book1_prop23, book1_prop24, book1_prop25, book1_prop26, book1_prop27,
-        book1_prop28,
+        book1_prop28, book1_prop29, book1_prop30, book1_prop31, book1_prop32,
     };
 
     fn has(v: &[String], id: &str) -> bool {
@@ -1713,6 +1723,79 @@ mod tests {
         assert!(gdx > 0.15 && gdy < -0.45, "G above-right of the crossing, --dx={gdx} --dy={gdy}");
         assert!(edx > 0.2 && edy > 0.2, "E below-right of the tip, --dx={edx} --dy={edy}");
         assert!((d.at("A").dist(d.at("B")) / cd_len - 1.0).abs() < 0.01, "AB/CD");
+    }
+
+    #[test]
+    fn prop29_paths() {
+        let d = book1_prop29();
+        let ab = d.highlight("AB");
+        assert!(has(&ab, "ag") && has(&ab, "gb"), "AB via G: {ab:?}");
+        let cd = d.highlight("CD");
+        assert!(has(&cd, "ch") && has(&cd, "hd"), "CD via H: {cd:?}");
+        let ef = d.highlight("EF");
+        assert!(has(&ef, "eg") && has(&ef, "gh") && has(&ef, "hf"), "EF: {ef:?}");
+        assert!(d.at("G").on_seg(d.at("A"), d.at("B"), 1e-3));
+        assert!(d.at("H").on_seg(d.at("C"), d.at("D"), 1e-3));
+        assert!((d.at("A").y - d.at("B").y).abs() < 1e-9, "AB level");
+        assert!((d.at("C").y - d.at("D").y).abs() < 1e-9, "CD level");
+    }
+
+    #[test]
+    fn prop30_paths() {
+        let d = book1_prop30();
+        let gk = d.highlight("GK");
+        assert!(has(&gk, "gh") && has(&gk, "hk"), "GK via H: {gk:?}");
+        assert!(d.at("H").on_seg(d.at("E"), d.at("F"), 1e-3));
+        assert!((d.at("A").y - d.at("B").y).abs() < 1e-9);
+        assert!((d.at("E").y - d.at("F").y).abs() < 1e-9);
+        assert!((d.at("C").y - d.at("D").y).abs() < 1e-9);
+    }
+
+    #[test]
+    fn prop31_paths() {
+        let d = book1_prop31();
+        let eaf = d.highlight("EAF");
+        assert!(has(&eaf, "ea") && has(&eaf, "af"), "EAF via A: {eaf:?}");
+        let bc = d.highlight("BC");
+        assert!(has(&bc, "bd") && has(&bc, "dc"), "BC via D: {bc:?}");
+        let ad = d.highlight("AD");
+        assert!(has(&ad, "ad"), "AD: {ad:?}");
+        let ead = d.highlight_angle("EAD");
+        assert!(has(&ead, "ea") && has(&ead, "ad"), "∠EAD: {ead:?}");
+        let adc = d.highlight_angle("ADC");
+        assert!(has(&adc, "ad") && has(&adc, "dc"), "∠ADC: {adc:?}");
+        assert!((d.at("E").y - d.at("F").y).abs() < 1e-9, "EF level");
+        assert!((d.at("B").y - d.at("C").y).abs() < 1e-9, "BC level");
+        assert!((d.at("B").dist(d.at("C")) / d.at("E").dist(d.at("F")) - 1.0).abs() < 0.01);
+        assert!(d.at("A").on_seg(d.at("E"), d.at("F"), 1e-6), "A on EF");
+        assert!(d.at("D").on_seg(d.at("B"), d.at("C"), 1e-6), "D on BC");
+        assert!(d.at("D").x < d.at("A").x, "AD leans left, as on the plate");
+    }
+
+    #[test]
+    fn prop32_paths() {
+        let d = book1_prop32();
+        let bc = d.highlight("BC");
+        assert!(has(&bc, "bc"), "BC: {bc:?}");
+        let bd = d.highlight("BD");
+        assert!(has(&bd, "bc") && has(&bd, "cd"), "BD via C: {bd:?}");
+        let ce = d.highlight("CE");
+        assert!(has(&ce, "ec"), "CE: {ce:?}");
+        let acd = d.highlight_angle("ACD");
+        assert!(has(&acd, "ac") && has(&acd, "cd"), "∠ACD: {acd:?}");
+        let bac = d.highlight_angle("BAC");
+        assert!(has(&bac, "ab") && has(&bac, "ac"), "∠BAC: {bac:?}");
+        let ace = d.highlight_angle("ACE");
+        assert!(has(&ace, "ac") && has(&ace, "ec"), "∠ACE: {ace:?}");
+        let ecd = d.highlight_angle("ECD");
+        assert!(has(&ecd, "ec") && has(&ecd, "cd"), "∠ECD: {ecd:?}");
+        assert!(d.at("C").on_seg(d.at("B"), d.at("D"), 1e-3), "C on BD");
+        assert!((d.at("B").y - d.at("C").y).abs() < 1e-9, "BC level");
+        assert!((d.at("C").y - d.at("D").y).abs() < 1e-9, "CD level");
+        let bc_len = d.at("B").dist(d.at("C"));
+        assert!((d.at("A").dist(d.at("B")) / bc_len - 1.394).abs() < 0.01, "AB/BC");
+        assert!((d.at("A").dist(d.at("C")) / bc_len - 1.333).abs() < 0.01, "AC/BC");
+        assert!((d.at("C").dist(d.at("D")) / bc_len - 1.145).abs() < 0.01, "CD/BC");
     }
 
     fn letter_offset(html: &str, id: &str) -> (f64, f64) {
