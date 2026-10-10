@@ -632,7 +632,6 @@ pub fn book1_prop30() -> Diagram {
 /// I.31 — Fitzpatrick English plate (Elements p. 34): EAF ∥ BC, AD falling
 /// on BC at D. Ink tips, one scale EF = 100. Plate: BC/EF = 1, gap/EF = 0.332.
 /// A is 0.558 of EF from E. AD leans left (D is left of A).
-///
 /// E and B sit just outside the left tips, a hair above the stroke — not
 /// above the line. F and C sit just outside the right tips, the same way.
 /// A sits just above the stroke; D below it, right of the foot.
@@ -656,7 +655,7 @@ pub fn book1_prop31() -> Diagram {
 /// Plate: AB/BC = 1.394, AC/BC = 1.333, CD/BC = 1.145. ∠ABC = 65.2°,
 /// ∠ACB = 71.8°. B, C sit just under the base. A sits just above the apex,
 /// a hair left. E sits just above the free tip, a hair right. D is not at the
-/// tip: its letter sits under the stroke, just left of the end, on the same
+/// tip: its letter hangs under the stroke, just left of the end, on the same
 /// baseline as B and C.
 pub fn book1_prop32() -> Diagram {
     let mut d = Diagram::new();
@@ -669,9 +668,47 @@ pub fn book1_prop32() -> Diagram {
     d.chain(&["B", "C", "D"]);
     d.join("A", "C");
     d.chain(&["E", "C"]);
-    // Plate: D's center is 0.149 of BC left of the tip, and 8.09 below it —
-    // the same drop as B and C. The letter hangs under the stroke, not past the end.
     d.label_at("D", V2::new(199.54, 0.0), Place::Deg(-90.0));
     d.dots(&["A", "B", "C", "D", "E"]);
+    d
+}
+
+/// I.33 — Fitzpatrick English plate (Elements p. 35): AB ∥ CD, equal,
+/// joined on the same sides by AC and BD, diagonal BC. A, B and C, D
+/// `level`; AC ∥ BD. One scale AB = 100. Plate: CD/AB = 1,
+/// AC/AB = BD/AB = 0.610, ∠ABC = ∠BCD = 36.0°. B and A sit just above
+/// the top stroke, a hair outside the tips. D and C hang under the base.
+pub fn book1_prop33() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("D", V2::new(0.0, 0.0), Place::Deg(-90.4));
+    d.level("C", "D", 100.0, Place::Deg(-75.6));
+    d.put("B", V2::new(21.4, 57.07), Place::Deg(95.1));
+    d.level("A", "B", 121.4, Place::Deg(73.3));
+    d.chain(&["B", "A"]);
+    d.chain(&["D", "C"]);
+    d.join("A", "C");
+    d.join("B", "D");
+    d.join("B", "C");
+    d.dots(&["A", "B", "C", "D"]);
+    d
+}
+
+/// I.34 — Fitzpatrick English plate (Elements p. 36): parallelogram ACDB,
+/// diagonal BC. A, B and C, D `level`; AC ∥ BD. One scale AB = 100.
+/// Plate: CD/AB = 1, AC/AB = BD/AB = 0.594, ∠BAC = 95.1°, ∠ABC = 29.3°.
+/// A and B sit just above the top stroke. C and D hang under the base,
+/// a hair outside the tips.
+pub fn book1_prop34() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("C", V2::new(0.0, 0.0), Place::Deg(-93.2));
+    d.level("D", "C", 100.0, Place::Deg(-72.9));
+    d.put("A", V2::new(5.25, 59.17), Place::Deg(92.4));
+    d.level("B", "A", 105.25, Place::Deg(78.6));
+    d.chain(&["A", "B"]);
+    d.chain(&["C", "D"]);
+    d.join("A", "C");
+    d.join("B", "D");
+    d.join("B", "C");
+    d.dots(&["A", "B", "C", "D"]);
     d
 }

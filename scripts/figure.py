@@ -1769,6 +1769,86 @@ def book1_prop32() -> Fig:
     return f
 
 
+def book1_prop33() -> Fig:
+    # Fitzpatrick English plate, printed p. 35. The plate sits under the
+    # Greek figure, so `--measure` takes the Greek capitals. Ink of the
+    # English parallelogram (200 dpi, glyph boxes blanked): AB and CD
+    # level, AC ∥ BD leaning right. One scale AB = 100. Diagonal BC is
+    # drawn, not a named vertex. Plate: CD/AB = 1, AC/AB = BD/AB = 0.610,
+    # ∠ABC = ∠BCD = 36.0°. B and A sit just above the top stroke, a hair
+    # outside the tips. D and C hang under the base, the same way.
+    s = Sketch()
+    s.put("D", 0.0, 0.0)
+    s.level("C", "D", 100.0)
+    s.put("B", 21.40, 57.07)
+    s.level("A", "B", 121.40)
+    s.require_eq("A", "B", "D", "C")
+    s.require_eq("A", "C", "B", "D")
+    s.require_line_angle("A", "B", "D", "C", 0.0)
+    s.require_line_angle("A", "C", "B", "D", 0.0)
+    s.require_angle("A", "B", "C", 35.98, eps=0.05)
+    s.letters(A=73.3, B=95.1, C=-75.6, D=-90.4)
+    f = Fig(
+        "book1_prop33",
+        "I.33 — Fitzpatrick English plate (Elements p. 35): AB ∥ CD, equal,\n"
+        "joined on the same sides by AC and BD, diagonal BC. A, B and C, D\n"
+        "`level`; AC ∥ BD. One scale AB = 100. Plate: CD/AB = 1,\n"
+        "AC/AB = BD/AB = 0.610, ∠ABC = ∠BCD = 36.0°. B and A sit just above\n"
+        "the top stroke, a hair outside the tips. D and C hang under the base.",
+        sketch=s,
+    )
+    f.put("D", *s.at("D"))
+    f.level("C", "D", s.at("C")[0])
+    f.put("B", *s.at("B"))
+    f.level("A", "B", s.at("A")[0])
+    f.chain("B", "A")
+    f.chain("D", "C")
+    f.join("A", "C")
+    f.join("B", "D")
+    f.join("B", "C")
+    f.dots("A", "B", "C", "D")
+    return f
+
+
+def book1_prop34() -> Fig:
+    # Fitzpatrick English plate, printed p. 36. Parallelogram ACDB,
+    # diagonal BC. AB and CD level; AC ∥ BD, leaning slightly left.
+    # One scale AB = 100. Plate: CD/AB = 1, AC/AB = BD/AB = 0.594,
+    # ∠BAC = 95.1°, ∠ABC = 29.3°. A and B sit just above the top stroke.
+    # C and D hang under the base, a hair outside the tips.
+    s = Sketch()
+    s.put("C", 0.0, 0.0)
+    s.level("D", "C", 100.0)
+    s.put("A", 5.25, 59.17)
+    s.level("B", "A", 105.25)
+    s.require_eq("A", "B", "C", "D")
+    s.require_eq("A", "C", "B", "D")
+    s.require_line_angle("A", "B", "C", "D", 0.0)
+    s.require_line_angle("A", "C", "B", "D", 0.0)
+    s.require_angle("B", "A", "C", 95.07, eps=0.05)
+    s.letters(A=92.4, B=78.6, C=-93.2, D=-72.9)
+    f = Fig(
+        "book1_prop34",
+        "I.34 — Fitzpatrick English plate (Elements p. 36): parallelogram ACDB,\n"
+        "diagonal BC. A, B and C, D `level`; AC ∥ BD. One scale AB = 100.\n"
+        "Plate: CD/AB = 1, AC/AB = BD/AB = 0.594, ∠BAC = 95.1°, ∠ABC = 29.3°.\n"
+        "A and B sit just above the top stroke. C and D hang under the base,\n"
+        "a hair outside the tips.",
+        sketch=s,
+    )
+    f.put("C", *s.at("C"))
+    f.level("D", "C", s.at("D")[0])
+    f.put("A", *s.at("A"))
+    f.level("B", "A", s.at("B")[0])
+    f.chain("A", "B")
+    f.chain("C", "D")
+    f.join("A", "C")
+    f.join("B", "D")
+    f.join("B", "C")
+    f.dots("A", "B", "C", "D")
+    return f
+
+
 PLATES = [
     book1_prop1,
     book1_prop2,
@@ -1802,6 +1882,8 @@ PLATES = [
     book1_prop30,
     book1_prop31,
     book1_prop32,
+    book1_prop33,
+    book1_prop34,
 ]
 
 
