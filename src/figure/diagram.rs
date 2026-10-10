@@ -518,7 +518,7 @@ mod tests {
         book1_prop18, book1_prop19, book1_prop20, book1_prop21, book1_prop22,
         book1_prop23, book1_prop24, book1_prop25, book1_prop26, book1_prop27,
         book1_prop28, book1_prop29, book1_prop30, book1_prop31, book1_prop32,
-        book1_prop33, book1_prop34,
+        book1_prop33, book1_prop34, book1_prop35, book1_prop36,
     };
 
     fn has(v: &[String], id: &str) -> bool {
@@ -1874,6 +1874,100 @@ mod tests {
         assert!((d.at("C").dist(d.at("D")) / ab_len - 1.0).abs() < 0.01, "CD/AB");
         assert!((d.at("A").dist(d.at("C")) / ab_len - 0.594).abs() < 0.01, "AC/AB");
         assert!((d.at("B").dist(d.at("D")) / ab_len - 0.594).abs() < 0.01, "BD/AB");
+    }
+
+    #[test]
+    fn prop35_paths() {
+        let d = book1_prop35();
+        let abcd = d.highlight("ABCD");
+        assert!(
+            has(&abcd, "ab") && has(&abcd, "ad") && has(&abcd, "dc") && has(&abcd, "bc"),
+            "ABCD: {abcd:?}"
+        );
+        let ebcf = d.highlight("EBCF");
+        assert!(
+            has(&ebcf, "eb") && has(&ebcf, "bc") && has(&ebcf, "fc") && has(&ebcf, "ef"),
+            "EBCF: {ebcf:?}"
+        );
+        let af = d.highlight("AF");
+        assert!(has(&af, "ad") && has(&af, "de") && has(&af, "ef"), "AF: {af:?}");
+        let ae = d.highlight("AE");
+        assert!(has(&ae, "ad") && has(&ae, "de"), "AE: {ae:?}");
+        let df = d.highlight("DF");
+        assert!(has(&df, "de") && has(&df, "ef"), "DF: {df:?}");
+        let eb = d.highlight("EB");
+        assert!(has(&eb, "eb"), "EB: {eb:?}");
+        let fc = d.highlight("FC");
+        assert!(has(&fc, "fc"), "FC: {fc:?}");
+        let eab = d.highlight("EAB");
+        assert!(has(&eab, "ab") && has(&eab, "eb"), "△EAB: {eab:?}");
+        let dfc = d.highlight("DFC");
+        assert!(has(&dfc, "fc") && has(&dfc, "dc"), "△DFC: {dfc:?}");
+        let gb = d.highlight("GB");
+        assert!(has(&gb, "G") && has(&gb, "B"), "GB: {gb:?}");
+        let gc = d.highlight("GC");
+        assert!(has(&gc, "G") && has(&gc, "C"), "GC: {gc:?}");
+        let gbc = d.highlight("GBC");
+        assert!(has(&gbc, "G") && has(&gbc, "B") && has(&gbc, "C"), "△GBC: {gbc:?}");
+        let fdc = d.highlight_angle("FDC");
+        assert!(has(&fdc, "de") && has(&fdc, "dc"), "∠FDC: {fdc:?}");
+        let eab_ang = d.highlight_angle("EAB");
+        assert!(has(&eab_ang, "ad") && has(&eab_ang, "ab"), "∠EAB: {eab_ang:?}");
+        assert!(d.at("G").on_seg(d.at("E"), d.at("B"), 1e-3), "G on EB");
+        assert!(d.at("G").on_seg(d.at("D"), d.at("C"), 1e-3), "G on DC");
+        assert!(d.at("D").on_seg(d.at("A"), d.at("F"), 1e-3), "D on AF");
+        assert!(d.at("E").on_seg(d.at("A"), d.at("F"), 1e-3), "E on AF");
+        assert!((d.at("A").y - d.at("F").y).abs() < 1e-9, "AF level");
+        assert!((d.at("B").y - d.at("C").y).abs() < 1e-9, "BC level");
+        let bc = d.at("B").dist(d.at("C"));
+        assert!((d.at("A").dist(d.at("D")) / bc - 1.0).abs() < 0.01, "AD/BC");
+        assert!((d.at("E").dist(d.at("F")) / bc - 1.004).abs() < 0.01, "EF/BC");
+        assert!((d.at("A").dist(d.at("B")) / bc - 1.673).abs() < 0.01, "AB/BC");
+        assert!((d.at("D").dist(d.at("C")) / bc - 1.673).abs() < 0.01, "DC/BC");
+    }
+
+    #[test]
+    fn prop36_paths() {
+        let d = book1_prop36();
+        let abcd = d.highlight("ABCD");
+        assert!(
+            has(&abcd, "ab") && has(&abcd, "ad") && has(&abcd, "dc") && has(&abcd, "bc"),
+            "ABCD: {abcd:?}"
+        );
+        let efgh = d.highlight("EFGH");
+        assert!(
+            has(&efgh, "ef") && has(&efgh, "fg") && has(&efgh, "hg") && has(&efgh, "eh"),
+            "EFGH: {efgh:?}"
+        );
+        let ebch = d.highlight("EBCH");
+        assert!(
+            has(&ebch, "be") && has(&ebch, "bc") && has(&ebch, "ch") && has(&ebch, "eh"),
+            "EBCH: {ebch:?}"
+        );
+        let be = d.highlight("BE");
+        assert!(has(&be, "be"), "BE: {be:?}");
+        let ch = d.highlight("CH");
+        assert!(has(&ch, "ch"), "CH: {ch:?}");
+        let hc = d.highlight("HC");
+        assert!(has(&hc, "ch"), "HC: {hc:?}");
+        let eh = d.highlight("EH");
+        assert!(has(&eh, "eh"), "EH: {eh:?}");
+        let ah = d.highlight("AH");
+        assert!(has(&ah, "ad") && has(&ah, "de") && has(&ah, "eh"), "AH: {ah:?}");
+        let bg = d.highlight("BG");
+        assert!(has(&bg, "bc") && has(&bg, "cf") && has(&bg, "fg"), "BG: {bg:?}");
+        assert!(d.at("C").on_seg(d.at("B"), d.at("G"), 1e-3), "C on BG");
+        assert!(d.at("F").on_seg(d.at("B"), d.at("G"), 1e-3), "F on BG");
+        assert!(d.at("D").on_seg(d.at("A"), d.at("H"), 1e-3), "D on AH");
+        assert!(d.at("E").on_seg(d.at("A"), d.at("H"), 1e-3), "E on AH");
+        assert!((d.at("A").y - d.at("H").y).abs() < 1e-9, "AH level");
+        assert!((d.at("B").y - d.at("G").y).abs() < 1e-9, "BG level");
+        let bc = d.at("B").dist(d.at("C"));
+        assert!((d.at("A").dist(d.at("D")) / bc - 1.0).abs() < 0.01, "AD/BC");
+        assert!((d.at("F").dist(d.at("G")) / bc - 1.163).abs() < 0.01, "FG/BC");
+        assert!((d.at("E").dist(d.at("H")) / bc - 1.108).abs() < 0.01, "EH/BC");
+        assert!((d.at("A").dist(d.at("B")) / bc - 2.266).abs() < 0.01, "AB/BC");
+        assert!((d.at("D").dist(d.at("C")) / bc - 2.266).abs() < 0.01, "DC/BC");
     }
 
     fn letter_offset(html: &str, id: &str) -> (f64, f64) {
