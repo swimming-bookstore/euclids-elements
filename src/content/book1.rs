@@ -7,6 +7,7 @@ use crate::figure::{
     book1_prop22, book1_prop23, book1_prop24, book1_prop25, book1_prop26,
     book1_prop27, book1_prop28, book1_prop29, book1_prop30,
     book1_prop31, book1_prop32,
+    book1_prop33, book1_prop34,
 };
 
 pub const PROP_1: Proposition = Proposition {
@@ -784,9 +785,57 @@ pub const PROP_32: Proposition = Proposition {
     ],
 };
 
+pub const PROP_33: Proposition = Proposition {
+    book: 1,
+    number: 33,
+    enunciation: "Straight-lines joining equal and parallel (straight-lines) on the same sides are themselves also equal and parallel.",
+    figure: book1_prop33,
+    phrases: &[
+        s(1, "Let *AB* and *CD* be equal and parallel (straight-lines),"),
+        s(1, "and let the straight-lines *AC* and *BD* join them on the same sides."),
+        s(1, "I say that *AC* and *BD* are also equal and parallel."),
+        s(2, "Let *BC* have been joined."),
+        s(2, "And since *AB* is parallel to *CD*, and *BC* has fallen across them, the alternate angles *ABC* and *BCD* are equal to one another.{[Prop. 1.29]}"),
+        s(2, "And since *AB* is equal to *CD*, and *BC* is common, the two (straight-lines) *AB*, *BC* are equal to the two (straight-lines) *DC*, *CB*."),
+        s(2, "And the angle *ABC* is equal to the angle *BCD*."),
+        s(2, "Thus, the base *AC* is equal to the base *BD*, and triangle *ABC* is equal to triangle *DCB*, and the remaining angles will be equal to the corresponding remaining angles subtended by the equal sides.{[Prop. 1.4]}"),
+        s(2, "Thus, angle *ACB* is equal to *CBD*."),
+        s(2, "Also, since the straight-line *BC*, (in) falling across the two straight-lines *AC* and *BD*, has made the alternate angles (*ACB* and *CBD*) equal to one another, *AC* is thus parallel to *BD*.{[Prop. 1.27]}"),
+        s(2, "And (*AC*) was also shown (to be) equal to (*BD*)."),
+        s(3, "Thus, straight-lines joining equal and parallel (straight-lines) on the same sides are themselves also equal and parallel."),
+        s(3, "(Which is) the very thing it was required to show."),
+    ],
+};
+
+pub const PROP_34: Proposition = Proposition {
+    book: 1,
+    number: 34,
+    enunciation: "In parallelogrammic figures the opposite sides and angles are equal to one another, and a diagonal cuts them in half.",
+    figure: book1_prop34,
+    phrases: &[
+        s(1, "Let *ACDB* be a parallelogrammic figure, and *BC* its diagonal."),
+        s(1, "I say that for parallelogram *ACDB*, the opposite sides and angles are equal to one another, and the diagonal *BC* cuts it in half."),
+        s(2, "For since *AB* is parallel to *CD*, and the straight-line *BC* has fallen across them, the alternate angles *ABC* and *BCD* are equal to one another.{[Prop. 1.29]}"),
+        s(2, "Again, since *AC* is parallel to *BD*, and *BC* has fallen across them, the alternate angles *ACB* and *CBD* are equal to one another.{[Prop. 1.29]}"),
+        s(2, "So *ABC* and *BCD* are two triangles having the two angles *ABC* and *BCA* equal to the two (angles) *BCD* and *CBD*, respectively, and one side equal to one side—the (one) by the equal angles and common to them, (namely) *BC*."),
+        s(2, "Thus, they will also have the remaining sides equal to the corresponding remaining (sides), and the remaining angle (equal) to the remaining angle.{[Prop. 1.26]}"),
+        s(2, "Thus, side *AB* is equal to *CD*, and *AC* to *BD*."),
+        s(2, "Furthermore, angle *BAC* is equal to *CDB*."),
+        s(2, "And since angle *ABC* is equal to *BCD*, and *CBD* to *ACB*, the whole (angle) *ABD* is thus equal to the whole (angle) *ACD*."),
+        s(2, "And *BAC* was also shown (to be) equal to *CDB*."),
+        s(3, "Thus, in parallelogrammic figures the opposite sides and angles are equal to one another."),
+        s(4, "And, I also say that a diagonal cuts them in half."),
+        s(4, "For since *AB* is equal to *CD*, and *BC* (is) common, the two (straight-lines) *AB*, *BC* are equal to the two (straight-lines) *DC*, *CB*, respectively."),
+        s(4, "And angle *ABC* is equal to angle *BCD*."),
+        s(4, "Thus, the base *AC* (is) also equal to *DB*, and triangle *ABC* is equal to triangle *BCD*.{[Prop. 1.4]}"),
+        s(5, "Thus, the diagonal *BC* cuts the parallelogram *ACDB* in half."),
+        s(5, "(Which is) the very thing it was required to show."),
+    ],
+};
+
 pub const PROPOSITIONS: &[Proposition] = &[
     PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6, PROP_7, PROP_8, PROP_9, PROP_10, PROP_11,
     PROP_12, PROP_13, PROP_14, PROP_15, PROP_16, PROP_17, PROP_18, PROP_19, PROP_20, PROP_21,
     PROP_22, PROP_23, PROP_24, PROP_25, PROP_26, PROP_27, PROP_28, PROP_29, PROP_30,
-    PROP_31, PROP_32,
+    PROP_31, PROP_32, PROP_33, PROP_34,
 ];

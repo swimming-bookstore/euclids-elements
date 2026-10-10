@@ -338,6 +338,7 @@ impl Diagram {
             2 => self.pair(letters[0], letters[1]),
             3 if angle => self.angle(letters[0], letters[1], letters[2], &key),
             3 => self.triple(letters[0], letters[1], letters[2], &key),
+            4 if !angle => self.quad(letters[0], letters[1], letters[2], letters[3]),
             _ => Vec::new(),
         }
     }
@@ -383,6 +384,23 @@ impl Diagram {
         let mut out = self.pair(a, b);
         out.extend(self.pair(b, c));
         out.extend(self.pair(c, a));
+        out.sort();
+        out.dedup();
+        out
+    }
+
+    /// A four-letter figure name (*ACDB*) is the polygon of those vertices in order.
+    fn quad(
+        &self,
+        a: &'static str,
+        b: &'static str,
+        c: &'static str,
+        d: &'static str,
+    ) -> Vec<String> {
+        let mut out = self.pair(a, b);
+        out.extend(self.pair(b, c));
+        out.extend(self.pair(c, d));
+        out.extend(self.pair(d, a));
         out.sort();
         out.dedup();
         out
@@ -500,6 +518,7 @@ mod tests {
         book1_prop18, book1_prop19, book1_prop20, book1_prop21, book1_prop22,
         book1_prop23, book1_prop24, book1_prop25, book1_prop26, book1_prop27,
         book1_prop28, book1_prop29, book1_prop30, book1_prop31, book1_prop32,
+        book1_prop33, book1_prop34,
     };
 
     fn has(v: &[String], id: &str) -> bool {
@@ -1796,6 +1815,65 @@ mod tests {
         assert!((d.at("A").dist(d.at("B")) / bc_len - 1.394).abs() < 0.01, "AB/BC");
         assert!((d.at("A").dist(d.at("C")) / bc_len - 1.333).abs() < 0.01, "AC/BC");
         assert!((d.at("C").dist(d.at("D")) / bc_len - 1.145).abs() < 0.01, "CD/BC");
+    }
+
+    #[test]
+    fn prop33_paths() {
+        let d = book1_prop33();
+        let ab = d.highlight("AB");
+        assert!(has(&ab, "ba"), "AB: {ab:?}");
+        let cd = d.highlight("CD");
+        assert!(has(&cd, "dc"), "CD: {cd:?}");
+        let ac = d.highlight("AC");
+        assert!(has(&ac, "ac"), "AC: {ac:?}");
+        let bd = d.highlight("BD");
+        assert!(has(&bd, "bd"), "BD: {bd:?}");
+        let bc = d.highlight("BC");
+        assert!(has(&bc, "bc"), "BC: {bc:?}");
+        let abc = d.highlight("ABC");
+        assert!(has(&abc, "ba") && has(&abc, "bc") && has(&abc, "ac"), "△ABC: {abc:?}");
+        let dcb = d.highlight("DCB");
+        assert!(has(&dcb, "dc") && has(&dcb, "bc") && has(&dcb, "bd"), "△DCB: {dcb:?}");
+        let ang_abc = d.highlight_angle("ABC");
+        assert!(has(&ang_abc, "ba") && has(&ang_abc, "bc"), "∠ABC: {ang_abc:?}");
+        let ang_bcd = d.highlight_angle("BCD");
+        assert!(has(&ang_bcd, "bc") && has(&ang_bcd, "dc"), "∠BCD: {ang_bcd:?}");
+        let ang_acb = d.highlight_angle("ACB");
+        assert!(has(&ang_acb, "ac") && has(&ang_acb, "bc"), "∠ACB: {ang_acb:?}");
+        let ang_cbd = d.highlight_angle("CBD");
+        assert!(has(&ang_cbd, "bc") && has(&ang_cbd, "bd"), "∠CBD: {ang_cbd:?}");
+        assert!((d.at("A").y - d.at("B").y).abs() < 1e-9, "AB level");
+        assert!((d.at("C").y - d.at("D").y).abs() < 1e-9, "CD level");
+        let ab_len = d.at("A").dist(d.at("B"));
+        assert!((d.at("C").dist(d.at("D")) / ab_len - 1.0).abs() < 0.01, "CD/AB");
+        assert!((d.at("A").dist(d.at("C")) / ab_len - 0.610).abs() < 0.01, "AC/AB");
+        assert!((d.at("B").dist(d.at("D")) / ab_len - 0.610).abs() < 0.01, "BD/AB");
+    }
+
+    #[test]
+    fn prop34_paths() {
+        let d = book1_prop34();
+        let acdb = d.highlight("ACDB");
+        assert!(
+            has(&acdb, "ac") && has(&acdb, "cd") && has(&acdb, "bd") && has(&acdb, "ab"),
+            "ACDB: {acdb:?}"
+        );
+        let bc = d.highlight("BC");
+        assert!(has(&bc, "bc"), "BC: {bc:?}");
+        let abd = d.highlight_angle("ABD");
+        assert!(has(&abd, "ab") && has(&abd, "bd"), "∠ABD: {abd:?}");
+        let acd = d.highlight_angle("ACD");
+        assert!(has(&acd, "ac") && has(&acd, "cd"), "∠ACD: {acd:?}");
+        let bac = d.highlight_angle("BAC");
+        assert!(has(&bac, "ab") && has(&bac, "ac"), "∠BAC: {bac:?}");
+        let cdb = d.highlight_angle("CDB");
+        assert!(has(&cdb, "cd") && has(&cdb, "bd"), "∠CDB: {cdb:?}");
+        assert!((d.at("A").y - d.at("B").y).abs() < 1e-9, "AB level");
+        assert!((d.at("C").y - d.at("D").y).abs() < 1e-9, "CD level");
+        let ab_len = d.at("A").dist(d.at("B"));
+        assert!((d.at("C").dist(d.at("D")) / ab_len - 1.0).abs() < 0.01, "CD/AB");
+        assert!((d.at("A").dist(d.at("C")) / ab_len - 0.594).abs() < 0.01, "AC/AB");
+        assert!((d.at("B").dist(d.at("D")) / ab_len - 0.594).abs() < 0.01, "BD/AB");
     }
 
     fn letter_offset(html: &str, id: &str) -> (f64, f64) {
