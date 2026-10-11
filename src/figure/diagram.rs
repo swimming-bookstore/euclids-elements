@@ -410,10 +410,29 @@ impl Diagram {
         if let Some(circ) = self.named_circle(key) {
             return vec![circ, a.to_string(), v.to_string(), c.to_string()];
         }
-        let mut out = self.pair(v, a);
-        out.extend(self.pair(v, c));
+        // The two rays from the vertex. A chain that detours through
+        // another point (A–E–C when E lies on AC) is the triangle, not
+        // the angle.
+        let mut out = self.angle_ray(v, a);
+        out.extend(self.angle_ray(v, c));
         out.sort();
         out.dedup();
+        out
+    }
+
+    /// Edges from `v` toward `end`: the collinear segment if one exists,
+    /// otherwise only a direct edge. Never a path around the figure.
+    fn angle_ray(&self, v: &'static str, end: &'static str) -> Vec<String> {
+        let mut out = vec![v.to_string()];
+        if let Some(ids) = self.straight(v, end) {
+            out.push(end.to_string());
+            out.extend(ids);
+            return out;
+        }
+        if let Some(id) = self.edge_id(v, end) {
+            out.push(end.to_string());
+            out.push(id);
+        }
         out
     }
 
