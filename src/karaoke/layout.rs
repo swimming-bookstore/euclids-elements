@@ -843,7 +843,7 @@ mod tests {
         assert!(cites(&i21[3]).is_empty());
         let given = para_text(&i21[0]);
         assert!(given.contains("straight-lines BD and DC have been constructed"));
-        assert!(given.contains("angle BDC greater than BAC."));
+        assert!(given.contains("angle BDC greater than (angle) BAC."));
         let sides = para_text(&i21[1]);
         assert!(sides.contains("remaining (side), [Prop. 1.20] \nin triangle ABE"));
         assert!(sides.contains("much greater than (the sum of) BD and DC."));
@@ -927,5 +927,40 @@ mod tests {
         assert!(qed.contains(
             "(of the latter). (Which is) the very thing it was required to show."
         ));
+    }
+
+    #[test]
+    fn i37_interpolation_stays_in_the_paragraph() {
+        let i37 = layout_of(1, 37);
+        assert_eq!(i37.len(), 3, "I.37 has three Fitzpatrick paragraphs");
+        assert!(cites(&i37[0]).is_empty());
+        assert_eq!(
+            cites(&i37[1]),
+            vec!["[Prop. 1.31]", "[Prop. 1.31]", "[Prop. 1.35]", "[Prop. 1.34]", "[Prop. 1.34]"]
+        );
+        assert!(cites(&i37[2]).is_empty());
+        let proof = para_text(&i37[1]);
+        assert!(proof.contains("parallel to CA, [Prop. 1.31] \nand let"));
+        assert!(proof.contains(
+            "[And the halves of equal things are equal to one another.] Thus, triangle ABC"
+        ));
+        assert!(!cites(&i37[1]).iter().any(|c| c.contains("halves")));
+    }
+
+    #[test]
+    fn i38_interpolation_stays_in_the_paragraph() {
+        let i38 = layout_of(1, 38);
+        assert_eq!(i38.len(), 3, "I.38 has three Fitzpatrick paragraphs");
+        assert!(cites(&i38[0]).is_empty());
+        assert_eq!(
+            cites(&i38[1]),
+            vec!["[Prop. 1.31]", "[Prop. 1.31]", "[Prop. 1.36]", "[Prop. 1.34]", "[Prop. 1.34]"]
+        );
+        let proof = para_text(&i38[1]);
+        assert!(proof.contains("parallels BF and GH. [Prop. 1.36] \nAnd triangle ABC"));
+        assert!(proof.contains(
+            "[And the halves of equal things are equal to one another.] Thus, triangle ABC is equal to triangle DEF."
+        ));
+        assert!(!cites(&i38[1]).iter().any(|c| c.contains("halves")));
     }
 }

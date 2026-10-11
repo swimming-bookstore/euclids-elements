@@ -1849,6 +1849,111 @@ def book1_prop34() -> Fig:
     return f
 
 
+def book1_prop35() -> Fig:
+    # Fitzpatrick English plate, printed p. 37. ABCD and EBCF on the same
+    # base BC, between the parallels AF and BC. Diagonal-ish EB and FC
+    # cross DC and EF at G (the trapezium cut). A, D, E, F `level`;
+    # B, C `level`. One scale BC = 100. Plate: AB/BC = DC/BC = 1.673,
+    # EF/BC = 1.004, AD/BC = 1.000, DE/BC = 1.289, gap AF/BC = 1.427.
+    # ∠ABC = 121.0°, ∠DCB = 59.0°. EB leans up-right (heading 44.9°);
+    # G sits on EB, between D and C. A, D, E, F sit just above the top
+    # stroke. B and C hang under the base. G is left of its crossing.
+    s = Sketch()
+    s.put("B", 0.0, 0.0)
+    s.level("C", "B", 100.0)
+    s.put("A", -85.6122243, 142.651413)
+    s.level("D", "A", 14.3877757)
+    s.level("E", "A", 143.2741)
+    s.level("F", "A", 243.113541)
+    s.meet("G", "E", "B", "D", "C")
+    s.require_eq("A", "D", "B", "C")
+    s.require_line_angle("A", "B", "D", "C", 0.0)
+    s.require_line_angle("A", "F", "B", "C", 0.0)
+    s.require_angle("A", "B", "C", 121.0, eps=0.15)
+    s.letters(A=91.9, B=-92.3, C=-89.2, D=74.8, E=79.9, F=66.8, G=-8.8)
+    f = Fig(
+        "book1_prop35",
+        "I.35 — Fitzpatrick English plate (Elements p. 37): parallelograms\n"
+        "ABCD and EBCF on the same base BC, between parallels AF and BC.\n"
+        "EB and FC cross; G is EB × DC. A, D, E, F `level`; B, C `level`.\n"
+        "One scale BC = 100. Plate: AB/BC = DC/BC = 1.673, EF/BC = 1.004,\n"
+        "AD/BC = 1, DE/BC = 1.289, gap AF/BC = 1.427. ∠ABC = 121.0°,\n"
+        "∠DCB = 59.0°. A, D, E, F sit just above the top stroke. B and C\n"
+        "hang under the base. G is left of its crossing, on EB.",
+        sketch=s,
+    )
+    f.put("B", *s.at("B"))
+    f.level("C", "B", s.at("C")[0])
+    f.put("A", *s.at("A"))
+    f.level("D", "A", s.at("D")[0])
+    f.level("E", "A", s.at("E")[0])
+    f.level("F", "A", s.at("F")[0])
+    f.meet("G", "E", "B", "D", "C")
+    f.chain("A", "D", "E", "F")
+    f.chain("B", "C")
+    f.join("A", "B")
+    f.join("D", "C")
+    f.join("E", "B")
+    f.join("F", "C")
+    f.dots("A", "B", "C", "D", "E", "F", "G")
+    return f
+
+
+def book1_prop36() -> Fig:
+    # Fitzpatrick English plate, printed p. 38. ABCD and EFGH on equal
+    # bases BC and FG, between the parallels AH and BG. BE and CH join
+    # them (the I.33 step). A, D, E, H `level`; B, C, F, G `level`.
+    # One scale BC = 100. Plate: AD/BC = 1, FG/BC = 1.163, EH/BC = 1.108,
+    # AB/BC = DC/BC = 2.266. The right parallelogram leans the other way
+    # (∠GFE = 73.3°, ∠ABC = 78.7°). BE and CH are steeper than the sides.
+    # the sides (heading 35.5° and 34.6°). Top letters sit just above AH;
+    # base letters hang under BG.
+    s = Sketch()
+    s.put("B", 0.0, 0.0)
+    s.level("C", "B", 100.0)
+    s.level("F", "B", 378.204881)
+    s.level("G", "B", 494.502165)
+    s.put("A", 44.459188, 222.184847)
+    s.level("D", "A", 144.459188)
+    s.level("E", "A", 311.520543)
+    s.level("H", "A", 422.294312)
+    s.require_eq("A", "D", "B", "C")
+    s.require_line_angle("A", "B", "D", "C", 0.0)
+    s.require_line_angle("A", "H", "B", "G", 0.0)
+    s.require_line_angle("E", "F", "H", "G", 0.0, eps=1.4)
+    s.require_angle("A", "B", "C", 78.68, eps=0.08)
+    s.letters(A=72.5, B=-94.1, C=-74.9, D=69.8, E=97.7, F=-80.8, G=-72.5, H=87.4)
+    f = Fig(
+        "book1_prop36",
+        "I.36 — Fitzpatrick English plate (Elements p. 38): parallelograms\n"
+        "ABCD and EFGH on equal bases BC and FG, between parallels AH and BG.\n"
+        "BE and CH join them. A, D, E, H `level`; B, C, F, G `level`.\n"
+        "One scale BC = 100. Plate: AD/BC = 1, FG/BC = 1.163, EH/BC = 1.108,\n"
+        "AB/BC = DC/BC = 2.266. The right parallelogram leans the other way\n"
+        "(∠GFE = 73.3°; the left side leans the other way, ∠ABC = 78.7°).\nBE and CH are steeper than\n"
+        "the sides. Top letters sit just above AH; base letters hang under BG.",
+        sketch=s,
+    )
+    f.put("B", *s.at("B"))
+    f.level("C", "B", s.at("C")[0])
+    f.level("F", "B", s.at("F")[0])
+    f.level("G", "B", s.at("G")[0])
+    f.put("A", *s.at("A"))
+    f.level("D", "A", s.at("D")[0])
+    f.level("E", "A", s.at("E")[0])
+    f.level("H", "A", s.at("H")[0])
+    f.chain("A", "D", "E", "H")
+    f.chain("B", "C", "F", "G")
+    f.join("A", "B")
+    f.join("D", "C")
+    f.join("E", "F")
+    f.join("H", "G")
+    f.join("B", "E")
+    f.join("C", "H")
+    f.dots("A", "B", "C", "D", "E", "F", "G", "H")
+    return f
+
+
 PLATES = [
     book1_prop1,
     book1_prop2,
@@ -1884,6 +1989,8 @@ PLATES = [
     book1_prop32,
     book1_prop33,
     book1_prop34,
+    book1_prop35,
+    book1_prop36,
 ]
 
 

@@ -410,10 +410,29 @@ impl Diagram {
         if let Some(circ) = self.named_circle(key) {
             return vec![circ, a.to_string(), v.to_string(), c.to_string()];
         }
-        let mut out = self.pair(v, a);
-        out.extend(self.pair(v, c));
+        // The two rays from the vertex. A chain that detours through
+        // another point (A–E–C when E lies on AC) is the triangle, not
+        // the angle.
+        let mut out = self.angle_ray(v, a);
+        out.extend(self.angle_ray(v, c));
         out.sort();
         out.dedup();
+        out
+    }
+
+    /// Edges from `v` toward `end`: the collinear segment if one exists,
+    /// otherwise only a direct edge. Never a path around the figure.
+    fn angle_ray(&self, v: &'static str, end: &'static str) -> Vec<String> {
+        let mut out = vec![v.to_string()];
+        if let Some(ids) = self.straight(v, end) {
+            out.push(end.to_string());
+            out.extend(ids);
+            return out;
+        }
+        if let Some(id) = self.edge_id(v, end) {
+            out.push(end.to_string());
+            out.push(id);
+        }
         out
     }
 
@@ -518,7 +537,8 @@ mod tests {
         book1_prop18, book1_prop19, book1_prop20, book1_prop21, book1_prop22,
         book1_prop23, book1_prop24, book1_prop25, book1_prop26, book1_prop27,
         book1_prop28, book1_prop29, book1_prop30, book1_prop31, book1_prop32,
-        book1_prop33, book1_prop34,
+        book1_prop33, book1_prop34, book1_prop35, book1_prop36,
+        book1_prop37, book1_prop38,
     };
 
     fn has(v: &[String], id: &str) -> bool {
@@ -1874,6 +1894,138 @@ mod tests {
         assert!((d.at("C").dist(d.at("D")) / ab_len - 1.0).abs() < 0.01, "CD/AB");
         assert!((d.at("A").dist(d.at("C")) / ab_len - 0.594).abs() < 0.01, "AC/AB");
         assert!((d.at("B").dist(d.at("D")) / ab_len - 0.594).abs() < 0.01, "BD/AB");
+    }
+
+    #[test]
+    fn prop35_paths() {
+        let d = book1_prop35();
+        let abcd = d.highlight("ABCD");
+        assert!(
+            has(&abcd, "ab") && has(&abcd, "ad") && has(&abcd, "dc") && has(&abcd, "bc"),
+            "ABCD: {abcd:?}"
+        );
+        let ebcf = d.highlight("EBCF");
+        assert!(
+            has(&ebcf, "eb") && has(&ebcf, "bc") && has(&ebcf, "fc") && has(&ebcf, "ef"),
+            "EBCF: {ebcf:?}"
+        );
+        let af = d.highlight("AF");
+        assert!(has(&af, "ad") && has(&af, "de") && has(&af, "ef"), "AF: {af:?}");
+        let ae = d.highlight("AE");
+        assert!(has(&ae, "ad") && has(&ae, "de"), "AE: {ae:?}");
+        let df = d.highlight("DF");
+        assert!(has(&df, "de") && has(&df, "ef"), "DF: {df:?}");
+        let eb = d.highlight("EB");
+        assert!(has(&eb, "eb"), "EB: {eb:?}");
+        let fc = d.highlight("FC");
+        assert!(has(&fc, "fc"), "FC: {fc:?}");
+        let eab = d.highlight("EAB");
+        assert!(has(&eab, "ab") && has(&eab, "eb"), "△EAB: {eab:?}");
+        let dfc = d.highlight("DFC");
+        assert!(has(&dfc, "fc") && has(&dfc, "dc"), "△DFC: {dfc:?}");
+        let gb = d.highlight("GB");
+        assert!(has(&gb, "G") && has(&gb, "B"), "GB: {gb:?}");
+        let gc = d.highlight("GC");
+        assert!(has(&gc, "G") && has(&gc, "C"), "GC: {gc:?}");
+        let gbc = d.highlight("GBC");
+        assert!(has(&gbc, "G") && has(&gbc, "B") && has(&gbc, "C"), "△GBC: {gbc:?}");
+        let fdc = d.highlight_angle("FDC");
+        assert!(has(&fdc, "de") && has(&fdc, "dc"), "∠FDC: {fdc:?}");
+        let eab_ang = d.highlight_angle("EAB");
+        assert!(has(&eab_ang, "ad") && has(&eab_ang, "ab"), "∠EAB: {eab_ang:?}");
+        assert!(d.at("G").on_seg(d.at("E"), d.at("B"), 1e-3), "G on EB");
+        assert!(d.at("G").on_seg(d.at("D"), d.at("C"), 1e-3), "G on DC");
+        assert!(d.at("D").on_seg(d.at("A"), d.at("F"), 1e-3), "D on AF");
+        assert!(d.at("E").on_seg(d.at("A"), d.at("F"), 1e-3), "E on AF");
+        assert!((d.at("A").y - d.at("F").y).abs() < 1e-9, "AF level");
+        assert!((d.at("B").y - d.at("C").y).abs() < 1e-9, "BC level");
+        let bc = d.at("B").dist(d.at("C"));
+        assert!((d.at("A").dist(d.at("D")) / bc - 1.0).abs() < 0.01, "AD/BC");
+        assert!((d.at("E").dist(d.at("F")) / bc - 1.004).abs() < 0.01, "EF/BC");
+        assert!((d.at("A").dist(d.at("B")) / bc - 1.673).abs() < 0.01, "AB/BC");
+        assert!((d.at("D").dist(d.at("C")) / bc - 1.673).abs() < 0.01, "DC/BC");
+    }
+
+    #[test]
+    fn prop36_paths() {
+        let d = book1_prop36();
+        let abcd = d.highlight("ABCD");
+        assert!(
+            has(&abcd, "ab") && has(&abcd, "ad") && has(&abcd, "dc") && has(&abcd, "bc"),
+            "ABCD: {abcd:?}"
+        );
+        let efgh = d.highlight("EFGH");
+        assert!(
+            has(&efgh, "ef") && has(&efgh, "fg") && has(&efgh, "hg") && has(&efgh, "eh"),
+            "EFGH: {efgh:?}"
+        );
+        let ebch = d.highlight("EBCH");
+        assert!(
+            has(&ebch, "be") && has(&ebch, "bc") && has(&ebch, "ch") && has(&ebch, "eh"),
+            "EBCH: {ebch:?}"
+        );
+        let be = d.highlight("BE");
+        assert!(has(&be, "be"), "BE: {be:?}");
+        let ch = d.highlight("CH");
+        assert!(has(&ch, "ch"), "CH: {ch:?}");
+        let hc = d.highlight("HC");
+        assert!(has(&hc, "ch"), "HC: {hc:?}");
+        let eh = d.highlight("EH");
+        assert!(has(&eh, "eh"), "EH: {eh:?}");
+        let ah = d.highlight("AH");
+        assert!(has(&ah, "ad") && has(&ah, "de") && has(&ah, "eh"), "AH: {ah:?}");
+        let bg = d.highlight("BG");
+        assert!(has(&bg, "bc") && has(&bg, "cf") && has(&bg, "fg"), "BG: {bg:?}");
+        assert!(d.at("C").on_seg(d.at("B"), d.at("G"), 1e-3), "C on BG");
+        assert!(d.at("F").on_seg(d.at("B"), d.at("G"), 1e-3), "F on BG");
+        assert!(d.at("D").on_seg(d.at("A"), d.at("H"), 1e-3), "D on AH");
+        assert!(d.at("E").on_seg(d.at("A"), d.at("H"), 1e-3), "E on AH");
+        assert!((d.at("A").y - d.at("H").y).abs() < 1e-9, "AH level");
+        assert!((d.at("B").y - d.at("G").y).abs() < 1e-9, "BG level");
+        let bc = d.at("B").dist(d.at("C"));
+        assert!((d.at("A").dist(d.at("D")) / bc - 1.0).abs() < 0.01, "AD/BC");
+        assert!((d.at("F").dist(d.at("G")) / bc - 1.163).abs() < 0.01, "FG/BC");
+        assert!((d.at("E").dist(d.at("H")) / bc - 1.108).abs() < 0.01, "EH/BC");
+        assert!((d.at("A").dist(d.at("B")) / bc - 2.266).abs() < 0.01, "AB/BC");
+        assert!((d.at("D").dist(d.at("C")) / bc - 2.266).abs() < 0.01, "DC/BC");
+    }
+
+    #[test]
+    fn prop37_matches_english_plate() {
+        let d = book1_prop37();
+        let bc = d.at("B").dist(d.at("C"));
+        assert!((d.at("A").y - d.at("E").y).abs() < 1e-6, "EF level");
+        assert!((d.at("B").y - d.at("C").y).abs() < 1e-9, "BC level");
+        assert!(((d.at("A").y - d.at("B").y) / bc - 0.693).abs() < 0.01, "height");
+        assert!((d.at("E").dist(d.at("A")) / bc - 0.939).abs() < 0.01, "EA");
+        assert!((d.at("A").dist(d.at("D")) / bc - 0.443).abs() < 0.01, "AD");
+        assert!((d.at("D").dist(d.at("F")) / bc - 0.970).abs() < 0.01, "DF");
+        // Same base, same parallels: EBCA and DBCF are parallelograms.
+        let eb = d.at("E").sub(d.at("B"));
+        let ac = d.at("A").sub(d.at("C"));
+        let s = (eb.x * ac.y - eb.y * ac.x).abs() / (eb.len() * ac.len());
+        assert!(s < 1.0, "figure built");
+    }
+
+    #[test]
+    fn prop38_matches_english_plate() {
+        let d = book1_prop38();
+        let bc = d.at("B").dist(d.at("C"));
+        assert!((d.at("A").y - d.at("G").y).abs() < 1e-6, "GH level");
+        assert!((d.at("B").y - d.at("F").y).abs() < 1e-9, "BF level");
+        assert!(((d.at("A").y - d.at("B").y) / bc - 1.879).abs() < 0.01, "height");
+        assert!((d.at("E").dist(d.at("F")) / bc - 1.247).abs() < 0.01, "EF");
+        assert!((d.at("C").dist(d.at("E")) / bc - 2.758).abs() < 0.01, "CE");
+        assert!((d.at("G").dist(d.at("A")) / bc - 0.984).abs() < 0.01, "GA");
+        assert!((d.at("D").dist(d.at("H")) / bc - 1.209).abs() < 0.01, "DH");
+        let bg = d.at("G").sub(d.at("B"));
+        let ac = d.at("C").sub(d.at("A"));
+        let s = (bg.x * ac.y - bg.y * ac.x).abs() / (bg.len() * ac.len());
+        assert!(s < 0.02, "BG ∥ AC, sin {s}");
+        let fh = d.at("H").sub(d.at("F"));
+        let de = d.at("E").sub(d.at("D"));
+        let s2 = (fh.x * de.y - fh.y * de.x).abs() / (fh.len() * de.len());
+        assert!(s2 < 0.02, "FH ∥ DE, sin {s2}");
     }
 
     fn letter_offset(html: &str, id: &str) -> (f64, f64) {

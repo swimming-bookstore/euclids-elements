@@ -712,3 +712,109 @@ pub fn book1_prop34() -> Diagram {
     d.dots(&["A", "B", "C", "D"]);
     d
 }
+
+/// I.35 — Fitzpatrick English plate (Elements p. 37): parallelograms
+/// ABCD and EBCF on the same base BC, between parallels AF and BC.
+/// EB and FC cross; G is EB × DC. A, D, E, F `level`; B, C `level`.
+/// One scale BC = 100. Plate: AB/BC = DC/BC = 1.673, EF/BC = 1.004,
+/// AD/BC = 1, DE/BC = 1.289, gap AF/BC = 1.427. ∠ABC = 121.0°,
+/// ∠DCB = 59.0°. A, D, E, F sit just above the top stroke. B and C
+/// hang under the base. G is left of its crossing, on EB.
+pub fn book1_prop35() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("B", V2::new(0.0, 0.0), Place::Deg(-92.3));
+    d.level("C", "B", 100.0, Place::Deg(-89.2));
+    d.put("A", V2::new(-85.6122243, 142.651413), Place::Deg(91.9));
+    d.level("D", "A", 14.3877757, Place::Deg(74.8));
+    d.level("E", "A", 143.2741, Place::Deg(79.9));
+    d.level("F", "A", 243.113541, Place::Deg(66.8));
+    d.meet("G", "E", "B", "D", "C", Place::Deg(-8.8));
+    d.chain(&["A", "D", "E", "F"]);
+    d.chain(&["B", "C"]);
+    d.join("A", "B");
+    d.join("D", "C");
+    d.join("E", "B");
+    d.join("F", "C");
+    d.dots(&["A", "B", "C", "D", "E", "F", "G"]);
+    d
+}
+
+/// I.36 — Fitzpatrick English plate (Elements p. 38): parallelograms
+/// ABCD and EFGH on equal bases BC and FG, between parallels AH and BG.
+/// BE and CH join them. A, D, E, H `level`; B, C, F, G `level`.
+/// One scale BC = 100. Plate: AD/BC = 1, FG/BC = 1.163, EH/BC = 1.108,
+/// AB/BC = DC/BC = 2.266. The right parallelogram leans the other way
+/// (∠GFE = 73.3°; the left side leans the other way, ∠ABC = 78.7°).
+/// BE and CH are steeper than
+/// the sides. Top letters sit just above AH; base letters hang under BG.
+pub fn book1_prop36() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("B", V2::new(0.0, 0.0), Place::Deg(-94.1));
+    d.level("C", "B", 100.0, Place::Deg(-74.9));
+    d.level("F", "B", 378.204881, Place::Deg(-80.8));
+    d.level("G", "B", 494.502165, Place::Deg(-72.5));
+    d.put("A", V2::new(44.459188, 222.184847), Place::Deg(72.5));
+    d.level("D", "A", 144.459188, Place::Deg(69.8));
+    d.level("E", "A", 311.520543, Place::Deg(97.7));
+    d.level("H", "A", 422.294312, Place::Deg(87.4));
+    d.chain(&["A", "D", "E", "H"]);
+    d.chain(&["B", "C", "F", "G"]);
+    d.join("A", "B");
+    d.join("D", "C");
+    d.join("E", "F");
+    d.join("H", "G");
+    d.join("B", "E");
+    d.join("C", "H");
+    d.dots(&["A", "B", "C", "D", "E", "F", "G", "H"]);
+    d
+}
+
+/// I.37 — Fitzpatrick English plate (Elements p. 38). Ink tips of the
+/// plate capitals, one scale BC = 100. Height/BC = 0.693, EA/BC = 0.939,
+/// AD/BC = 0.443, DF/BC = 0.970. E, A, D, F sit on the upper parallel;
+/// B, C on the base. Letters sit off the stroke the way the plate sets them.
+pub fn book1_prop37() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("B", V2::new(0.0, 0.0), Place::Deg(-95.0));
+    d.put("C", V2::new(100.0, 0.0), Place::Deg(-80.0));
+    d.put("E", V2::new(-59.09, 69.32), Place::Deg(168.0));
+    d.put("A", V2::new(34.85, 69.32), Place::Deg(95.0));
+    d.put("D", V2::new(79.17, 69.32), Place::Deg(80.0));
+    d.put("F", V2::new(176.14, 69.32), Place::Deg(10.0));
+    d.chain(&["E", "A", "D", "F"]);
+    d.chain(&["B", "C"]);
+    d.join("A", "B");
+    d.join("A", "C");
+    d.join("D", "B");
+    d.join("D", "C");
+    d.join("E", "B");
+    d.join("F", "C");
+    d.dots(&["A", "B", "C", "D", "E", "F"]);
+    d
+}
+
+/// I.38 — Fitzpatrick English plate (Elements p. 39). Vertices are the
+/// stroke under each plate capital, one scale BC = 100. Height/BC = 1.879,
+/// EF/BC = 1.247, CE/BC = 2.758, GA/BC = 0.984, DH/BC = 1.209.
+/// BG ∥ AC and FH ∥ DE, as the construction draws them.
+pub fn book1_prop38() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("B", V2::new(0.0, 0.0), Place::Deg(-110.0));
+    d.level("C", "B", 100.0, Place::Deg(-70.0));
+    d.level("E", "B", 375.82, Place::Deg(-100.0));
+    d.level("F", "B", 500.55, Place::Deg(-60.0));
+    d.put("G", V2::new(64.29, 187.91), Place::Deg(160.0));
+    d.level("A", "G", 162.64, Place::Deg(100.0));
+    d.level("D", "G", 268.13, Place::Deg(80.0));
+    d.level("H", "G", 389.01, Place::Deg(15.0));
+    d.chain(&["G", "A", "D", "H"]);
+    d.chain(&["B", "C", "E", "F"]);
+    d.join("G", "B");
+    d.join("A", "B");
+    d.join("A", "C");
+    d.join("D", "E");
+    d.join("D", "F");
+    d.join("H", "F");
+    d.dots(&["A", "B", "C", "D", "E", "F", "G", "H"]);
+    d
+}
