@@ -8,7 +8,7 @@ use crate::figure::{
     book1_prop27, book1_prop28, book1_prop29, book1_prop30,
     book1_prop31, book1_prop32,
     book1_prop33, book1_prop34,
-    book1_prop35, book1_prop36,
+    book1_prop35, book1_prop36, book1_prop37, book1_prop38,
 };
 
 pub const PROP_1: Proposition = Proposition {
@@ -881,9 +881,52 @@ pub const PROP_36: Proposition = Proposition {
     ],
 };
 
+pub const PROP_37: Proposition = Proposition {
+    book: 1,
+    number: 37,
+    enunciation: "Triangles which are on the same base and between the same parallels are equal to one another.",
+    figure: book1_prop37,
+    phrases: &[
+        s(1, "Let *ABC* and *DBC* be triangles on the same base *BC*, and between the same parallels *AD* and *BC*."),
+        s(1, "I say that triangle *ABC* is equal to triangle *DBC*."),
+        s(2, "Let *AD* have been produced in both directions to *E* and *F*, and let the (straight-line) *BE* have been drawn through *B* parallel to *CA*,{[Prop. 1.31]} and let the (straight-line) *CF* have been drawn through *C* parallel to *BD*.{[Prop. 1.31]}"),
+        s(2, "Thus, *EBCA* and *DBCF* are both parallelograms, and are equal."),
+        s(2, "For they are on the same base *BC*, and between the same parallels *BC* and *EF*.{[Prop. 1.35]}"),
+        s(2, "And the triangle *ABC* is half of the parallelogram *EBCA*."),
+        s(2, "For the diagonal *AB* cuts the latter in half.{[Prop. 1.34]}"),
+        s(2, "And the triangle *DBC* (is) half of the parallelogram *DBCF*."),
+        s(2, "For the diagonal *DC* cuts the latter in half.{[Prop. 1.34]}"),
+        s(2, "{[And the halves of equal things are equal to one another.]} Thus, triangle *ABC* is equal to triangle *DBC*."),
+        s(3, "Thus, triangles which are on the same base and between the same parallels are equal to one another."),
+        s(3, "(Which is) the very thing it was required to show."),
+    ],
+};
+
+pub const PROP_38: Proposition = Proposition {
+    book: 1,
+    number: 38,
+    enunciation: "Triangles which are on equal bases and between the same parallels are equal to one another.",
+    figure: book1_prop38,
+    phrases: &[
+        s(1, "Let *ABC* and *DEF* be triangles on the equal bases *BC* and *EF*, and between the same parallels *BF* and *AD*."),
+        s(1, "I say that triangle *ABC* is equal to triangle *DEF*."),
+        s(2, "For let *AD* have been produced in both directions to *G* and *H*, and let the (straight-line) *BG* have been drawn through *B* parallel to *CA*,{[Prop. 1.31]} and let the (straight-line) *FH* have been drawn through *F* parallel to *DE*.{[Prop. 1.31]}"),
+        s(2, "Thus, *GBCA* and *DEFH* are each parallelograms."),
+        s(2, "And *GBCA* is equal to *DEFH*."),
+        s(2, "For they are on the equal bases *BC* and *EF*, and between the same parallels *BF* and *GH*.{[Prop. 1.36]}"),
+        s(2, "And triangle *ABC* is half of the parallelogram *GBCA*."),
+        s(2, "For the diagonal *AB* cuts the latter in half.{[Prop. 1.34]}"),
+        s(2, "And triangle *FED* (is) half of parallelogram *DEFH*."),
+        s(2, "For the diagonal *DF* cuts the latter in half.{[Prop. 1.34]}"),
+        s(2, "{[And the halves of equal things are equal to one another.]} Thus, triangle *ABC* is equal to triangle *DEF*."),
+        s(3, "Thus, triangles which are on equal bases and between the same parallels are equal to one another."),
+        s(3, "(Which is) the very thing it was required to show."),
+    ],
+};
+
 pub const PROPOSITIONS: &[Proposition] = &[
     PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6, PROP_7, PROP_8, PROP_9, PROP_10, PROP_11,
     PROP_12, PROP_13, PROP_14, PROP_15, PROP_16, PROP_17, PROP_18, PROP_19, PROP_20, PROP_21,
     PROP_22, PROP_23, PROP_24, PROP_25, PROP_26, PROP_27, PROP_28, PROP_29, PROP_30,
-    PROP_31, PROP_32, PROP_33, PROP_34, PROP_35, PROP_36,
+    PROP_31, PROP_32, PROP_33, PROP_34, PROP_35, PROP_36, PROP_37, PROP_38,
 ];

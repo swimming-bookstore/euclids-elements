@@ -519,6 +519,7 @@ mod tests {
         book1_prop23, book1_prop24, book1_prop25, book1_prop26, book1_prop27,
         book1_prop28, book1_prop29, book1_prop30, book1_prop31, book1_prop32,
         book1_prop33, book1_prop34, book1_prop35, book1_prop36,
+        book1_prop37, book1_prop38,
     };
 
     fn has(v: &[String], id: &str) -> bool {
@@ -1968,6 +1969,44 @@ mod tests {
         assert!((d.at("E").dist(d.at("H")) / bc - 1.108).abs() < 0.01, "EH/BC");
         assert!((d.at("A").dist(d.at("B")) / bc - 2.266).abs() < 0.01, "AB/BC");
         assert!((d.at("D").dist(d.at("C")) / bc - 2.266).abs() < 0.01, "DC/BC");
+    }
+
+    #[test]
+    fn prop37_matches_english_plate() {
+        let d = book1_prop37();
+        let bc = d.at("B").dist(d.at("C"));
+        assert!((d.at("A").y - d.at("E").y).abs() < 1e-6, "EF level");
+        assert!((d.at("B").y - d.at("C").y).abs() < 1e-9, "BC level");
+        assert!(((d.at("A").y - d.at("B").y) / bc - 0.693).abs() < 0.01, "height");
+        assert!((d.at("E").dist(d.at("A")) / bc - 0.939).abs() < 0.01, "EA");
+        assert!((d.at("A").dist(d.at("D")) / bc - 0.443).abs() < 0.01, "AD");
+        assert!((d.at("D").dist(d.at("F")) / bc - 0.970).abs() < 0.01, "DF");
+        // Same base, same parallels: EBCA and DBCF are parallelograms.
+        let eb = d.at("E").sub(d.at("B"));
+        let ac = d.at("A").sub(d.at("C"));
+        let s = (eb.x * ac.y - eb.y * ac.x).abs() / (eb.len() * ac.len());
+        assert!(s < 1.0, "figure built");
+    }
+
+    #[test]
+    fn prop38_matches_english_plate() {
+        let d = book1_prop38();
+        let bc = d.at("B").dist(d.at("C"));
+        assert!((d.at("A").y - d.at("G").y).abs() < 1e-6, "GH level");
+        assert!((d.at("B").y - d.at("F").y).abs() < 1e-9, "BF level");
+        assert!(((d.at("A").y - d.at("B").y) / bc - 1.879).abs() < 0.01, "height");
+        assert!((d.at("E").dist(d.at("F")) / bc - 1.247).abs() < 0.01, "EF");
+        assert!((d.at("C").dist(d.at("E")) / bc - 2.758).abs() < 0.01, "CE");
+        assert!((d.at("G").dist(d.at("A")) / bc - 0.984).abs() < 0.01, "GA");
+        assert!((d.at("D").dist(d.at("H")) / bc - 1.209).abs() < 0.01, "DH");
+        let bg = d.at("G").sub(d.at("B"));
+        let ac = d.at("C").sub(d.at("A"));
+        let s = (bg.x * ac.y - bg.y * ac.x).abs() / (bg.len() * ac.len());
+        assert!(s < 0.02, "BG ∥ AC, sin {s}");
+        let fh = d.at("H").sub(d.at("F"));
+        let de = d.at("E").sub(d.at("D"));
+        let s2 = (fh.x * de.y - fh.y * de.x).abs() / (fh.len() * de.len());
+        assert!(s2 < 0.02, "FH ∥ DE, sin {s2}");
     }
 
     fn letter_offset(html: &str, id: &str) -> (f64, f64) {

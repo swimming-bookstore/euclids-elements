@@ -768,3 +768,53 @@ pub fn book1_prop36() -> Diagram {
     d.dots(&["A", "B", "C", "D", "E", "F", "G", "H"]);
     d
 }
+
+/// I.37 — Fitzpatrick English plate (Elements p. 38). Ink tips of the
+/// plate capitals, one scale BC = 100. Height/BC = 0.693, EA/BC = 0.939,
+/// AD/BC = 0.443, DF/BC = 0.970. E, A, D, F sit on the upper parallel;
+/// B, C on the base. Letters sit off the stroke the way the plate sets them.
+pub fn book1_prop37() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("B", V2::new(0.0, 0.0), Place::Deg(-95.0));
+    d.put("C", V2::new(100.0, 0.0), Place::Deg(-80.0));
+    d.put("E", V2::new(-59.09, 69.32), Place::Deg(168.0));
+    d.put("A", V2::new(34.85, 69.32), Place::Deg(95.0));
+    d.put("D", V2::new(79.17, 69.32), Place::Deg(80.0));
+    d.put("F", V2::new(176.14, 69.32), Place::Deg(10.0));
+    d.chain(&["E", "A", "D", "F"]);
+    d.chain(&["B", "C"]);
+    d.join("A", "B");
+    d.join("A", "C");
+    d.join("D", "B");
+    d.join("D", "C");
+    d.join("E", "B");
+    d.join("F", "C");
+    d.dots(&["A", "B", "C", "D", "E", "F"]);
+    d
+}
+
+/// I.38 — Fitzpatrick English plate (Elements p. 39). Vertices are the
+/// stroke under each plate capital, one scale BC = 100. Height/BC = 1.879,
+/// EF/BC = 1.247, CE/BC = 2.758, GA/BC = 0.984, DH/BC = 1.209.
+/// BG ∥ AC and FH ∥ DE, as the construction draws them.
+pub fn book1_prop38() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("B", V2::new(0.0, 0.0), Place::Deg(-110.0));
+    d.level("C", "B", 100.0, Place::Deg(-70.0));
+    d.level("E", "B", 375.82, Place::Deg(-100.0));
+    d.level("F", "B", 500.55, Place::Deg(-60.0));
+    d.put("G", V2::new(64.29, 187.91), Place::Deg(160.0));
+    d.level("A", "G", 162.64, Place::Deg(100.0));
+    d.level("D", "G", 268.13, Place::Deg(80.0));
+    d.level("H", "G", 389.01, Place::Deg(15.0));
+    d.chain(&["G", "A", "D", "H"]);
+    d.chain(&["B", "C", "E", "F"]);
+    d.join("G", "B");
+    d.join("A", "B");
+    d.join("A", "C");
+    d.join("D", "E");
+    d.join("D", "F");
+    d.join("H", "F");
+    d.dots(&["A", "B", "C", "D", "E", "F", "G", "H"]);
+    d
+}
