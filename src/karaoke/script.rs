@@ -120,6 +120,24 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
             });
             continue;
         }
+        if chars[i] == '[' {
+            // Fitzpatrick's square-bracket interpolation ("[And the halves…]").
+            // Not a citation — those are wrapped in `{…}`.
+            let start = i;
+            i += 1;
+            while i < chars.len() && chars[i] != ']' {
+                i += 1;
+            }
+            if i < chars.len() {
+                i += 1;
+            }
+            let word: String = chars[start..i].iter().collect();
+            if word.chars().any(|c| c.is_ascii_alphabetic()) {
+                recent.push(word.clone());
+                push_words(&mut out, &word, false, map, timing, false, &mut pending_open);
+            }
+            continue;
+        }
         if chars[i] == '*' {
             i += 1;
             let start = i;

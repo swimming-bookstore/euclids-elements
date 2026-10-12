@@ -5,6 +5,8 @@ use super::geom::{Place, V2};
 //     python3 scripts/figure.py --write
 // Ratios, angles, and `s.letters(...)` come from `--measure PAGE`
 // (ink tips; `level` / `plumb` / `meet` only when the ink lines up).
+// A capital off its stroke is `s.plate_glyphs(...)` from `--measure`,
+// then `f.glyph(name)` — the center, not a heading from the tip.
 
 /// I.1 — equilateral triangle on AB. C above the base; D, E on the sides.
 pub fn book1_prop1() -> Diagram {
@@ -769,10 +771,125 @@ pub fn book1_prop36() -> Diagram {
     d
 }
 
-/// I.37 — Fitzpatrick English plate (Elements p. 38). Ink tips of the
-/// plate capitals, one scale BC = 100. Height/BC = 0.693, EA/BC = 0.939,
-/// AD/BC = 0.443, DF/BC = 0.970. E, A, D, F sit on the upper parallel;
-/// B, C on the base. Letters sit off the stroke the way the plate sets them.
+/// I.38 — Fitzpatrick English plate (Elements PDF p. 39, 300 dpi).
+/// Vertices are the stroke under each plate capital, one scale BC = 100.
+/// Height/BC = 1.879, EF/BC = 1.247, CE/BC = 2.758, GA/BC = 0.984,
+/// DH/BC = 1.209. BG ∥ AC and FH ∥ DE. G and H are the produced ends
+/// of AD. Those capitals sit a letter-gap above the stroke, not out
+/// past the tips: G at 76.6° (up and slightly right), H at 102.1°
+/// (up and slightly left). A heading along the stroke parks them on
+/// the wrong side.
+pub fn book1_prop38() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("B", V2::new(0.0, 0.0), Place::Deg(-110.0));
+    d.level("C", "B", 100.0, Place::Deg(-70.0));
+    d.level("E", "B", 375.82, Place::Deg(-100.0));
+    d.level("F", "B", 500.55, Place::Deg(-60.0));
+    d.put("G", V2::new(64.29, 187.91), Place::Deg(76.6));
+    d.level("A", "G", 162.64, Place::Deg(100.0));
+    d.level("D", "G", 268.13, Place::Deg(80.0));
+    d.level("H", "G", 389.01, Place::Deg(102.1));
+    d.chain(&["G", "A", "D", "H"]);
+    d.chain(&["B", "C", "E", "F"]);
+    d.join("G", "B");
+    d.join("A", "B");
+    d.join("A", "C");
+    d.join("D", "E");
+    d.join("D", "F");
+    d.join("H", "F");
+    d.dots(&["A", "B", "C", "D", "E", "F", "G", "H"]);
+    d
+}
+
+/// I.39 — Fitzpatrick English plate (Elements PDF p. 40, 300 dpi).
+/// ABCD first. E is where AE meets DB, so E touches BD. AE joins A to E;
+/// EC joins E to C. AE/BC = 0.664, EC/BC = 0.569, ∠AEC = 125.3°.
+/// A–D use the same letter radius as the other plates, on the measured
+/// tip→glyph heading. E is the plate glyph center, off the junction.
+pub fn book1_prop39() -> Diagram {
+    let mut d = Diagram::new();
+    d.pin("B", V2::new(0.0, 0.0));
+    d.pin("C", V2::new(100.0, 0.05));
+    d.pin("A", V2::new(5.77, 55.92));
+    d.pin("D", V2::new(81.64, 56.2));
+    d.pin("E", V2::new(71.8432, 49.456));
+    d.label("A", Place::Deg(137.6));
+    d.label("B", Place::Deg(-165.3));
+    d.label("C", Place::Deg(-6.4));
+    d.label("D", Place::Deg(42.2));
+    d.glyph("E", V2::new(70.86, 39.94));
+    d.join("A", "D");
+    d.join("B", "C");
+    d.join("A", "B");
+    d.join("A", "C");
+    d.join("D", "B");
+    d.join("D", "C");
+    d.join("A", "E");
+    d.join("E", "C");
+    d.dots(&["A", "B", "C", "D", "E"]);
+    d
+}
+
+/// I.40 — Fitzpatrick English plate (Elements PDF p. 40, 300 dpi), same
+/// construction as I.39. F is where AF meets DC, so F touches DC. AF joins
+/// A to F; FE joins F to E. AF is not the stroke AD, and FE is not DE.
+/// AF/BC = 1.375, FE/BC = 0.833, ∠AFE = 129.7°.
+/// A–E use the same letter radius as the other plates, on the measured
+/// tip→glyph heading. F is the plate glyph center, off the junction.
+pub fn book1_prop40() -> Diagram {
+    let mut d = Diagram::new();
+    d.pin("B", V2::new(0.0, 0.0));
+    d.pin("C", V2::new(100.0, 0.0));
+    d.pin("E", V2::new(194.46, 0.0));
+    d.pin("A", V2::new(15.57, 92.0));
+    d.pin("D", V2::new(166.44, 92.0));
+    d.pin("F", V2::new(151.53, 71.34));
+    d.label("A", Place::Deg(166.4));
+    d.label("D", Place::Deg(11.1));
+    d.label("B", Place::Deg(-178.7));
+    d.label("E", Place::Deg(-5.8));
+    d.label("C", Place::Deg(-77.0));
+    d.glyph("F", V2::new(140.47, 65.33));
+    d.join("A", "B");
+    d.join("A", "C");
+    d.join("A", "D");
+    d.join("D", "C");
+    d.join("D", "E");
+    d.join("B", "C");
+    d.join("C", "E");
+    d.join("A", "F");
+    d.join("F", "E");
+    d.dots(&["A", "B", "C", "D", "E", "F"]);
+    d
+}
+
+/// I.41 — Fitzpatrick English plate (Elements PDF p. 41, the right-hand
+/// figure; the Greek plate leans the other way). Parallelogram ABCD and
+/// triangle EBC on the same base BC, between parallels AE and BC. AD = BC
+/// and AB = DC, so the right side leans out. Diagonal AC. E is on AD
+/// produced. One scale BC = 100. Height/BC = 1.091, AE/BC = 1.909,
+/// AB/BC = CD/BC = 1.095, BE/BC = 2.278. ∠ABC = 85.2°, ∠BCD = 94.8°.
+/// A–E use the same letter radius, on the measured tip→glyph heading.
+pub fn book1_prop41() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("B", V2::new(0.0, 0.0), Place::Deg(-96.0));
+    d.level("C", "B", 100.0, Place::Deg(-76.2));
+    d.put("A", V2::new(9.091, 109.091), Place::Deg(94.9));
+    d.level("D", "A", 109.091, Place::Deg(71.7));
+    d.level("E", "A", 200.0, Place::Deg(78.2));
+    d.chain(&["A", "D", "E"]);
+    d.chain(&["B", "C"]);
+    d.join("A", "B");
+    d.join("D", "C");
+    d.join("A", "C");
+    d.join("E", "B");
+    d.join("E", "C");
+    d.dots(&["A", "B", "C", "D", "E"]);
+    d
+}
+/// I.37 — Fitzpatrick English plate. Triangles ABC and DBC on the same base BC,
+/// between parallels EF and BC. B, C on the base. Letters sit off the stroke the
+/// way the plate sets them.
 pub fn book1_prop37() -> Diagram {
     let mut d = Diagram::new();
     d.put("B", V2::new(0.0, 0.0), Place::Deg(-95.0));
@@ -793,28 +910,43 @@ pub fn book1_prop37() -> Diagram {
     d
 }
 
-/// I.38 — Fitzpatrick English plate (Elements p. 39). Vertices are the
-/// stroke under each plate capital, one scale BC = 100. Height/BC = 1.879,
-/// EF/BC = 1.247, CE/BC = 2.758, GA/BC = 0.984, DH/BC = 1.209.
-/// BG ∥ AC and FH ∥ DE, as the construction draws them.
-pub fn book1_prop38() -> Diagram {
+/// I.42 — Fitzpatrick English plate (Elements PDF p. 42, the right-hand figure).
+/// Triangle ABC, E the midpoint of BC. D is the given rectilinear angle, off to
+/// the left of A. AE joins. EF rises from E with ∠CEF = ∠D and meets AG at F.
+/// AG through A ∥ EC; CG through C ∥ EF, meeting AG at G, so FECG is the
+/// parallelogram. AB leans; EF ∥ CG. Path endpoints, one scale BC = 100.
+/// Height/BC = 0.750, BE/BC = EC/BC = 0.500, FG/BC = 0.498, EF/BC = CG/BC = 0.804.
+/// ∠ABC = 85.8°, ∠CEF = 67.6°. The given angle is a shallow mark to the left of
+/// A, not a tall V. Measured from A on the page-42 path: the vertex sits 35.94
+/// left and 9.38 below A. The arms rise 34.59 at 108.4° and 36.34 at 64.5°, and
+/// open 43.9°. D sits inside the angle, at the plate glyph. A–C, E–G use the
+/// same letter radius, on the measured tip→glyph heading. The mark is
+/// `given_angle`: vertex from A, then each arm's length and heading, then the glyph.
+pub fn book1_prop42() -> Diagram {
     let mut d = Diagram::new();
-    d.put("B", V2::new(0.0, 0.0), Place::Deg(-110.0));
-    d.level("C", "B", 100.0, Place::Deg(-70.0));
-    d.level("E", "B", 375.82, Place::Deg(-100.0));
-    d.level("F", "B", 500.55, Place::Deg(-60.0));
-    d.put("G", V2::new(64.29, 187.91), Place::Deg(160.0));
-    d.level("A", "G", 162.64, Place::Deg(100.0));
-    d.level("D", "G", 268.13, Place::Deg(80.0));
-    d.level("H", "G", 389.01, Place::Deg(15.0));
-    d.chain(&["G", "A", "D", "H"]);
-    d.chain(&["B", "C", "E", "F"]);
-    d.join("G", "B");
+    d.put("B", V2::new(0.0, 0.0), Place::Deg(-93.6));
+    d.level("C", "B", 100.0, Place::Deg(-80.7));
+    d.put("E", V2::new(50.0, 0.0), Place::Deg(-91.2));
+    d.put("A", V2::new(6.25, 75.0), Place::Deg(92.7));
+    d.level("F", "A", 80.675, Place::Deg(79.4));
+    d.level("G", "A", 130.474, Place::Deg(86.2));
+    // Given angle: vertex from A, then each arm (length, heading), then the glyph.
+    d.given_angle(
+        "D",
+        "A",
+        (37.140, -165.38),
+        (34.588, 108.43),
+        (36.343, 64.54),
+        V2::new(-28.25, 88.84),
+    );
+    d.chain(&["B", "E", "C"]);
     d.join("A", "B");
+    d.join("A", "E");
     d.join("A", "C");
-    d.join("D", "E");
-    d.join("D", "F");
-    d.join("H", "F");
-    d.dots(&["A", "B", "C", "D", "E", "F", "G", "H"]);
+    d.join("A", "F");
+    d.join("F", "G");
+    d.join("E", "F");
+    d.join("C", "G");
+    d.dots(&["A", "B", "C", "E", "F", "G"]);
     d
 }

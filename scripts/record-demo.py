@@ -10,7 +10,9 @@ import socket
 import threading
 from functools import partial
 from pathlib import Path
+import sys
 
+sys.path.insert(0, str(Path.home() / "demo"))
 from record.session import RecordSession
 
 ROOT = Path(__file__).resolve().parent.parent / "dist"
