@@ -963,4 +963,16 @@ mod tests {
         ));
         assert!(!cites(&i38[1]).iter().any(|c| c.contains("halves")));
     }
+
+    #[test]
+    fn i40_interpolation_is_not_a_citation() {
+        let i40 = layout_of(1, 40);
+        assert_eq!(i40.len(), 4, "I.40 has four Fitzpatrick paragraphs");
+        assert!(cites(&i40[0]).is_empty());
+        assert_eq!(cites(&i40[2]), vec!["[Prop. 1.31]", "[Prop. 1.38]"]);
+        let proof = para_text(&i40[2]);
+        assert!(proof.contains("equal to [triangle] DCE"));
+        assert!(proof.contains("[triangle] DCE is also equal to triangle FCE"));
+        assert!(!cites(&i40[2]).iter().any(|c| c.contains("triangle")));
+    }
 }

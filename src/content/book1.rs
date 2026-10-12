@@ -9,6 +9,7 @@ use crate::figure::{
     book1_prop31, book1_prop32,
     book1_prop33, book1_prop34,
     book1_prop35, book1_prop36, book1_prop37, book1_prop38,
+    book1_prop39, book1_prop40, book1_prop41, book1_prop42,
 };
 
 pub const PROP_1: Proposition = Proposition {
@@ -924,9 +925,101 @@ pub const PROP_38: Proposition = Proposition {
     ],
 };
 
+pub const PROP_39: Proposition = Proposition {
+    book: 1,
+    number: 39,
+    enunciation: "Equal triangles which are on the same base, and on the same side, are also between the same parallels.",
+    figure: book1_prop39,
+    phrases: &[
+        s(1, "Let *ABC* and *DBC* be equal triangles which are on the same base *BC*, and on the same side (of it)."),
+        s(1, "I say that they are also between the same parallels."),
+        s(2, "For let *AD* have been joined."),
+        s(2, "I say that *AD* and *BC* are parallel."),
+        s(3, "For, if not, let *AE* have been drawn through point *A* parallel to the straight-line *BC*,{[Prop. 1.31]} and let *EC* have been joined."),
+        s(3, "Thus, triangle *ABC* is equal to triangle *EBC*."),
+        s(3, "For it is on the same base as it, *BC*, and between the same parallels.{[Prop. 1.37]}"),
+        s(3, "But *ABC* is equal to *DBC*."),
+        s(3, "Thus, *DBC* is also equal to *EBC*, the greater to the lesser."),
+        s(3, "The very thing is impossible."),
+        s(3, "Thus, *AE* is not parallel to *BC*."),
+        s(3, "Similarly, we can show that neither (is) any other (straight-line) than *AD*."),
+        s(3, "Thus, *AD* is parallel to *BC*."),
+        s(4, "Thus, equal triangles which are on the same base, and on the same side, are also between the same parallels."),
+        s(4, "(Which is) the very thing it was required to show."),
+    ],
+};
+
+pub const PROP_40: Proposition = Proposition {
+    book: 1,
+    number: 40,
+    enunciation: "Equal triangles which are on equal bases, and on the same side, are also between the same parallels.",
+    figure: book1_prop40,
+    phrases: &[
+        s(1, "Let *ABC* and *CDE* be equal triangles on the equal bases *BC* and *CE* (respectively), and on the same side (of *BE*)."),
+        s(1, "I say that they are also between the same parallels."),
+        s(2, "For let *AD* have been joined."),
+        s(2, "I say that *AD* is parallel to *BE*."),
+        s(3, "For if not, let *AF* have been drawn through *A* parallel to *BE*,{[Prop. 1.31]} and let *FE* have been joined."),
+        s(3, "Thus, triangle *ABC* is equal to triangle *FCE*."),
+        s(3, "For they are on equal bases, *BC* and *CE*, and between the same parallels, *BE* and *AF*.{[Prop. 1.38]}"),
+        s(3, "But, triangle *ABC* is equal to [triangle] *DCE*."),
+        s(3, "Thus, [triangle] *DCE* is also equal to triangle *FCE*, the greater to the lesser."),
+        s(3, "The very thing is impossible."),
+        s(3, "Thus, *AF* is not parallel to *BE*."),
+        s(3, "Similarly, we can show that neither (is) any other (straight-line) than *AD*."),
+        s(3, "Thus, *AD* is parallel to *BE*."),
+        s(4, "Thus, equal triangles which are on equal bases, and on the same side, are also between the same parallels."),
+        s(4, "(Which is) the very thing it was required to show."),
+    ],
+};
+
+pub const PROP_41: Proposition = Proposition {
+    book: 1,
+    number: 41,
+    enunciation: "If a parallelogram has the same base as a triangle, and is between the same parallels, then the parallelogram is double (the area) of the triangle.",
+    figure: book1_prop41,
+    phrases: &[
+        s(1, "For let parallelogram *ABCD* have the same base *BC* as triangle *EBC*, and let it be between the same parallels, *BC* and *AE*."),
+        s(1, "I say that parallelogram *ABCD* is double (the area) of triangle *BEC*."),
+        s(2, "For let *AC* have been joined."),
+        s(2, "So triangle *ABC* is equal to triangle *EBC*."),
+        s(2, "For it is on the same base, *BC*, as (*EBC*), and between the same parallels, *BC* and *AE*.{[Prop. 1.37]}"),
+        s(2, "But, parallelogram *ABCD* is double (the area) of triangle *ABC*."),
+        s(2, "For the diagonal *AC* cuts the former in half.{[Prop. 1.34]}"),
+        s(2, "So parallelogram *ABCD* is also double (the area) of triangle *EBC*."),
+        s(3, "Thus, if a parallelogram has the same base as a triangle, and is between the same parallels, then the parallelogram is double (the area) of the triangle."),
+        s(3, "(Which is) the very thing it was required to show."),
+    ],
+};
+
+pub const PROP_42: Proposition = Proposition {
+    book: 1,
+    number: 42,
+    enunciation: "To construct a parallelogram equal to a given triangle in a given rectilinear angle.",
+    figure: book1_prop42,
+    phrases: &[
+        s(1, "Let *ABC* be the given triangle, and *D* the given rectilinear angle."),
+        s(1, "So it is required to construct a parallelogram equal to triangle *ABC* in the rectilinear angle *D*."),
+        s(2, "Let *BC* have been cut in half at *E*,{[Prop. 1.10]} and let *AE* have been joined."),
+        s(2, "And let (angle) *CEF*, equal to angle *D*, have been constructed at the point *E* on the straight-line *EC*.{[Prop. 1.23]}"),
+        s(2, "And let *AG* have been drawn through *A* parallel to *EC*,{[Prop. 1.31]} and let *CG* have been drawn through *C* parallel to *EF*.{[Prop. 1.31]}"),
+        s(2, "Thus, *FECG* is a parallelogram."),
+        s(3, "And since *BE* is equal to *EC*, triangle *ABE* is also equal to triangle *AEC*."),
+        s(3, "For they are on the equal bases, *BE* and *EC*, and between the same parallels, *BC* and *AG*.{[Prop. 1.38]}"),
+        s(3, "Thus, triangle *ABC* is double (the area) of triangle *AEC*."),
+        s(3, "And parallelogram *FECG* is also double (the area) of triangle *AEC*."),
+        s(3, "For it has the same base as (*AEC*), and is between the same parallels as (*AEC*).{[Prop. 1.41]}"),
+        s(3, "Thus, parallelogram *FECG* is equal to triangle *ABC*."),
+        s(3, "(*FECG*) also has the angle *CEF* equal to the given (angle) *D*."),
+        s(4, "Thus, parallelogram *FECG*, equal to the given triangle *ABC*, has been constructed in the angle *CEF*, which is equal to *D*."),
+        s(4, "(Which is) the very thing it was required to do."),
+    ],
+};
+
 pub const PROPOSITIONS: &[Proposition] = &[
     PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6, PROP_7, PROP_8, PROP_9, PROP_10, PROP_11,
     PROP_12, PROP_13, PROP_14, PROP_15, PROP_16, PROP_17, PROP_18, PROP_19, PROP_20, PROP_21,
     PROP_22, PROP_23, PROP_24, PROP_25, PROP_26, PROP_27, PROP_28, PROP_29, PROP_30,
-    PROP_31, PROP_32, PROP_33, PROP_34, PROP_35, PROP_36, PROP_37, PROP_38,
+    PROP_31, PROP_32, PROP_33, PROP_34, PROP_35, PROP_36, PROP_37, PROP_38, PROP_39, PROP_40,
+    PROP_41, PROP_42,
 ];

@@ -14,6 +14,13 @@ struct Circ {
     letters: String,
 }
 
+/// One stroke of a given angle (I.42's D). Named so tests can measure it;
+/// not a lettered point of the figure.
+struct Arm {
+    name: String,
+    at: V2,
+}
+
 /// A Euclidean figure: name the points, join them, draw circles.
 pub struct Diagram {
     fig: Figure,
@@ -21,6 +28,7 @@ pub struct Diagram {
     adj: HashMap<&'static str, Vec<Edge>>,
     circles: Vec<Circ>,
     named: Vec<Circ>,
+    arms: Vec<Arm>,
 }
 
 impl Diagram {
@@ -31,13 +39,18 @@ impl Diagram {
             adj: HashMap::new(),
             circles: Vec::new(),
             named: Vec::new(),
+            arms: Vec::new(),
         }
     }
 
     pub fn at(&self, name: &str) -> V2 {
-        *self
-            .pts
-            .get(name)
+        if let Some(p) = self.pts.get(name) {
+            return *p;
+        }
+        self.arms
+            .iter()
+            .find(|a| a.name == name)
+            .map(|a| a.at)
             .unwrap_or_else(|| panic!("unknown point {name}"))
     }
 
@@ -66,6 +79,12 @@ impl Diagram {
                 Place::LineRight
             },
         )
+    }
+
+    /// Letter on an already named point, shared radius.
+    pub fn label(&mut self, name: &'static str, place: Place) -> &mut Self {
+        self.fig.label_at(name, self.at(name), place);
+        self
     }
 
     /// Name a point; letter center at `r_em` from the mark.
@@ -123,6 +142,30 @@ impl Diagram {
     /// Column of `x_of` × row of `y_of`.
     pub fn corner(&mut self, name: &'static str, x_of: &str, y_of: &str, place: Place) -> V2 {
         self.put(name, V2::new(self.at(x_of).x, self.at(y_of).y), place)
+    }
+
+    /// Intersection of lines `a``b` and `c``d`. No letter.
+    pub fn meet_pin(
+        &mut self,
+        name: &'static str,
+        a: &str,
+        b: &str,
+        c: &str,
+        d: &str,
+    ) -> V2 {
+        let pa = self.at(a);
+        let pb = self.at(b);
+        let pc = self.at(c);
+        let pd = self.at(d);
+        let den = (pa.x - pb.x) * (pc.y - pd.y) - (pa.y - pb.y) * (pc.x - pd.x);
+        if den.abs() < 1e-12 {
+            panic!("{a}{b} parallel to {c}{d}");
+        }
+        let t = ((pa.x - pc.x) * (pc.y - pd.y) - (pa.y - pc.y) * (pc.x - pd.x)) / den;
+        self.pin(
+            name,
+            V2::new(pa.x + t * (pb.x - pa.x), pa.y + t * (pb.y - pa.y)),
+        )
     }
 
     /// Intersection of lines `a``b` and `c``d`.
@@ -212,6 +255,61 @@ impl Diagram {
     pub fn label_at(&mut self, name: &'static str, at: V2, place: Place) -> &mut Self {
         self.fig.label_at(name, at, place);
         self
+    }
+
+    /// Letter whose center is the plate glyph, not an offset from the mark.
+    /// Use this when the capital does not sit on the stroke (I.39 E, I.40 F).
+    pub fn glyph(&mut self, name: &'static str, at: V2) -> &mut Self {
+        self.label_fixed(name, at)
+    }
+
+    /// Letter whose center is exactly `at` (a plate glyph, not an offset from a mark).
+    pub fn label_fixed(&mut self, name: &'static str, at: V2) -> &mut Self {
+        self.fig.label_at_r(name, at, Place::Above, 0.0);
+        self
+    }
+
+    /// A given rectilinear angle, as on the plate (I.23, I.42): not a point of the
+    /// figure. Measure the vertex from `from`, then each arm from the vertex, then
+    /// the letter.
+    ///
+    /// `vertex` is `(r, heading°)` from `from`. `left` and `right` are
+    /// `(length, heading°)` from that vertex — the two strokes, not a bisector.
+    /// `glyph` is the plate letter center. Arm ends are `{name}left` and
+    /// `{name}right` (reachable from `at`, not lettered points).
+    pub fn given_angle(
+        &mut self,
+        name: &'static str,
+        from: &str,
+        vertex: (f64, f64),
+        left: (f64, f64),
+        right: (f64, f64),
+        glyph: V2,
+    ) -> &mut Self {
+        let v = self.at(from).polar(vertex.0, vertex.1);
+        self.pin(name, v);
+        let (ll, lh) = left;
+        let (rl, rh) = right;
+        let left_at = v.polar(ll, lh);
+        let right_at = v.polar(rl, rh);
+        let id = format!("ang-{}", name.to_ascii_lowercase());
+        self.fig.seg(&id, left_at, v);
+        self.fig.seg(&id, v, right_at);
+        // Spoken as the one letter ("the given angle D"), so highlight("D")
+        // lights both strokes — they share this id.
+        self.named.push(Circ {
+            id,
+            letters: name.to_ascii_uppercase(),
+        });
+        self.arms.push(Arm {
+            name: format!("{name}left"),
+            at: left_at,
+        });
+        self.arms.push(Arm {
+            name: format!("{name}right"),
+            at: right_at,
+        });
+        self.glyph(name, glyph)
     }
 
     pub fn dots(&mut self, names: &[&'static str]) -> &mut Self {
@@ -354,10 +452,10 @@ impl Diagram {
     fn single(&self, a: &'static str, key: &str) -> Vec<String> {
         let mut out = vec![a.to_string()];
         if let Some(id) = self.named_id(key) {
-            out.push(id);
+            out.push(id.clone());
             if let Some(edges) = self.adj.get(a) {
                 for e in edges {
-                    if e.id == out[1] {
+                    if e.id == id {
                         out.push(e.to.to_string());
                     }
                 }
@@ -474,6 +572,8 @@ impl Diagram {
         if on.len() < 2 || on[0].0 != start || on.last().map(|x| x.0) != Some(goal) {
             return None;
         }
+        // A longer collinear chain (B–C–E) still names the short piece (C–E)
+        // when every step of it is drawn.
         let mut ids = Vec::new();
         for w in on.windows(2) {
             let id = self.edge_id(w[0].0, w[1].0)?;
@@ -538,7 +638,8 @@ mod tests {
         book1_prop23, book1_prop24, book1_prop25, book1_prop26, book1_prop27,
         book1_prop28, book1_prop29, book1_prop30, book1_prop31, book1_prop32,
         book1_prop33, book1_prop34, book1_prop35, book1_prop36,
-        book1_prop37, book1_prop38,
+        book1_prop37, book1_prop38, book1_prop39, book1_prop40,
+        book1_prop41, book1_prop42,
     };
 
     fn has(v: &[String], id: &str) -> bool {
@@ -2028,6 +2129,136 @@ mod tests {
         assert!(s2 < 0.02, "FH ∥ DE, sin {s2}");
     }
 
+    #[test]
+    fn prop39_matches_english_plate() {
+        let d = book1_prop39();
+        let bc = d.at("B").dist(d.at("C"));
+        assert!((d.at("A").y - d.at("D").y).abs() < 0.4, "AD level with the base");
+        assert!((d.at("B").y - d.at("C").y).abs() < 0.1, "BC level");
+        assert!(d.at("E").x > d.at("A").x && d.at("E").x < d.at("D").x, "E between A and D");
+        assert!(d.at("E").y < d.at("A").y && d.at("E").y > d.at("B").y, "E between AD and BC");
+        assert!(d.at("E").on_seg(d.at("B"), d.at("D"), 1e-3), "E on BD");
+        assert!(((d.at("A").y - d.at("B").y) / bc - 0.560).abs() < 0.01, "height");
+        assert!((d.at("A").dist(d.at("D")) / bc - 0.759).abs() < 0.01, "AD");
+        assert!((d.at("A").dist(d.at("B")) / bc - 0.562).abs() < 0.01, "AB");
+        assert!((d.at("D").dist(d.at("C")) / bc - 0.591).abs() < 0.01, "DC");
+        // AE joins A to E; EC joins E to C. E is the crossing on BD.
+        let ae = d.at("A").dist(d.at("E")) / bc;
+        let ec = d.at("E").dist(d.at("C")) / bc;
+        assert!((ae - 0.664).abs() < 0.01, "AE {ae}");
+        assert!((ec - 0.569).abs() < 0.01, "EC {ec}");
+        let ea = d.at("A").sub(d.at("E"));
+        let ecv = d.at("C").sub(d.at("E"));
+        let cos = (ea.x * ecv.x + ea.y * ecv.y) / (ea.len() * ecv.len());
+        let deg = cos.acos().to_degrees();
+        assert!((deg - 125.3).abs() < 1.0, "∠AEC {deg}");
+        let aeh = d.highlight("AE");
+        assert!(has(&aeh, "ae"), "AE joined: {aeh:?}");
+        let ech = d.highlight("EC");
+        assert!(has(&ech, "ec"), "EC joined: {ech:?}");
+        let abc = d.highlight("ABC");
+        assert!(has(&abc, "ab") && has(&abc, "ac") && has(&abc, "bc"), "△ABC: {abc:?}");
+        let dbc = d.highlight("DBC");
+        assert!(has(&dbc, "db") && has(&dbc, "dc") && has(&dbc, "bc"), "△DBC: {dbc:?}");
+        let ad = d.highlight("AD");
+        assert!(has(&ad, "ad"), "AD: {ad:?}");
+    }
+
+    #[test]
+    fn prop40_matches_english_plate() {
+        let d = book1_prop40();
+        let bc = d.at("B").dist(d.at("C"));
+        assert!((d.at("A").y - d.at("D").y).abs() < 0.1, "AD level");
+        assert!((d.at("B").y - d.at("E").y).abs() < 0.1, "BE level");
+        assert!(d.at("C").on_seg(d.at("B"), d.at("E"), 1e-6), "C on BE");
+        assert!(d.at("F").on_seg(d.at("D"), d.at("C"), 1e-3), "F on DC");
+        assert!(d.at("F").y < d.at("D").y && d.at("F").y > d.at("C").y, "F between D and C");
+        assert!(((d.at("A").y - d.at("B").y) / bc - 0.920).abs() < 0.01, "height");
+        assert!((d.at("A").dist(d.at("D")) / bc - 1.509).abs() < 0.01, "AD");
+        assert!((d.at("C").dist(d.at("E")) / bc - 0.945).abs() < 0.01, "CE");
+        assert!((d.at("B").dist(d.at("E")) / bc - 1.945).abs() < 0.01, "BE");
+        assert!((d.at("A").dist(d.at("F")) / bc - 1.375).abs() < 0.01, "AF");
+        assert!((d.at("F").dist(d.at("E")) / bc - 0.833).abs() < 0.01, "FE");
+        let abc = d.highlight("ABC");
+        assert!(has(&abc, "ab") && has(&abc, "ac") && has(&abc, "bc"), "△ABC: {abc:?}");
+        let cde = d.highlight("CDE");
+        assert!(has(&cde, "dc") && has(&cde, "de") && has(&cde, "ce"), "△CDE: {cde:?}");
+        let af = d.highlight("AF");
+        assert!(has(&af, "af"), "AF joined: {af:?}");
+        let fe = d.highlight("FE");
+        assert!(has(&fe, "fe"), "FE joined: {fe:?}");
+        let ad = d.highlight("AD");
+        assert!(has(&ad, "ad"), "AD: {ad:?}");
+        let be = d.highlight("BE");
+        assert!(has(&be, "bc") && has(&be, "ce"), "BE: {be:?}");
+    }
+
+    #[test]
+    fn prop41_matches_english_plate() {
+        let d = book1_prop41();
+        let bc = d.at("B").dist(d.at("C"));
+        assert!((d.at("A").y - d.at("E").y).abs() < 1e-6, "AE level");
+        assert!((d.at("B").y - d.at("C").y).abs() < 1e-6, "BC level");
+        assert!(d.at("D").on_seg(d.at("A"), d.at("E"), 1e-6), "D on AE");
+        assert!(d.at("D").x > d.at("C").x, "right side leans out, as on the English plate");
+        assert!(((d.at("A").y - d.at("B").y) / bc - 1.091).abs() < 0.01, "height");
+        assert!((d.at("A").dist(d.at("E")) / bc - 1.909).abs() < 0.02, "AE");
+        assert!((d.at("A").dist(d.at("D")) / bc - 1.0).abs() < 0.01, "AD = BC");
+        assert!((d.at("A").dist(d.at("B")) / bc - 1.095).abs() < 0.02, "AB");
+        assert!((d.at("C").dist(d.at("D")) / bc - 1.095).abs() < 0.02, "CD");
+        assert!((d.at("B").dist(d.at("E")) / bc - 2.278).abs() < 0.02, "BE");
+        let abcd = d.highlight("ABCD");
+        assert!(
+            has(&abcd, "ab") && has(&abcd, "dc") && has(&abcd, "ad") && has(&abcd, "bc"),
+            "parallelogram ABCD: {abcd:?}"
+        );
+        let ebc = d.highlight("EBC");
+        assert!(has(&ebc, "eb") && has(&ebc, "ec") && has(&ebc, "bc"), "triangle EBC: {ebc:?}");
+        let ac = d.highlight("AC");
+        assert!(has(&ac, "ac"), "diagonal AC: {ac:?}");
+    }
+
+    #[test]
+    fn prop42_matches_english_plate() {
+        let d = book1_prop42();
+        let bc = d.at("B").dist(d.at("C"));
+        assert!((d.at("B").y - d.at("C").y).abs() < 1e-6, "BC level");
+        assert!((d.at("A").y - d.at("G").y).abs() < 1e-6, "AG level");
+        assert!(d.at("E").on_seg(d.at("B"), d.at("C"), 1e-6), "E on BC");
+        assert!((d.at("B").dist(d.at("E")) - d.at("E").dist(d.at("C"))).abs() < 1e-6);
+        assert!(((d.at("A").y - d.at("B").y) / bc - 0.750).abs() < 0.01, "height");
+        assert!((d.at("A").dist(d.at("G")) / bc - 1.242).abs() < 0.02, "AG");
+        assert!((d.at("E").dist(d.at("F")) / bc - 0.804).abs() < 0.02, "EF");
+        assert!((d.at("C").dist(d.at("G")) / bc - 0.804).abs() < 0.02, "CG");
+        let cg = d.at("G").sub(d.at("C"));
+        let ef = d.at("F").sub(d.at("E"));
+        let cross = cg.x * ef.y - cg.y * ef.x;
+        let sin = cross.abs() / (cg.len() * ef.len());
+        assert!(sin < 0.003, "CG parallel to EF, sin {sin}");
+        let a = d.at("A");
+        let dv = d.at("D");
+        let from_a = dv.sub(a);
+        assert!((from_a.len() / bc - 0.371).abs() < 0.01, "D from A");
+        assert!((from_a.y.atan2(from_a.x).to_degrees() + 165.4).abs() < 0.5, "D heading");
+        let left = d.at("Dleft").dist(dv) / bc;
+        let right = d.at("Dright").dist(dv) / bc;
+        assert!((left - 0.346).abs() < 0.01, "left arm {left}");
+        assert!((right - 0.363).abs() < 0.01, "right arm {right}");
+        let u = d.at("Dleft").sub(dv);
+        let v = d.at("Dright").sub(dv);
+        let open = (u.x * v.x + u.y * v.y) / (u.len() * v.len());
+        let deg = open.clamp(-1.0, 1.0).acos().to_degrees();
+        assert!((deg - 43.9).abs() < 0.4, "angle at D {deg}");
+        let abc = d.highlight("ABC");
+        assert!(has(&abc, "ab") && has(&abc, "ac") && has(&abc, "be") && has(&abc, "ec"), "triangle ABC: {abc:?}");
+        let fecg = d.highlight("FECG");
+        assert!(has(&fecg, "ef") && has(&fecg, "cg") && has(&fecg, "fg") && has(&fecg, "ec"),
+            "parallelogram FECG: {fecg:?}"
+        );
+        let ang = d.highlight("D");
+        assert!(has(&ang, "ang-d"), "given angle D: {ang:?}");
+    }
+
     fn letter_offset(html: &str, id: &str) -> (f64, f64) {
         let needle = format!("data-id=\"{id}\"");
         let start = html.find(&needle).expect(id);
@@ -2061,3 +2292,4 @@ mod tests {
         assert!(b.contains("class=\"letter"));
     }
 }
+

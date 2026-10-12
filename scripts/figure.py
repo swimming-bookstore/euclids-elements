@@ -10,12 +10,20 @@ stay in plate proportion.
         rasterize the English column, blank the capitals, take the
         nearest ink to each letter. Shared *ink* rows (`level`) and
         columns (`plumb`) snap; a cut is `meet`. Prints one-scale
-        ratios and angles.
+        ratios and angles, tip→glyph headings, and glyph centers.
 
     Put those in `book1_propN` as a Sketch (`put` / `polar` / `level` /
     `plumb` / `meet`, then `require_*`). Copy `s.letters(...)` from
     `--measure` (tip→glyph headings). `Fig(..., sketch=s)` then places
     every letter that way unless you pass a `place`.
+
+    A capital that does not sit on its stroke (I.39 E) is not a heading
+    from the tip. Paste `s.plate_glyphs(...)` from `--measure`, then
+    `f.glyph("E")` — no coordinates. The point stays the junction.
+
+    A given angle (I.42's D) is not a point of the figure. Measure the
+    vertex from a named point, then each arm's length and heading, then
+    the glyph, and call `f.given_angle(...)`.
 
     python3 scripts/figure.py --write
         emit src/figure/book1.rs
@@ -45,6 +53,9 @@ class Sketch:
     def __init__(self):
         self.pts: dict[str, tuple[float, float]] = {}
         self._letters: dict[str, float] = {}
+        # Glyph centers in this same plane (from `--measure`), for a capital
+        # that does not sit on its stroke.
+        self._glyphs: dict[str, tuple[float, float]] = {}
 
     def put(self, name: str, x: float, y: float) -> tuple[float, float]:
         self.pts[name] = (x, y)
@@ -77,6 +88,12 @@ class Sketch:
             raise SystemExit(f"{a}{b} ∥ {c}{d}")
         t = ((ax - cx) * (cy - dy) - (ay - cy) * (cx - dx)) / den
         return (ax + t * (bx - ax), ay + t * (by - ay))
+
+    def on_line(self, name: str, a: str, b: str, t: float) -> tuple[float, float]:
+        """Point on segment `a`–`b` at fraction `t` (0 at `a`, 1 at `b`)."""
+        ax, ay = self.pts[a]
+        bx, by = self.pts[b]
+        return self.put(name, ax + (bx - ax) * t, ay + (by - ay) * t)
 
     def level(self, name: str, of: str, x: float) -> tuple[float, float]:
         """`name` at (`x`, y of `of`) — same height as a plate letter-row."""
@@ -206,6 +223,23 @@ class Sketch:
         """Tip→glyph headings from `--measure PAGE` (`s.letters(A=92.4, …)`)."""
         self._letters.update({k: float(v) for k, v in headings.items()})
 
+    def plate_glyphs(self, **centers: tuple[float, float]) -> None:
+        """Glyph centers in this plane, pasted from `--measure`.
+
+        Same origin and scale as the vertices. A letter that does not sit on
+        its stroke (I.39 E) is placed with `f.glyph(name)` — no coordinates.
+        """
+        for name, xy in centers.items():
+            x, y = xy
+            self._glyphs[name] = (float(x), float(y))
+
+    def glyph_at(self, name: str) -> tuple[float, float]:
+        if name not in self._glyphs:
+            raise SystemExit(
+                f"no plate glyph for {name}; paste s.plate_glyphs(...) from --measure PAGE"
+            )
+        return self._glyphs[name]
+
     def glyph(self, name_or_deg: str | float) -> tuple:
         """Letter center from the ink tip toward the Fitzpatrick glyph.
 
@@ -334,6 +368,59 @@ class Fig:
         """Letter whose center is measured from (`x`, `y`), not from the point."""
         self._add(
             f'    d.label_at("{name}", V2::new({f64(x)}, {f64(y)}), {self._place(name, place)});'
+        )
+
+    def point(self, name: str, place=None) -> None:
+        """Letter at the pinned point, shared radius, heading from s.letters."""
+        self._add(f'    d.label("{name}", {self._place(name, place)});')
+
+    def glyph(self, name: str, x: float | None = None, y: float | None = None) -> None:
+        """Letter center exactly at the plate glyph, not an offset from the mark.
+
+        `f.glyph("E")` looks the center up in `s.plate_glyphs` (pasted from
+        `--measure`). Pass `x, y` only when the center is already in hand.
+        The point itself stays the junction.
+        """
+        if x is None or y is None:
+            if self.sketch is None:
+                raise SystemExit(f"{self.fn}: f.glyph({name!r}) needs Fig(..., sketch=s)")
+            x, y = self.sketch.glyph_at(name)
+        self._add(f'    d.glyph("{name}", V2::new({f64(x)}, {f64(y)}));')
+
+    def label_fixed(self, name: str, x: float, y: float) -> None:
+        """Letter center exactly at (`x`, `y`) — a plate glyph, not an offset."""
+        self._add(
+            f'    d.label_fixed("{name}", V2::new({f64(x)}, {f64(y)}));'
+        )
+
+    def given_angle(
+        self,
+        name: str,
+        from_: str,
+        vertex: tuple[float, float],
+        left: tuple[float, float],
+        right: tuple[float, float],
+        glyph: tuple[float, float],
+    ) -> None:
+        """A given rectilinear angle (I.42's D), not a point of the figure.
+
+        `vertex` is `(r, heading°)` from `from_`. `left` and `right` are
+        `(length, heading°)` of the two arms from that vertex. `glyph` is
+        the plate letter center. Emits `d.given_angle`.
+        """
+        vr, vd = vertex
+        ll, lh = left
+        rl, rh = right
+        gx, gy = glyph
+        self._add(
+            "    d.given_angle(\n"
+            f'        "{name}",\n'
+            f'        "{from_}",\n'
+            f"        ({f64(vr)}, {f64(vd)}),\n"
+            f"        ({f64(ll)}, {f64(lh)}),\n"
+            f"        ({f64(rl)}, {f64(rh)}),\n"
+            f"        V2::new({f64(gx)}, {f64(gy)}),\n"
+            "    );"
         )
 
     def polar(self, name: str, origin: str, r: float, deg: float, place=None) -> None:
@@ -1954,6 +2041,279 @@ def book1_prop36() -> Fig:
     return f
 
 
+def book1_prop38() -> Fig:
+    # Fitzpatrick English plate, PDF p. 39, 300 dpi. Vertices are the stroke
+    # under each capital, one scale BC = 100. G and H are the produced ends
+    # of AD. On the plate those capitals sit a letter-gap above the stroke,
+    # not out past the tips. Tip→glyph headings (y-up): G 76.6° (up and
+    # slightly right), H 102.1° (up and slightly left). A heading along the
+    # stroke parks them on the wrong side.
+    s = Sketch()
+    s.put("B", 0.0, 0.0)
+    s.level("C", "B", 100.0)
+    s.level("E", "B", 375.82)
+    s.level("F", "B", 500.55)
+    s.put("G", 64.29, 187.91)
+    s.level("A", "G", 162.64)
+    s.level("D", "G", 268.13)
+    s.level("H", "G", 389.01)
+    s.letters(B=-110.0, C=-70.0, E=-100.0, F=-60.0, G=76.6, A=100.0, D=80.0, H=102.1)
+    f = Fig(
+        "book1_prop38",
+        "I.38 — Fitzpatrick English plate (Elements PDF p. 39, 300 dpi).\n"
+        "Vertices are the stroke under each plate capital, one scale BC = 100.\n"
+        "Height/BC = 1.879, EF/BC = 1.247, CE/BC = 2.758, GA/BC = 0.984,\n"
+        "DH/BC = 1.209. BG ∥ AC and FH ∥ DE. G and H are the produced ends\n"
+        "of AD. Those capitals sit a letter-gap above the stroke, not out\n"
+        "past the tips: G at 76.6° (up and slightly right), H at 102.1°\n"
+        "(up and slightly left). A heading along the stroke parks them on\n"
+        "the wrong side.",
+        sketch=s,
+    )
+    f.put("B", *s.at("B"))
+    f.level("C", "B", s.at("C")[0])
+    f.level("E", "B", s.at("E")[0])
+    f.level("F", "B", s.at("F")[0])
+    f.put("G", *s.at("G"))
+    f.level("A", "G", s.at("A")[0])
+    f.level("D", "G", s.at("D")[0])
+    f.level("H", "G", s.at("H")[0])
+    f.chain("G", "A", "D", "H")
+    f.chain("B", "C", "E", "F")
+    f.join("G", "B")
+    f.join("A", "B")
+    f.join("A", "C")
+    f.join("D", "E")
+    f.join("D", "F")
+    f.join("H", "F")
+    f.dots("A", "B", "C", "D", "E", "F", "G", "H")
+    return f
+
+
+def book1_prop39() -> Fig:
+    # Fitzpatrick English plate, PDF p. 40, 300 dpi. ABCD first. E is the
+    # crossing of AE and DB, so the point touches BD; AE and EC are joined.
+    s = Sketch()
+    s.put("B", 0.0, 0.0)
+    s.put("C", 100.0, 0.05)
+    s.put("A", 5.77, 55.92)
+    s.put("D", 81.64, 56.20)
+    # E is on BD, not the AC crossing — AE is its own stroke.
+    s.on_line("E", "B", "D", 0.880)
+    s.require_ratio("A", "E", "B", "C", 0.664, eps=0.01)
+    s.require_ratio("E", "C", "B", "C", 0.569, eps=0.01)
+    s.require_angle("A", "E", "C", 125.3, eps=1.0)
+    # Same LETTER_R as every other plate. Headings are tip → glyph on the
+    # PDF (BC = 100, B at the origin). E does not sit on a heading from the
+    # junction — its center is the plate glyph.
+    s.letters(A=137.6, B=-165.3, C=-6.4, D=42.2)
+    s.plate_glyphs(E=(70.86, 39.94))
+    f = Fig(
+        "book1_prop39",
+        "I.39 — Fitzpatrick English plate (Elements PDF p. 40, 300 dpi).\n"
+        "ABCD first. E is where AE meets DB, so E touches BD. AE joins A to E;\n"
+        "EC joins E to C. AE/BC = 0.664, EC/BC = 0.569, ∠AEC = 125.3°.\n"
+        "A–D use the same letter radius as the other plates, on the measured\n"
+        "tip→glyph heading. E is the plate glyph center, off the junction.",
+        sketch=s,
+    )
+    f.pin("B", *s.at("B"))
+    f.pin("C", *s.at("C"))
+    f.pin("A", *s.at("A"))
+    f.pin("D", *s.at("D"))
+    f.pin("E", *s.at("E"))
+    f.point("A")
+    f.point("B")
+    f.point("C")
+    f.point("D")
+    f.glyph("E")
+    f.join("A", "D")
+    f.join("B", "C")
+    f.join("A", "B")
+    f.join("A", "C")
+    f.join("D", "B")
+    f.join("D", "C")
+    f.join("A", "E")
+    f.join("E", "C")
+    f.dots("A", "B", "C", "D", "E")
+    return f
+
+
+def book1_prop40() -> Fig:
+    # Same construction as I.39, PDF p. 40 under Proposition 40. ABC and CDE
+    # first. F is where AF meets DC, so the point touches DC. AF and FE are
+    # joined — AF is not AD, and FE is not DE. The capital F is the glyph
+    # center, off the junction.
+    s = Sketch()
+    s.put("B", 0.0, 0.0)
+    s.put("C", 100.0, 0.0)
+    s.put("E", 194.46, 0.0)
+    s.put("A", 15.57, 92.00)
+    s.put("D", 166.44, 92.00)
+    # F is on DC. AF is its own stroke, not AD.
+    s.put("F", 151.53, 71.34)
+    s.require_ratio("A", "F", "B", "C", 1.375, eps=0.01)
+    s.require_ratio("F", "E", "B", "C", 0.833, eps=0.01)
+    s.require_angle("A", "F", "E", 129.7, eps=1.0)
+    # Same LETTER_R as every other plate. Headings are tip → glyph on the
+    # PDF (BC = 100, B at the origin). F does not sit on a heading from the
+    # junction — its center is the plate glyph.
+    s.letters(A=166.4, D=11.1, B=-178.7, E=-5.8, C=-77.0)
+    s.plate_glyphs(F=(140.47, 65.33))
+    f = Fig(
+        "book1_prop40",
+        "I.40 — Fitzpatrick English plate (Elements PDF p. 40, 300 dpi), same\n"
+        "construction as I.39. F is where AF meets DC, so F touches DC. AF joins\n"
+        "A to F; FE joins F to E. AF is not the stroke AD, and FE is not DE.\n"
+        "AF/BC = 1.375, FE/BC = 0.833, ∠AFE = 129.7°.\n"
+        "A–E use the same letter radius as the other plates, on the measured\n"
+        "tip→glyph heading. F is the plate glyph center, off the junction.",
+        sketch=s,
+    )
+    f.pin("B", *s.at("B"))
+    f.pin("C", *s.at("C"))
+    f.pin("E", *s.at("E"))
+    f.pin("A", *s.at("A"))
+    f.pin("D", *s.at("D"))
+    f.pin("F", *s.at("F"))
+    f.point("A")
+    f.point("D")
+    f.point("B")
+    f.point("E")
+    f.point("C")
+    f.glyph("F")
+    f.join("A", "B")
+    f.join("A", "C")
+    f.join("A", "D")
+    f.join("D", "C")
+    f.join("D", "E")
+    f.join("B", "C")
+    f.join("C", "E")
+    f.join("A", "F")
+    f.join("F", "E")
+    f.dots("A", "B", "C", "D", "E", "F")
+    return f
+
+
+def book1_prop41() -> Fig:
+    # Fitzpatrick English plate, PDF p. 41 (the right-hand figure; the left one
+    # is the Greek plate and leans the other way). Parallelogram ABCD and
+    # triangle EBC on the same base BC, between parallels AE and BC. AD = BC
+    # and AB = DC, so the right side leans out: D is to the right of C, not
+    # a plumb drop. Diagonal AC. E is on the line AD produced.
+    # Path endpoints in the page stream, one scale BC = 100.
+    # Height/BC = 1.091, AE/BC = 1.909, AB/BC = CD/BC = 1.095, BE/BC = 2.278.
+    # ∠ABC = 85.2°, ∠BCD = 94.8°.
+    # A–E use the same letter radius, on the measured tip→glyph heading.
+    s = Sketch()
+    s.put("B", 0.0, 0.0)
+    s.level("C", "B", 100.0)
+    s.put("A", 9.091, 109.091)
+    s.level("D", "A", 109.091)
+    s.level("E", "A", 200.0)
+    s.require_line_angle("A", "E", "B", "C", 0.0)
+    s.require_line_angle("A", "B", "D", "C", 0.0, eps=0.15)
+    s.require_line_angle("A", "D", "B", "C", 0.0)
+    s.require_ratio("A", "D", "B", "C", 1.0, eps=0.01)
+    s.require_ratio("A", "B", "D", "C", 1.0, eps=0.01)
+    s.require_angle("A", "B", "C", 85.2, eps=0.3)
+    s.letters(A=94.9, B=-96.0, C=-76.2, D=71.7, E=78.2)
+    f = Fig(
+        "book1_prop41",
+        "I.41 — Fitzpatrick English plate (Elements PDF p. 41, the right-hand\n"
+        "figure; the Greek plate leans the other way). Parallelogram ABCD and\n"
+        "triangle EBC on the same base BC, between parallels AE and BC. AD = BC\n"
+        "and AB = DC, so the right side leans out. Diagonal AC. E is on AD\n"
+        "produced. One scale BC = 100. Height/BC = 1.091, AE/BC = 1.909,\n"
+        "AB/BC = CD/BC = 1.095, BE/BC = 2.278. ∠ABC = 85.2°, ∠BCD = 94.8°.\n"
+        "A–E use the same letter radius, on the measured tip→glyph heading.",
+        sketch=s,
+    )
+    f.put("B", *s.at("B"))
+    f.level("C", "B", s.at("C")[0])
+    f.put("A", *s.at("A"))
+    f.level("D", "A", s.at("D")[0])
+    f.level("E", "A", s.at("E")[0])
+    f.chain("A", "D", "E")
+    f.chain("B", "C")
+    f.join("A", "B")
+    f.join("D", "C")
+    f.join("A", "C")
+    f.join("E", "B")
+    f.join("E", "C")
+    f.dots("A", "B", "C", "D", "E")
+    return f
+
+
+def book1_prop42() -> Fig:
+    # Fitzpatrick English plate, PDF p. 42 (printed p. 42). Triangle ABC, E the
+    # midpoint of BC. Angle D is the given rectilinear angle, off to the left
+    # of A — two arms, not a point on the figure. AE joins. EF rises from E
+    # so that ∠CEF = ∠D, and meets AG at F. AG is the top parallel (through A,
+    # parallel to EC). CG through C, parallel to EF, meets AG at G, so FECG
+    # is the parallelogram. The sides lean: AB is not plumb, and EF ∥ CG.
+    # Ink tips, one scale BC = 100. Height/BC = 0.746, BE/BC = 0.497,
+    # EC/BC = 0.503, FG/BC = 0.506, AB/BC = 0.749, CG/BC = 0.809.
+    # ∠ABC = 85.8°, ∠CEF = 67.6°. The given angle is a shallow mark to the left
+    # of A, not a tall V. From A on the page-42 path: vertex 35.94 left and
+    # 9.38 below A (r = 37.14, heading −165.4°). Arms rise 34.59 at 108.4° and
+    # 36.34 at 64.5°, opening 43.9°. D is the plate glyph inside the angle.
+    s = Sketch()
+    s.put("B", 0.0, 0.0)
+    s.level("C", "B", 100.0)
+    s.put("E", 50.0, 0.0)
+    s.put("A", 6.141, 74.640)
+    s.level("F", "A", 81.021)
+    s.level("G", "A", 131.021)
+    s.require_line_angle("A", "G", "B", "C", 0.0, eps=0.15)
+    s.require_line_angle("E", "F", "C", "G", 0.0, eps=0.4)
+    s.require_angle("A", "B", "C", 85.3, eps=0.25)
+    s.require_angle("C", "E", "F", 67.6, eps=0.35)
+    s.letters(A=92.6, B=-95.1, C=-76.6, E=-93.0, F=69.3, G=87.6)
+    f = Fig(
+        "book1_prop42",
+        "I.42 — Fitzpatrick English plate (Elements PDF p. 42): triangle ABC,\n"
+        "E the midpoint of BC. D is the given rectilinear angle, off to the left\n"
+        "of A. AE joins. EF rises from E with ∠CEF = ∠D and meets AG at F.\n"
+        "AG through A ∥ EC; CG through C ∥ EF, meeting AG at G, so FECG is the\n"
+        "parallelogram. AB leans; EF ∥ CG. Ink tips, one scale BC = 100.\n"
+        "Height/BC = 0.746, BE/BC = 0.497, EC/BC = 0.503, FG/BC = 0.506,\n"
+        "AB/BC = 0.749, CG/BC = 0.809. ∠ABC = 85.8°, ∠CEF = 67.6°. The given\n"
+        "angle is a shallow mark to the left of A, not a tall V. From A: vertex\n"
+        "35.94 left and 9.38 below (r = 37.14, heading −165.4°). Arms rise 34.59\n"
+        "at 108.4° and 36.34 at 64.5°, opening 43.9°. D is the plate glyph.\n"
+        "`given_angle` places it: vertex from A, then each arm, then the glyph.",
+        sketch=s,
+    )
+    f.put("B", *s.at("B"))
+    f.level("C", "B", s.at("C")[0])
+    f.put("E", *s.at("E"))
+    f.put("A", *s.at("A"))
+    f.level("F", "A", s.at("F")[0])
+    f.level("G", "A", s.at("G")[0])
+    # From A on the page-42 path, not from the sketch A above (that A is the
+    # older ink snap). Vertex r = 37.14 at −165.4°; arms 34.59 at 108.4° and
+    # 36.34 at 64.5°. D is the plate glyph.
+    f.given_angle(
+        "D",
+        "A",
+        (37.140, -165.38),
+        (34.588, 108.43),
+        (36.343, 64.54),
+        (-28.25, 88.84),
+    )
+    f.chain("B", "E", "C")
+    f.join("A", "B")
+    f.join("A", "E")
+    f.join("A", "C")
+    f.join("A", "F")
+    f.join("F", "G")
+    f.join("E", "F")
+    f.join("C", "G")
+    f.dots("A", "B", "C", "E", "F", "G")
+    return f
+
+
 PLATES = [
     book1_prop1,
     book1_prop2,
@@ -1991,6 +2351,10 @@ PLATES = [
     book1_prop34,
     book1_prop35,
     book1_prop36,
+    book1_prop38,
+    book1_prop39,
+    book1_prop40,
+    book1_prop41,
 ]
 
 
@@ -2001,6 +2365,10 @@ use super::geom::{Place, V2};
 //     python3 scripts/figure.py --write
 // Ratios, angles, and `s.letters(...)` come from `--measure PAGE`
 // (ink tips; `level` / `plumb` / `meet` only when the ink lines up).
+// A capital off its stroke is `s.plate_glyphs(...)` from `--measure`,
+// then `f.glyph(name)` — the center, not a heading from the tip.
+// A given angle (I.42's D) is `f.given_angle`: vertex from a point,
+// then each arm's length and heading, then the glyph.
 """
 
 
@@ -2051,8 +2419,9 @@ def _figure_letters(html: str) -> list[tuple[str, float, float, float, float]]:
         if x0 < ENG_X0_PT or not re.fullmatch(r"[A-Z]", w):
             continue
         ww, hh = x1 - x0, y1 - y0
-        # Plate capitals are ~6 pt; body letters in the proof are ~9 pt.
-        if hh < 5.5 or hh > 9.0 or ww < 4.0:
+        # Plate capitals run ~6–10 pt (I.39–I.42 are the larger drawing).
+        # Body letters in the proof are ~9 pt but not isolated words.
+        if hh < 5.5 or hh > 11.0 or ww < 4.0:
             continue
         marks.append((w, (x0 + x1) / 2.0, (y0 + y1) / 2.0, ww, hh))
     if not marks:
@@ -2077,13 +2446,13 @@ def _figure_letters(html: str) -> list[tuple[str, float, float, float, float]]:
             best = cluster
             continue
         bn = {m[0] for m in best}
-        if len(names) > len(bn):
+        # A page can carry two plates (I.39 above I.40). The plate we want is
+        # the highest cluster; a lower one is the next proposition.
+        if meant(cluster) < meant(best) - 40.0:
             best = cluster
-        elif len(names) == len(bn):
-            if meant(cluster) < meant(best) - 8.0:
-                best = cluster
-            elif abs(meant(cluster) - meant(best)) <= 8.0 and spread(cluster) < spread(best):
-                best = cluster
+            continue
+        if meant(best) < meant(cluster) - 40.0:
+            continue
     cy = sum(m[2] for m in best) / len(best)
     by_name: dict[str, tuple[str, float, float, float, float]] = {}
     for m in best:
@@ -2256,7 +2625,7 @@ def _meet_interiors(pts: dict[str, tuple[float, float]], tol: float = 8.0):
     return pts
 
 
-def measure_page(pdf: Path, page: int, dpi: int = 200) -> None:
+def measure_page(pdf: Path, page: int, dpi: int = 300) -> None:
     html = _bbox_html(pdf, page)
     letters = _figure_letters(html)
     if len(letters) < 2:
@@ -2355,6 +2724,7 @@ def measure_page(pdf: Path, page: int, dpi: int = 200) -> None:
     print("letter from tip (y-up heading deg) — paste into the Sketch:")
     letter_xy = {n: (cx, cy) for n, cx, cy, _w, _h in letters}
     heads = []
+    glyph_bits = []
     for n in names:
         cx, cy = letter_xy[n]
         lx, ly = cx - ox, oy - cy
@@ -2362,8 +2732,17 @@ def measure_page(pdf: Path, page: int, dpi: int = 200) -> None:
         deg = math.degrees(math.atan2(ly - ty, lx - tx))
         heads.append(f"{n}={deg:.1f}")
         print(f"  {n}: {deg:.1f}")
+        # Glyph center in the same plane as the vertices. A capital that does
+        # not sit on its stroke is placed with f.glyph(name), not a heading.
+        gx, gy = lx * k, ly * k
+        glyph_bits.append(f"{n}=({gx:.2f}, {gy:.2f})")
+        print(f"  glyph {n}: ({gx:.2f}, {gy:.2f})")
     print(f"  s.letters({', '.join(heads)})")
-    print("Fig(..., sketch=s) then places every letter that way. python3 scripts/figure.py --write")
+    print(f"  s.plate_glyphs({', '.join(glyph_bits)})")
+    print(
+        "Fig(..., sketch=s) places letters from s.letters. "
+        "f.glyph(name) uses s.plate_glyphs. python3 scripts/figure.py --write"
+    )
 
 
 
@@ -2378,6 +2757,12 @@ def main() -> None:
         help="rasterize Fitzpatrick PAGE and print plate ratios",
     )
     parser.add_argument(
+        "--dpi",
+        type=int,
+        default=300,
+        help="raster dpi for --measure (default 300, the plate the figures copy)",
+    )
+    parser.add_argument(
         "--pdf",
         type=Path,
         default=DEFAULT_PDF,
@@ -2385,7 +2770,7 @@ def main() -> None:
     )
     args = parser.parse_args()
     if args.measure:
-        measure_page(args.pdf, args.measure)
+        measure_page(args.pdf, args.measure, args.dpi)
         return
     src = rust_file()
     if args.write:
