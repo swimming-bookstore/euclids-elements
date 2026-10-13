@@ -93,6 +93,29 @@ fn token_at(lines: &[Line], mut n: usize) -> Option<(usize, usize, &Token)> {
     None
 }
 
+pub fn display_letters(text: &str) -> String {
+    if let Some(name) = angle_object(text) {
+        return name;
+    }
+    text.to_string()
+}
+
+/// `*angle(DCE)*` is an angle object. The letters are the name; the wrapper
+/// is the kind. Nearby words cannot turn it back into a triangle.
+fn angle_object(piece: &str) -> Option<String> {
+    let t = piece.trim();
+    let rest = t.strip_prefix("angle(")?.strip_suffix(')')?;
+    let name: String = rest
+        .chars()
+        .filter(|c| c.is_ascii_alphabetic())
+        .collect();
+    // angle(s) is Fitzpatrick's plural, not an angle object.
+    if name.len() < 2 || !name.chars().all(|c| c.is_ascii_uppercase()) {
+        return None;
+    }
+    Some(name)
+}
+
 fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
     let mut out = Vec::new();
     let chars: Vec<char> = src.chars().collect();
@@ -153,12 +176,16 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
                 // A period inside the italic run starts a new sentence, so
                 // the next piece is not still "the angle …".
                 let following = words_after(&chars, i);
-                let angle = n == 0
-                    && letters_are_angles(&recent, &following)
-                    && !introduced_as_figure(&recent);
+                // angle(DCE) is the object. Words around it do not reclassify it.
+                let wrapped = angle_object(piece);
+                let angle = wrapped.is_some()
+                    || (n == 0
+                        && letters_are_angles(&recent, &following)
+                        && !introduced_as_figure(&recent));
+                let spoken = wrapped.as_deref().unwrap_or(piece);
                 push_words(
                     &mut out,
-                    piece,
+                    spoken,
                     true,
                     map,
                     timing,
@@ -273,13 +300,17 @@ fn letters_are_angles(recent: &[String], following: &[String]) -> bool {
             angle = false;
         }
     }
-    if following.iter().any(|word| {
+    let followed_by_angle = following.iter().any(|word| {
         let w = stem(word);
-        w == "than" || w.starts_with("angle")
-    }) {
+        w.starts_with("angle") || w == "angles"
+    });
+    if following.iter().any(|word| stem(word) == "than") {
         compared = true;
     }
-    angle || compared
+    // "and *DCE* the given rectilinear angle" names the angle after the
+    // letters. "than" alone still only applies to a three-letter name that
+    // an earlier "angle" introduced.
+    angle || followed_by_angle || compared
 }
 
 /// "triangle *ABE*" and "side *AB*" name a figure even when a later clause
@@ -634,6 +665,32 @@ mod tests {
         let phrases = [Phrase { para: 1, text }];
         let script = compile(&phrases, fig, Timing::default());
         first_parts(&script, word)
+    }
+
+    #[test]
+    fn angle_object_is_not_the_triangle() {
+        let dce = parts_of_fig(
+            "and *angle(DCE)* the given rectilinear angle.",
+            "DCE",
+            &book1_prop23(),
+        );
+        assert!(
+            dce.iter().any(|s| s == "cd" || s == "dc")
+                && dce.iter().any(|s| s == "ce" || s == "ec")
+                && !dce.iter().any(|s| s == "de" || s == "ed"),
+            "angle(DCE) is the two rays: {dce:?}"
+        );
+        let shown = display_letters("angle(DCE)");
+        assert_eq!(shown, "DCE");
+        let phrases = crate::content::get(1, 23).unwrap().phrases;
+        let script = compile(phrases, &book1_prop23(), Timing::default());
+        let first = first_parts(&script, "DCE");
+        assert!(
+            first.iter().any(|s| s == "cd" || s == "dc")
+                && first.iter().any(|s| s == "ce" || s == "ec")
+                && !first.iter().any(|s| s == "de" || s == "ed"),
+            "first spoken DCE is an angle: {first:?}"
+        );
     }
 
     #[test]

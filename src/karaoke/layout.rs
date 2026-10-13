@@ -6,7 +6,7 @@
 //! past those two lines rolls up: older wraps leave, the active wrap
 //! stays on the second line.
 
-use super::script::{Line, Script};
+use super::script::{display_letters, Line, Script};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Atom {
@@ -121,7 +121,7 @@ pub fn read_layout_lines(lines: &[Line]) -> Vec<Vec<Atom>> {
                         }
                     } else {
                         atoms.push(Atom::Word {
-                            text: t.text.clone(),
+                            text: display_letters(&t.text),
                             italic: t.italic,
                             spaced: t.spaced,
                         });
