@@ -94,6 +94,23 @@ impl Diagram {
         p
     }
 
+    /// Name a point, then drop its letter by `down` em.
+    ///
+    /// The shared radius and heading stay. `down` is extra, straight down, so
+    /// the letter clears a figure sitting above the mark (I.44 F, E, and K,
+    /// which otherwise read as labels of triangle C). The mark stays put.
+    pub fn put_down(
+        &mut self,
+        name: &'static str,
+        p: V2,
+        place: Place,
+        down: f64,
+    ) -> V2 {
+        self.pin(name, p);
+        self.fig.label_at_r_drop(name, p, place, super::plate::LETTER_R, down);
+        p
+    }
+
     pub fn polar(
         &mut self,
         name: &'static str,
@@ -286,28 +303,39 @@ impl Diagram {
         right: (f64, f64),
         glyph: V2,
     ) -> &mut Self {
+        self.given_angle_arms(name, from, vertex, &[left, right], glyph)
+    }
+
+    /// As `given_angle`, but the plate's mark may have more than two strokes
+    /// from the vertex (I.44 draws three). Every arm shares the one id, so
+    /// the spoken letter lights the whole mark.
+    pub fn given_angle_arms(
+        &mut self,
+        name: &'static str,
+        from: &str,
+        vertex: (f64, f64),
+        arms: &[(f64, f64)],
+        glyph: V2,
+    ) -> &mut Self {
         let v = self.at(from).polar(vertex.0, vertex.1);
         self.pin(name, v);
-        let (ll, lh) = left;
-        let (rl, rh) = right;
-        let left_at = v.polar(ll, lh);
-        let right_at = v.polar(rl, rh);
         let id = format!("ang-{}", name.to_ascii_lowercase());
-        self.fig.seg(&id, left_at, v);
-        self.fig.seg(&id, v, right_at);
-        // Spoken as the one letter ("the given angle D"), so highlight("D")
-        // lights both strokes — they share this id.
+        let side = ["left", "right"];
+        for (i, (len, heading)) in arms.iter().enumerate() {
+            let end = v.polar(*len, *heading);
+            self.fig.seg(&id, end, v);
+            let arm = side.get(i).copied().unwrap_or("arm");
+            let suffix = if i < 2 { arm } else { "arm" };
+            let label = if i < 2 {
+                format!("{name}{suffix}")
+            } else {
+                format!("{name}arm{i}")
+            };
+            self.arms.push(Arm { name: label, at: end });
+        }
         self.named.push(Circ {
             id,
             letters: name.to_ascii_uppercase(),
-        });
-        self.arms.push(Arm {
-            name: format!("{name}left"),
-            at: left_at,
-        });
-        self.arms.push(Arm {
-            name: format!("{name}right"),
-            at: right_at,
         });
         self.glyph(name, glyph)
     }
@@ -402,6 +430,20 @@ impl Diagram {
     pub fn clip(&mut self, min: V2, max: V2) -> &mut Self {
         self.fig.clip_box(min, max);
         self
+    }
+
+    /// Ids of the drawn strokes (`ae`, `ek`, …), one per undirected stroke.
+    pub fn stroke_ids(&self) -> Vec<String> {
+        let mut ids = Vec::new();
+        for edges in self.adj.values() {
+            for e in edges {
+                if !ids.contains(&e.id) {
+                    ids.push(e.id.clone());
+                }
+            }
+        }
+        ids.sort();
+        ids
     }
 
     pub fn svg<S: AsRef<str>>(&self, on: &[S]) -> String {
@@ -639,7 +681,7 @@ mod tests {
         book1_prop28, book1_prop29, book1_prop30, book1_prop31, book1_prop32,
         book1_prop33, book1_prop34, book1_prop35, book1_prop36,
         book1_prop37, book1_prop38, book1_prop39, book1_prop40,
-        book1_prop41, book1_prop42,
+        book1_prop41, book1_prop42, book1_prop43, book1_prop44,
     };
 
     fn has(v: &[String], id: &str) -> bool {
@@ -1644,6 +1686,13 @@ mod tests {
             d.at("C").dist(d.at("E0")) > ce + 10.0 && d.at("C").dist(d.at("E0")) < ce + 28.0,
             "CE produced a short way past E"
         );
+        let lit = d.svg(&["ab", "A", "B"]);
+        let ag = lit.find("data-id=\"ag\"").expect("ag");
+        let abp = lit.find("data-id=\"ab\"").expect("ab");
+        assert!(
+            abp > ag,
+            "lit AB must paint after dim AG so the shared ink stays red"
+        );
         let html = d.svg(&[] as &[String]);
         let (adx, ady) = letter_offset(&html, "A");
         assert!(adx < -0.7 && ady.abs() < 0.2, "A left of the tip, --dx={adx} --dy={ady}");
@@ -2259,8 +2308,105 @@ mod tests {
         assert!(has(&ang, "ang-d"), "given angle D: {ang:?}");
     }
 
+    #[test]
+    fn prop43_matches_english_plate() {
+        let d = book1_prop43();
+        let bc = d.at("B").dist(d.at("C"));
+        assert!((d.at("B").y - d.at("C").y).abs() < 1e-6, "BC level");
+        assert!((d.at("A").y - d.at("D").y).abs() < 1e-6, "AD level");
+        assert!((d.at("E").y - d.at("F").y).abs() < 1e-6, "EF level");
+        assert!((d.at("K").y - d.at("E").y).abs() < 1e-6, "K on the mid row");
+        assert!(d.at("E").on_seg(d.at("A"), d.at("B"), 1e-6), "E on AB");
+        assert!(d.at("F").on_seg(d.at("D"), d.at("C"), 1e-6), "F on DC");
+        assert!(d.at("H").on_seg(d.at("A"), d.at("D"), 1e-6), "H on AD");
+        assert!(d.at("G").on_seg(d.at("B"), d.at("C"), 1e-6), "G on BC");
+        assert!(d.at("K").on_seg(d.at("H"), d.at("G"), 0.5), "K on HG");
+        assert!(d.at("K").on_seg(d.at("A"), d.at("C"), 1e-4), "K on AC");
+        assert!(d.at("K").on_seg(d.at("E"), d.at("F"), 1e-4), "K on the mid row, so AK produced is AF");
+        assert!(((d.at("A").y - d.at("B").y) / bc - 0.588).abs() < 0.01, "height");
+        assert!((d.at("A").dist(d.at("B")) / bc - 0.614).abs() < 0.01, "AB");
+        assert!((d.at("D").dist(d.at("C")) / bc - 0.614).abs() < 0.01, "DC");
+        assert!((d.at("A").dist(d.at("D")) / bc - 1.0).abs() < 0.01, "AD");
+        assert!((d.at("B").dist(d.at("G")) / bc - 0.295).abs() < 0.01, "BG");
+        assert!((d.at("A").dist(d.at("H")) / d.at("A").dist(d.at("D")) - 0.298).abs() < 0.01, "AH");
+        let abcd = d.highlight("ABCD");
+        assert!(has(&abcd, "ad"), "AD: {abcd:?}");
+        assert!(has(&abcd, "ae") && has(&abcd, "eb"), "AB: {abcd:?}");
+        assert!(has(&abcd, "df") && has(&abcd, "fc"), "DC: {abcd:?}");
+        assert!(has(&abcd, "bg") && has(&abcd, "gc"), "BC: {abcd:?}");
+        let segs = d.stroke_ids();
+        assert!(segs.iter().any(|id| id == "ek"), "EK stroke: {segs:?}");
+        assert!(!segs.iter().any(|id| id == "eh"), "plate has no EH stroke: {segs:?}");
+        assert!(!segs.iter().any(|id| id == "fg"), "plate has no FG stroke: {segs:?}");
+        assert!(segs.iter().any(|id| id == "kf"), "KF: {segs:?}");
+        let ac = d.highlight("AC");
+        assert!(has(&ac, "ac"), "diagonal AC: {ac:?}");
+    }
+
+    #[test]
+    fn prop44_matches_english_plate() {
+        let d = book1_prop44();
+        let ab = d.at("A").dist(d.at("B"));
+        assert!((ab - 100.0).abs() < 0.05, "AB scale {ab}");
+        // Three level rows, three uprights leaning the same way.
+        assert!((d.at("H").y - d.at("L").y).abs() < 1e-6, "HL level");
+        assert!((d.at("G").y - d.at("M").y).abs() < 1e-6, "GM level");
+        assert!((d.at("F").y - d.at("K").y).abs() < 1e-6, "FK level");
+        assert!((d.at("B").y - d.at("G").y).abs() < 0.02, "B on the GM row");
+        assert!(d.at("G").on_seg(d.at("F"), d.at("H"), 1e-3), "G on FH");
+        assert!(d.at("B").on_seg(d.at("E"), d.at("A"), 1e-3), "B on EA");
+        assert!(d.at("M").on_seg(d.at("K"), d.at("L"), 1e-3), "M on KL");
+        // KH is the slanted stroke, from the top of the right upright to the
+        // foot of the left. It is not the diagonal of HLKF.
+        assert!(d.edge_id("K", "H").is_some(), "slanted stroke KH");
+        // The plate's middle upright stops at the mid row: no stroke down to HL,
+        // and no HB.
+        assert!(d.edge_id("A", "L").is_none() && d.edge_id("H", "B").is_none());
+        let hl = d.at("H").dist(d.at("L")) / ab;
+        assert!((hl - 2.965).abs() < 0.01, "HL {hl}");
+        assert!(((d.at("F").y - d.at("A").y) / ab - 2.960).abs() < 0.01, "height");
+        let fh = d.at("F").sub(d.at("H"));
+        let ea = d.at("E").sub(d.at("A"));
+        let kl = d.at("K").sub(d.at("L"));
+        let sin = |u: crate::figure::geom::V2, v: crate::figure::geom::V2| {
+            (u.x * v.y - u.y * v.x).abs() / (u.len() * v.len())
+        };
+        assert!(sin(fh, ea) < 0.004, "FH parallel to EA");
+        assert!(sin(fh, kl) < 0.004, "FH parallel to KL");
+        let hlkf = d.highlight("HLKF");
+        assert!(has(&hlkf, "hl") && has(&hlkf, "fk"), "rows: {hlkf:?}");
+        assert!(has(&hlkf, "fg") && has(&hlkf, "gh"), "FH: {hlkf:?}");
+        assert!(has(&hlkf, "km") && has(&hlkf, "ml"), "KL: {hlkf:?}");
+        let befg = d.highlight("BEFG");
+        assert!(
+            has(&befg, "eb") && has(&befg, "fg") && has(&befg, "bg"),
+            "BEFG: {befg:?}"
+        );
+        let tri = d.highlight("PQR");
+        assert!(has(&tri, "pq") && has(&tri, "qr") && has(&tri, "rp"), "triangle C: {tri:?}");
+        // Base parallel to FE, apex above it.
+        assert!((d.at("P").y - d.at("Q").y).abs() < 1e-6, "base level");
+        assert!(d.at("R").y > d.at("P").y, "apex above the base");
+        // D is the bent mark: vertex, upper arm, lower arm. Not a downward V.
+        let v = d.at("D");
+        let upper = d.at("Dleft");
+        let lower = d.at("Dright");
+        assert!(upper.y > v.y && lower.y < v.y, "D bends down from the upper arm");
+        let ang = d.highlight("D");
+        assert!(has(&ang, "ang-d"), "given angle D: {ang:?}");
+        let html = d.svg(&[] as &[String]);
+        let (fdx, fdy) = letter_offset(&html, "F");
+        let (edx, edy) = letter_offset(&html, "E");
+        // Above the FK line: CSS y is down, so a negative --dy is above the mark.
+        // Shorter than the shared 0.82 em radius.
+        assert!(fdy < -0.15, "F above FK, --dy={fdy}");
+        assert!(edy < -0.15, "E above FK, --dy={edy}");
+        assert!((fdx * fdx + fdy * fdy).sqrt() < 0.6, "F short radius");
+        assert!((edx * edx + edy * edy).sqrt() < 0.6, "E short radius");
+    }
+
     fn letter_offset(html: &str, id: &str) -> (f64, f64) {
-        let needle = format!("data-id=\"{id}\"");
+        let needle = format!("class=\"letter\" data-id=\"{id}\"");
         let start = html.find(&needle).expect(id);
         let chunk = &html[start..html[start..].find("</span>").map(|i| start + i).unwrap()];
         let grab = |key: &str| {
