@@ -15,6 +15,8 @@ pub(crate) struct Label {
     pub place: Place,
     /// Center-to-mark radius, in em of the letter type.
     pub r_em: f64,
+    /// Extra shift straight down, in em. Zero keeps the shared radius.
+    pub drop_em: f64,
 }
 
 pub(crate) struct Placed {
@@ -25,6 +27,8 @@ pub(crate) struct Placed {
     /// Direction of the letter center, y-up from +x.
     pub ang: f64,
     pub r_em: f64,
+    /// Extra shift straight down, in em of the letter type.
+    pub drop_em: f64,
 }
 
 pub(crate) fn place(
@@ -42,6 +46,7 @@ pub(crate) fn place(
             at: lab.at,
             ang,
             r_em: lab.r_em,
+            drop_em: lab.drop_em,
         });
     }
     out
@@ -68,7 +73,7 @@ pub(crate) fn layer<S: AsRef<str>>(
         let top = (size.h - lab.at.y) / size.h * 100.0;
         // Same em radius on every plate. CSS y is down, so sin is flipped.
         let dx = lab.ang.cos() * lab.r_em;
-        let dy = -lab.ang.sin() * lab.r_em;
+        let dy = -lab.ang.sin() * lab.r_em + lab.drop_em;
         out.push_str(&format!(
             r##"<span class="letter{state}" data-id="{}" style="left:{}%;top:{}%;--dx:{}em;--dy:{}em">{}</span>"##,
             lab.id,
@@ -238,6 +243,7 @@ mod tests {
                 at: V2::new(100.0, 100.0),
                 place: Place::Left,
                 r_em: plate::LETTER_R,
+                drop_em: 0.0,
             },
             Label {
                 id: "B".into(),
@@ -245,6 +251,7 @@ mod tests {
                 at: V2::new(400.0, 100.0),
                 place: Place::Right,
                 r_em: plate::LETTER_R,
+                drop_em: 0.0,
             },
             Label {
                 id: "C".into(),
@@ -252,6 +259,7 @@ mod tests {
                 at: V2::new(250.0, 300.0),
                 place: Place::Above,
                 r_em: plate::LETTER_R,
+                drop_em: 0.0,
             },
         ];
         let placed = place(&[], None, &labels, plate::Size { w: 1000.0, h: 1000.0 });
@@ -276,6 +284,7 @@ mod tests {
             at: V2::new(100.0, 100.0),
             place: Place::Auto,
             r_em: plate::LETTER_R,
+            drop_em: 0.0,
         }];
         let placed = place(&marks, None, &labels, plate::Size { w: 1000.0, h: 1000.0 });
         let ang = placed[0].ang;
@@ -296,6 +305,7 @@ mod tests {
             at,
             place: Place::BelowLeft,
             r_em: plate::LETTER_R,
+            drop_em: 0.0,
         }];
         let placed = place(&[], None, &labels, plate::Size { w: 1000.0, h: 1000.0 });
         assert!((placed[0].ang - ang_of(Place::BelowLeft)).abs() < 1e-9);
@@ -313,6 +323,7 @@ mod tests {
                 at: V2::new(0.0, 0.0),
                 place: Place::LineLeft,
                 r_em: plate::LETTER_R,
+                drop_em: 0.0,
             },
             Label {
                 id: "B".into(),
@@ -320,6 +331,7 @@ mod tests {
                 at: V2::new(400.0, 0.0),
                 place: Place::LineRight,
                 r_em: plate::LETTER_R,
+                drop_em: 0.0,
             },
         ];
         let placed = place(&[], None, &labels, plate::Size { w: 1000.0, h: 1000.0 });

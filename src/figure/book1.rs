@@ -950,3 +950,117 @@ pub fn book1_prop42() -> Diagram {
     d.dots(&["A", "B", "C", "E", "F", "G"]);
     d
 }
+
+/// I.43 — Fitzpatrick English plate (Elements PDF p. 43, the upper right-hand figure).
+///
+/// The page draws the other lines first, then the two diagonals. Outer
+/// parallelogram ABCD (B–A–D–C). The inner row is EK, E on AB to K — not
+/// EH, and not through to F. HG is the inner upright, H on AD through K to
+/// G on BC. AK and AC are the last strokes: AK from A across K to F, AC the
+/// long diagonal. AB ∥ DC, AD ∥ BC. There is no FG stroke.
+///
+/// Vertices are the intersections in the page-43 content stream, not the
+/// letter boxes. One scale BC = 100. The three rows are level.
+/// Height/BC = 0.588, AB/BC = DC/BC = 0.614, AD/BC = 1.000.
+/// AE/AB = 0.301, AH/AD = 0.298, BG/BC = 0.295, AK/AC = 0.301.
+/// ∠ABC = 73.3°, ∠BCD = 106.7°. The uprights lean 16.7° off the vertical.
+/// A–K sit one letter-radius out from the mark, on the measured heading.
+pub fn book1_prop43() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("B", V2::new(0.0, 0.0), Place::Deg(-96.0));
+    d.level("C", "B", 100.0, Place::Deg(-94.6));
+    d.put("A", V2::new(17.648, 58.824), Place::Deg(74.7));
+    d.level("D", "A", 117.647, Place::Deg(71.9));
+    d.pin("Erow", V2::new(0.0, 41.149));
+    d.pin("Efar", V2::new(100.0, 41.149));
+    d.meet("E", "A", "B", "Erow", "Efar", Place::Deg(-177.3));
+    d.meet("F", "D", "C", "Erow", "Efar", Place::Deg(-5.2));
+    d.put("H", V2::new(47.415, 58.824), Place::Deg(74.1));
+    d.put("G", V2::new(29.487, 0.0), Place::Deg(-92.4));
+    // K is where the last two strokes cross: AK (through to F) and AC.
+    // The plate's own HG misses that crossing by a fraction of a unit.
+    d.meet("K", "A", "C", "Erow", "Efar", Place::Deg(38.9));
+    // Outer parallelogram, split at E, F, and G. Then the other inner lines.
+    // The plate has no EH and no FG. The inner row is EK, E on AB to K.
+    d.chain(&["A", "E", "B"]);
+    d.chain(&["D", "F", "C"]);
+    d.chain(&["B", "G", "C"]);
+    d.join("A", "D");
+    d.join("E", "K");
+    d.join("H", "K");
+    d.join("K", "G");
+    // AK and AC last. AK is drawn through to F.
+    d.join("A", "K");
+    d.join("K", "F");
+    d.join("A", "C");
+    d.dots(&["A", "B", "C", "D", "E", "F", "G", "H", "K"]);
+    d
+}
+
+/// I.44 — Fitzpatrick English plate (Elements PDF p. 43, the lower right-hand
+/// figure; I.43 is the plate above it).
+///
+/// The plate is not the textbook application. It draws one parallelogram of
+/// three rows and three uprights, plus the slanted stroke KH. Left upright FH
+/// (F, G, H), middle AE (E, B, A) stopping at the mid row, right upright KM
+/// (K, M, L). Rows are FK, GM, HL. No stroke HB.
+///
+/// Vertices measured on the page-43 English plate (200 dpi), intersections of
+/// the ink. One scale AB = 100. The uprights lean 9.4° off the vertical, the
+/// same way. HL/AB = 2.965, height of the outer parallelogram/AB = 2.960.
+/// KH falls 1.167 of x per unit of y. Given triangle C and given angle D sit
+/// above the parallelogram, taken from the page path (not the letter boxes).
+/// C is the triangle above FE: base parallel to FE, apex up and to the right.
+/// D is the bent angle to the right of that apex — vertex, then the upper arm,
+/// then the lower arm. The plate sets D just left of the vertex, clear of the
+/// stroke. F, E, and K sit just above the FK line, on a shorter radius, so
+/// they clear the line and do not read as letters of triangle C. The other
+/// letters sit one letter-radius out.
+pub fn book1_prop44() -> Diagram {
+    let mut d = Diagram::new();
+    // A at the origin. AB = 100 along the middle upright.
+    d.put("A", V2::new(0.0, 0.0), Place::Deg(-96.2));
+    d.put("B", V2::new(16.341, 98.656), Place::Deg(-54.8));
+    // F and E sit just above FK. Shared heading, shorter radius, so the
+    // glyph clears the line without reading as a letter of triangle C.
+    d.put_r("E", V2::new(49.024, 295.967), Place::Deg(77.4), 0.48);
+    d.put("H", V2::new(-98.984, 0.0), Place::Deg(-88.9));
+    d.put("G", V2::new(-82.542, 98.656), Place::Deg(178.2));
+    d.put_r("F", V2::new(-49.658, 295.967), Place::Deg(80.5), 0.48);
+    d.put("L", V2::new(197.520, 0.0), Place::Deg(-100.0));
+    d.put("M", V2::new(213.858, 98.656), Place::Deg(0.0));
+    d.put_r("K", V2::new(246.535, 295.967), Place::Deg(73.2), 0.48);
+    d.join("H", "L");
+    d.join("G", "M");
+    d.join("F", "K");
+    d.chain(&["F", "G", "H"]);
+    d.chain(&["E", "B", "A"]);
+    d.chain(&["K", "M", "L"]);
+    // The slanted stroke on the plate runs from K down to H. It crosses the
+    // middle upright at the mid row, just left of B.
+    d.join("K", "H");
+    // BG is not ink on the plate. The proof calls BEFG a parallelogram, so the
+    // side is drawn — same as FG on the I.43 plate.
+    d.join("B", "G");
+    // Given triangle C, from FE. The plate draws the base first (parallel to
+    // FE, longer than FE), then the apex. Corners are pinned; C is the glyph.
+    d.pin("P", V2::new(-123.147, 344.809));
+    d.pin("Q", V2::new(55.415, 344.809));
+    d.pin("R", V2::new(110.829, 541.844));
+    d.join("P", "Q");
+    d.join("Q", "R");
+    d.join("R", "P");
+    d.glyph("C", V2::new(12.343, 406.469));
+    // Given angle D. The plate's mark is a bend, not a V opening downward.
+    // Vertex from K, then the upper arm and the lower arm, then the glyph.
+    d.given_angle(
+        "D",
+        "K",
+        (155.040, 83.16),
+        (107.707, 120.96),
+        (100.233, -137.49),
+        V2::new(206.0, 449.5),
+    );
+    d.dots(&["A", "B", "E", "F", "G", "H", "K", "L", "M"]);
+    d
+}

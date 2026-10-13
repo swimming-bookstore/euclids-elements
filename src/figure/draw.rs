@@ -70,6 +70,7 @@ impl Figure {
             at,
             place,
             r_em: plate::LETTER_R,
+            drop_em: 0.0,
         });
     }
 
@@ -80,6 +81,19 @@ impl Figure {
         place: Place,
         r_em: f64,
     ) {
+        self.label_at_r_drop(id, at, place, r_em, 0.0);
+    }
+
+    /// As `label_at_r`, then shift the letter center down by `drop_em`.
+    /// The heading is unchanged; only the height moves.
+    pub(crate) fn label_at_r_drop(
+        &mut self,
+        id: impl Into<String>,
+        at: V2,
+        place: Place,
+        r_em: f64,
+        drop_em: f64,
+    ) {
         let id = id.into();
         self.labels.push(Label {
             text: id.clone(),
@@ -87,6 +101,7 @@ impl Figure {
             at,
             place,
             r_em,
+            drop_em,
         });
     }
 
@@ -115,6 +130,7 @@ impl Figure {
                 at: fit.map(l.at),
                 place: l.place,
                 r_em: l.r_em,
+                drop_em: l.drop_em,
             })
             .collect();
         let placed = labels::place(&marks, clip, &labels, fit.size);
@@ -153,8 +169,9 @@ impl Figure {
             match m {
                 Mark::Circle { id, c, r } => {
                     out.push_str(&format!(
-                        r##"<circle class="{}" cx="{}" cy="{}" r="{}"/>"##,
+                        r##"<circle class="{}" data-id="{}" cx="{}" cy="{}" r="{}"/>"##,
                         cls(id, "circ"),
+                        id,
                         n(c.x),
                         n(y(c.y)),
                         n(*r)
@@ -169,8 +186,9 @@ impl Figure {
                     if let Some(d) = d {
                         // Decorative bows stay stroke-only; never fill, never dim.
                         out.push_str(&format!(
-                            r##"<path class="{}" d="{}" fill="none"/>"##,
+                            r##"<path class="{}" data-id="{}" d="{}" fill="none"/>"##,
                             cls(id, "arc"),
+                            id,
                             d
                         ));
                     }
@@ -179,15 +197,26 @@ impl Figure {
             }
         }
         out.push_str("</g>");
+        // Lit strokes last. A dim segment that shares ink with a spoken line
+        // (I.23: AG lies on AB) would otherwise paint grey over the red.
+        let mut segs: Vec<&Mark> = marks
+            .iter()
+            .filter(|m| matches!(m, Mark::Seg { .. }))
+            .collect();
+        segs.sort_by_key(|m| match m {
+            Mark::Seg { id, .. } => lit(id),
+            _ => false,
+        });
         out.push_str(&format!(
             r##"<g stroke="#111" stroke-width="{}" stroke-linecap="round">"##,
             n(plate::STROKE + 0.4)
         ));
-        for m in &marks {
+        for m in &segs {
             if let Mark::Seg { id, a, b } = m {
                 out.push_str(&format!(
-                    r##"<line class="{}" x1="{}" y1="{}" x2="{}" y2="{}"/>"##,
+                    r##"<line class="{}" data-id="{}" x1="{}" y1="{}" x2="{}" y2="{}"/>"##,
                     cls(id, "seg"),
+                    id,
                     n(a.x),
                     n(y(a.y)),
                     n(b.x),
@@ -196,12 +225,21 @@ impl Figure {
             }
         }
         out.push_str("</g>");
+        let mut dots: Vec<&Mark> = marks
+            .iter()
+            .filter(|m| matches!(m, Mark::Dot { .. }))
+            .collect();
+        dots.sort_by_key(|m| match m {
+            Mark::Dot { id, .. } => lit(id),
+            _ => false,
+        });
         out.push_str(r##"<g fill="#111">"##);
-        for m in &marks {
+        for m in &dots {
             if let Mark::Dot { id, p } = m {
                 out.push_str(&format!(
-                    r##"<circle class="{}" cx="{}" cy="{}" r="{}"/>"##,
+                    r##"<circle class="{}" data-id="{}" cx="{}" cy="{}" r="{}"/>"##,
                     cls(id, "dot"),
+                    id,
                     n(p.x),
                     n(y(p.y)),
                     n(plate::DOT)

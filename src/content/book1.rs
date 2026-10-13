@@ -10,6 +10,7 @@ use crate::figure::{
     book1_prop33, book1_prop34,
     book1_prop35, book1_prop36, book1_prop37, book1_prop38,
     book1_prop39, book1_prop40, book1_prop41, book1_prop42,
+    book1_prop43, book1_prop44,
 };
 
 pub const PROP_1: Proposition = Proposition {
@@ -1016,10 +1017,60 @@ pub const PROP_42: Proposition = Proposition {
     ],
 };
 
+pub const PROP_43: Proposition = Proposition {
+    book: 1,
+    number: 43,
+    enunciation: "For any parallelogram, the complements of the parallelograms about the diagonal are equal to one another.",
+    figure: book1_prop43,
+    phrases: &[
+        s(1, "Let *ABCD* be a parallelogram, and *AC* its diagonal."),
+        s(1, "And let *EH* and *FG* be the parallelograms about *AC*, and *BK* and *KD* the so-called complements (about *AC*)."),
+        s(1, "I say that the complement *BK* is equal to the complement *KD*."),
+        s(2, "For since *ABCD* is a parallelogram, and *AC* its diagonal, triangle *ABC* is equal to triangle *ACD*.{[Prop. 1.34]}"),
+        s(2, "Again, since *EH* is a parallelogram, and *AK* is its diagonal, triangle *AEK* is equal to triangle *AHK*.{[Prop. 1.34]}"),
+        s(2, "So, for the same (reasons), triangle *KFC* is also equal to (triangle) *KGC*."),
+        s(2, "Therefore, since triangle *AEK* is equal to triangle *AHK*, and *KFC* to *KGC*, triangle *AEK* plus *KGC* is equal to triangle *AHK* plus *KFC*."),
+        s(2, "And the whole triangle *ABC* is also equal to the whole (triangle) *ADC*."),
+        s(2, "Thus, the remaining complement *BK* is equal to the remaining complement *KD*."),
+        s(3, "Thus, for any parallelogramic figure, the complements of the parallelograms about the diagonal are equal to one another."),
+        s(3, "(Which is) the very thing it was required to show."),
+    ],
+};
+
+pub const PROP_44: Proposition = Proposition {
+    book: 1,
+    number: 44,
+    enunciation: "To apply a parallelogram equal to a given triangle to a given straight-line in a given rectilinear angle.",
+    figure: book1_prop44,
+    phrases: &[
+        s(1, "Let *AB* be the given straight-line, *C* the given triangle, and *D* the given rectilinear angle."),
+        s(1, "So it is required to apply a parallelogram equal to the given triangle *C* to the given straight-line *AB* in an angle equal to (angle) *D*."),
+        s(2, "Let the parallelogram *BEFG*, equal to the triangle *C*, have been constructed in the angle *EBG*, which is equal to *D*.{[Prop. 1.42]}"),
+        s(2, "And let it have been placed so that *BE* is straight-on to *AB*."),
+        s(2, "And let *FG* have been drawn through to *H*, and let *AH* have been drawn through *A* parallel to either of *BG* or *EF*.{[Prop. 1.31]}"),
+        s(2, "And let *HB* have been joined."),
+        s(2, "And since the straight-line *HF* falls across the parallels *AH* and *EF*, the (sum of the) angles *AHF* and *HFE* is thus equal to two right-angles.{[Prop. 1.29]}"),
+        s(2, "Thus, (the sum of) *BHG* and *GFE* is less than two right-angles."),
+        s(2, "And (straight-lines) produced to infinity from (internal angles whose sum is) less than two right-angles meet together.{[Post. 5]}"),
+        s(2, "Thus, being produced, *HB* and *FE* will meet together."),
+        s(2, "Let them have been produced, and let them meet together at *K*."),
+        s(2, "And let *KL* have been drawn through point *K* parallel to either of *EA* or *FH*.{[Prop. 1.31]}"),
+        s(2, "And let *HA* and *GB* have been produced to points *L* and *M* (respectively)."),
+        s(2, "Thus, *HLKF* is a parallelogram, and *HK* its diagonal."),
+        s(2, "And *AG* and *ME* (are) parallelograms, and *LB* and *BF* the so-called complements, about *HK*."),
+        s(2, "Thus, *LB* is equal to *BF*.{[Prop. 1.43]}"),
+        s(2, "But, *BF* is equal to triangle *C*."),
+        s(2, "Thus, *LB* is also equal to *C*."),
+        s(2, "Also, since angle *GBE* is equal to *ABM*,{[Prop. 1.15]} but *GBE* is equal to *D*, *ABM* is thus also equal to angle *D*."),
+        s(3, "Thus, the parallelogram *LB*, equal to the given triangle *C*, has been applied to the given straight-line *AB* in the angle *ABM*, which is equal to *D*."),
+        s(3, "(Which is) the very thing it was required to do."),
+    ],
+};
+
 pub const PROPOSITIONS: &[Proposition] = &[
     PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6, PROP_7, PROP_8, PROP_9, PROP_10, PROP_11,
     PROP_12, PROP_13, PROP_14, PROP_15, PROP_16, PROP_17, PROP_18, PROP_19, PROP_20, PROP_21,
     PROP_22, PROP_23, PROP_24, PROP_25, PROP_26, PROP_27, PROP_28, PROP_29, PROP_30,
     PROP_31, PROP_32, PROP_33, PROP_34, PROP_35, PROP_36, PROP_37, PROP_38, PROP_39, PROP_40,
-    PROP_41, PROP_42,
+    PROP_41, PROP_42, PROP_43, PROP_44,
 ];
