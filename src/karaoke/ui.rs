@@ -1,6 +1,6 @@
 use super::layout::{read_layout, roll_shift, Atom};
 use super::player::Player;
-use super::script::Script;
+use super::script::{display_letters, Script};
 use leptos::prelude::*;
 use wasm_bindgen::JsCast;
 
@@ -162,7 +162,7 @@ pub fn KaraokeLyrics(script: Script, player: Player) -> impl IntoView {
                             {chunks.into_iter().enumerate().map(|(ci, (ti, tok, cites))| {
                                 let italic = tok.italic;
                                 let gap = super::layout::demo_spaced(&line.tokens, ti);
-                                let text = tok.text;
+                                let text = display_letters(&tok.text);
                                 let broken = hyphen_at(&text);
                                 let cite_break = !cites.is_empty() && ci + 1 < n_chunks;
                                 let sing_script = word_script.clone();
