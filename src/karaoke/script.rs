@@ -248,7 +248,6 @@ fn words_after(chars: &[char], mut i: usize) -> Vec<String> {
 fn letters_are_angles(recent: &[String], following: &[String]) -> bool {
     let mut angle = false;
     let mut compared = false;
-    let mut figure = false;
     for word in recent {
         let w = stem(word);
         if w.is_empty() {
@@ -258,17 +257,20 @@ fn letters_are_angles(recent: &[String], following: &[String]) -> bool {
             // "in triangle CDE the external angle BDC" names the angle
             // after the triangle. The earlier figure word no longer applies.
             angle = true;
-            figure = false;
             compared = false;
             continue;
         }
         if w == "than" || w == "to" {
             compared = true;
         }
+        // "the given rectilinear angle *DCE*" keeps the angle through the
+        // adjective. A later figure word ("triangle *ABC*") still clears it.
+        // A noun between "angle" and the letters ("point") clears it too.
         if figure_word(&w) {
             angle = false;
-            figure = true;
             compared = false;
+        } else if !is_angle_adjective(&w) {
+            angle = false;
         }
     }
     if following.iter().any(|word| {
@@ -301,6 +303,28 @@ fn stem(word: &str) -> String {
         .filter(|c| c.is_ascii_alphabetic() || *c == '-')
         .map(|c| c.to_ascii_lowercase())
         .collect()
+}
+
+/// Words that may sit between "angle" and the letter name without naming
+/// a different figure: "rectilinear angle *DCE*", "given angle *D*".
+fn is_angle_adjective(w: &str) -> bool {
+    matches!(
+        w,
+        "rectilinear"
+            | "given"
+            | "external"
+            | "adjacent"
+            | "remaining"
+            | "equal"
+            | "corresponding"
+            | "right"
+            | "right-angle"
+            | "right-angles"
+            | "vertical"
+            | "interior"
+            | "exterior"
+            | "opposite"
+    )
 }
 
 fn figure_word(w: &str) -> bool {
@@ -480,7 +504,7 @@ fn push_one(
 mod tests {
     use super::*;
     use crate::content::Phrase;
-    use crate::figure::{book1_prop4, book1_prop21};
+    use crate::figure::{book1_prop4, book1_prop21, book1_prop23};
 
     fn parts_of(text: &'static str, word: &str) -> Vec<String> {
         let phrases = [Phrase { para: 1, text }];
@@ -606,6 +630,37 @@ mod tests {
         let abc = parts_of("of the triangle *ABC* greater than *AB*", "ABC");
         assert!(abc.iter().any(|s| s == "bc"), "a named triangle stays a triangle: {abc:?}");
     }
+    fn parts_of_fig(text: &'static str, word: &str, fig: &impl PartsMap) -> Vec<String> {
+        let phrases = [Phrase { para: 1, text }];
+        let script = compile(&phrases, fig, Timing::default());
+        first_parts(&script, word)
+    }
+
+    #[test]
+    fn rectilinear_angle_is_not_the_triangle() {
+        // "rectilinear" used to clear the angle flag, so *DCE* lit DE as well.
+        let dce = parts_of_fig(
+            "and *DCE* the given rectilinear angle.",
+            "DCE",
+            &book1_prop23(),
+        );
+        assert!(
+            dce.iter().any(|s| s == "cd" || s == "dc")
+                && dce.iter().any(|s| s == "ce" || s == "ec")
+                && !dce.iter().any(|s| s == "de" || s == "ed"),
+            "rectilinear angle DCE is the two rays: {dce:?}"
+        );
+        let again = parts_of_fig(
+            "equal to the given rectilinear angle *DCE* at the point *A*",
+            "DCE",
+            &book1_prop23(),
+        );
+        assert!(
+            !again.iter().any(|s| s == "de" || s == "ed"),
+            "given rectilinear angle DCE: {again:?}"
+        );
+    }
+
     #[test]
     fn parenthetical_angle_does_not_stick_into_the_next_sentence() {
         let text = "I say that the angle *ABC* is equal to *ACB*. And they are at the base of triangle *ABC*.";
