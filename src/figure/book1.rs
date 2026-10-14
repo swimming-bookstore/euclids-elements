@@ -1064,3 +1064,77 @@ pub fn book1_prop44() -> Diagram {
     d.dots(&["A", "B", "E", "F", "G", "H", "K", "L", "M"]);
     d
 }
+
+/// I.45 — Fitzpatrick English plate (Elements PDF p. 45, the right-hand figure).
+///
+/// The page path, not the letter boxes. Parallelogram KFLM first (K–M–L–F),
+/// then the middle upright GH, then the given angle E, then rectilinear
+/// figure ADCB with diagonal DB. KH is straight-on to HM and FG to GL, so
+/// the two parallelograms FH and GM make one. One scale HM = 100. The path
+/// is in thirds of that: KH = FG = 200, height = 800/3, upright run = 200/3,
+/// so the uprights lean 14.04° off the vertical, the same way. ∠HKF = 76.0°,
+/// the same as the given angle's opening is not — E opens 83.7°.
+///
+/// A–D and F–M sit one letter-radius out, on the measured tip→glyph
+/// heading. E is the plate glyph, inside the angle, not a heading from the
+/// vertex (the vertex is the bend, well left of the capital).
+pub fn book1_prop45() -> Diagram {
+    let mut d = Diagram::new();
+    // K at the origin. HM = 100, so KM = 300 along the base. H splits KH:HM
+    // as 2:1. The top is level with height 800/3; each upright runs 200/3 to
+    // the right as it rises.
+    d.put("K", V2::new(0.0, 0.0), Place::Deg(-95.7));
+    d.level("H", "K", 200.0, Place::Deg(-89.2));
+    d.level("M", "K", 300.0, Place::Deg(-83.0));
+    d.put("F", V2::new(200.0 / 3.0, 800.0 / 3.0), Place::Deg(80.1));
+    d.level("G", "F", 800.0 / 3.0, Place::Deg(91.6));
+    d.level("L", "F", 1100.0 / 3.0, Place::Deg(80.9));
+    d.chain(&["K", "H", "M"]);
+    d.chain(&["F", "G", "L"]);
+    d.join("K", "F");
+    d.join("H", "G");
+    d.join("M", "L");
+    // Given rectilinear figure ADCB. The plate draws A–D–C–B, then DB.
+    // A is 250/3 right of K and 1425/3 up; the other corners are the same
+    // thirds of HM.
+    d.put("A", V2::new(250.0 / 3.0, 1425.0 / 3.0), Place::Deg(-176.6));
+    d.put("D", V2::new(1125.0 / 3.0, 2050.0 / 3.0), Place::Deg(72.2));
+    d.put("C", V2::new(1400.0 / 3.0, 1700.0 / 3.0), Place::Deg(-3.5));
+    d.put("B", V2::new(925.0 / 3.0, 1100.0 / 3.0), Place::Deg(-78.0));
+    d.chain(&["A", "D", "C", "B", "A"]);
+    d.join("D", "B");
+    d.dots(&["A", "B", "C", "D", "F", "G", "H", "K", "L", "M"]);
+    // Given angle E. Vertex from L (r = 125 at 53.13° — a 3-4-5 from L),
+    // then the upper arm and the lower arm, then the plate glyph. The arms
+    // are the page path, not a copy of ∠HKF.
+    d.given_angle(
+        "E",
+        "L",
+        (125.0, 53.13),
+        (129.633, 45.0),
+        (106.719, -38.66),
+        V2::new(496.65, 373.80),
+    );
+    d
+}
+
+/// I.46 — Fitzpatrick English plate (Elements PDF p. 46, the right-hand figure).
+///
+/// Square ADEB on the given straight-line AB. The left side is produced
+/// upward through D to C: AC is the whole upright, AD the square's side.
+/// One scale AB = 100. The square is right-angled. C sits past the produced
+/// end, up and to the left of the upright. D sits up and to the right of the
+/// corner, clear of AC. E sits above the top side. A and B sit below the base.
+pub fn book1_prop46() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("A", V2::new(0.0, 0.0), Place::Deg(-96.0));
+    d.level("B", "A", 100.0, Place::Deg(-84.0));
+    // D and E are one line of type, just above DE. D's glyph center is
+    // 55.2° from the corner (up and to the right, clear of the produced
+    // upright). A near-vertical heading parks D on AC, toward C.
+    d.put("D", V2::new(0.0, 100.0), Place::Deg(55.2));
+    d.level("E", "D", 100.0, Place::Deg(88.0));
+    d.put("C", V2::new(0.0, 214.23), Place::Deg(107.3));
+    d.chain(&["C", "D", "A", "B", "E", "D"]);
+    d
+}

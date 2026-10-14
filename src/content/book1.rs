@@ -10,7 +10,7 @@ use crate::figure::{
     book1_prop33, book1_prop34,
     book1_prop35, book1_prop36, book1_prop37, book1_prop38,
     book1_prop39, book1_prop40, book1_prop41, book1_prop42,
-    book1_prop43, book1_prop44,
+    book1_prop43, book1_prop44, book1_prop45, book1_prop46,
 };
 
 pub const PROP_1: Proposition = Proposition {
@@ -1067,10 +1067,72 @@ pub const PROP_44: Proposition = Proposition {
     ],
 };
 
+pub const PROP_45: Proposition = Proposition {
+    book: 1,
+    number: 45,
+    enunciation: "To construct a parallelogram equal to a given rectilinear figure in a given rectilinear angle.",
+    figure: book1_prop45,
+    phrases: &[
+        s(1, "Let *ABCD* be the given rectilinear figure, and *E* the given rectilinear angle."),
+        s(1, "So it is required to construct a parallelogram equal to the rectilinear figure *ABCD* in the given angle *E*."),
+        s(2, "Let *DB* have been joined, and let the parallelogram *FH*, equal to the triangle *ABD*, have been constructed in the angle *angle(HKF)*, which is equal to *E*.{[Prop. 1.42]}"),
+        s(2, "And let the parallelogram *GM*, equal to the triangle *DBC*, have been applied to the straight-line *GH* in the angle *angle(GHM)*, which is equal to *E*.{[Prop. 1.44]}"),
+        s(2, "And since angle *E* is equal to each of (angles) *angle(HKF)* and *angle(GHM)*, (angle) *angle(HKF)* is thus also equal to *angle(GHM)*."),
+        s(2, "Let *angle(KHG)* have been added to both."),
+        s(2, "Thus, (the sum of) *angle(FKH)* and *angle(KHG)* is equal to (the sum of) *angle(KHG)* and *angle(GHM)*."),
+        s(2, "But, (the sum of) *angle(FKH)* and *angle(KHG)* is equal to two right-angles.{[Prop. 1.29]}"),
+        s(2, "Thus, (the sum of) *angle(KHG)* and *angle(GHM)* is also equal to two right-angles."),
+        s(2, "So two straight-lines, *KH* and *HM*, not lying on the same side, make adjacent angles with some straight-line *GH*, at the point *H* on it, (whose sum is) equal to two right-angles."),
+        s(2, "Thus, *KH* is straight-on to *HM*.{[Prop. 1.14]}"),
+        s(2, "And since the straight-line *HG* falls across the parallels *KM* and *FG*, the alternate angles *angle(MHG)* and *angle(HGF)* are equal to one another.{[Prop. 1.29]}"),
+        s(2, "Let *angle(HGL)* have been added to both."),
+        s(2, "Thus, (the sum of) *angle(MHG)* and *angle(HGL)* is equal to (the sum of) *angle(HGF)* and *angle(HGL)*."),
+        s(2, "But, (the sum of) *angle(MHG)* and *angle(HGL)* is equal to two right-angles.{[Prop. 1.29]}"),
+        s(2, "Thus, (the sum of) *angle(HGF)* and *angle(HGL)* is also equal to two right-angles."),
+        s(2, "Thus, *FG* is straight-on to *GL*.{[Prop. 1.14]}"),
+        s(2, "And since *FK* is equal and parallel to *HG*,{[Prop. 1.34]} but also *HG* to *ML*,{[Prop. 1.34]} *KF* is thus also equal and parallel to *ML*.{[Prop. 1.30]}"),
+        s(2, "And the straight-lines *KM* and *FL* join them."),
+        s(2, "Thus, *KM* and *FL* are equal and parallel as well.{[Prop. 1.33]}"),
+        s(2, "Thus, *KFLM* is a parallelogram."),
+        s(2, "And since triangle *ABD* is equal to parallelogram *FH*, and *DBC* to *GM*, the whole rectilinear figure *ABCD* is thus equal to the whole parallelogram *KFLM*."),
+        s(3, "Thus, the parallelogram *KFLM*, equal to the given rectilinear figure *ABCD*, has been constructed in the angle *angle(FKM)*, which is equal to the given (angle) *E*."),
+        s(3, "(Which is) the very thing it was required to do."),
+    ],
+};
+
+pub const PROP_46: Proposition = Proposition {
+    book: 1,
+    number: 46,
+    enunciation: "To describe a square on a given straight-line.",
+    figure: book1_prop46,
+    phrases: &[
+        s(1, "Let *AB* be the given straight-line."),
+        s(1, "So it is required to describe a square on the straight-line *AB*."),
+        s(2, "Let *AC* have been drawn at right-angles to the straight-line *AB* from the point *A* on it,{[Prop. 1.11]} and let *AD* have been made equal to *AB*.{[Prop. 1.3]}"),
+        s(2, "And let *DE* have been drawn through point *D* parallel to *AB*,{[Prop. 1.31]} and let *BE* have been drawn through point *B* parallel to *AD*.{[Prop. 1.31]}"),
+        s(2, "Thus, *ADEB* is a parallelogram."),
+        s(2, "Therefore, *AB* is equal to *DE*, and *AD* to *BE*.{[Prop. 1.34]}"),
+        s(2, "But, *AB* is equal to *AD*."),
+        s(2, "Thus, the four (sides) *BA*, *AD*, *DE*, and *EB* are equal to one another."),
+        s(2, "Thus, the parallelogram *ADEB* is equilateral."),
+        s(2, "So I say that (it is) also right-angled."),
+        s(2, "For since the straight-line *AD* falls across the parallels *AB* and *DE*, the (sum of the) angles *angle(BAD)* and *angle(ADE)* is equal to two right-angles.{[Prop. 1.29]}"),
+        s(2, "But *angle(BAD)* (is a) right-angle."),
+        s(2, "Thus, *angle(ADE)* (is) also a right-angle."),
+        s(2, "And for parallelogrammic figures, the opposite sides and angles are equal to one another.{[Prop. 1.34]}"),
+        s(2, "Thus, each of the opposite angles *angle(ABE)* and *angle(BED)* (are) also right-angles."),
+        s(2, "Thus, *ADEB* is right-angled."),
+        s(2, "And it was also shown (to be) equilateral."),
+        s(3, "Thus, (*ADEB*) is a square.{[Def. 1.22]}"),
+        s(3, "And it is described on the straight-line *AB*."),
+        s(3, "(Which is) the very thing it was required to do."),
+    ],
+};
+
 pub const PROPOSITIONS: &[Proposition] = &[
     PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6, PROP_7, PROP_8, PROP_9, PROP_10, PROP_11,
     PROP_12, PROP_13, PROP_14, PROP_15, PROP_16, PROP_17, PROP_18, PROP_19, PROP_20, PROP_21,
     PROP_22, PROP_23, PROP_24, PROP_25, PROP_26, PROP_27, PROP_28, PROP_29, PROP_30,
     PROP_31, PROP_32, PROP_33, PROP_34, PROP_35, PROP_36, PROP_37, PROP_38, PROP_39, PROP_40,
-    PROP_41, PROP_42, PROP_43, PROP_44,
+    PROP_41, PROP_42, PROP_43, PROP_44, PROP_45, PROP_46,
 ];
