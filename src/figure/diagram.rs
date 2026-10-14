@@ -682,6 +682,7 @@ mod tests {
         book1_prop33, book1_prop34, book1_prop35, book1_prop36,
         book1_prop37, book1_prop38, book1_prop39, book1_prop40,
         book1_prop41, book1_prop42, book1_prop43, book1_prop44,
+        book1_prop45, book1_prop46,
     };
 
     fn has(v: &[String], id: &str) -> bool {
@@ -2403,6 +2404,44 @@ mod tests {
         assert!(edy < -0.15, "E above FK, --dy={edy}");
         assert!((fdx * fdx + fdy * fdy).sqrt() < 0.6, "F short radius");
         assert!((edx * edx + edy * edy).sqrt() < 0.6, "E short radius");
+    }
+
+    #[test]
+    fn prop45_matches_english_plate() {
+        let d = book1_prop45();
+        let hm = d.at("H").dist(d.at("M"));
+        assert!((hm - 100.0).abs() < 0.05, "HM scale {hm}");
+        assert!((d.at("K").y - d.at("H").y).abs() < 1e-6, "KH level");
+        assert!(d.at("K").x < d.at("H").x && d.at("H").x < d.at("M").x);
+        assert!((d.at("F").y - d.at("G").y).abs() < 1e-6, "FG level");
+        assert!((d.at("G").y - d.at("L").y).abs() < 1e-6, "GL level");
+        assert!(d.at("G").on_seg(d.at("F"), d.at("L"), 1e-3), "G on FL");
+        assert!(d.at("H").on_seg(d.at("K"), d.at("M"), 1e-3), "H on KM");
+        assert!(d.edge_id("D", "B").is_some(), "DB joined");
+        assert!(d.edge_id("F", "H").is_some(), "parallelogram FH");
+        assert!(d.edge_id("G", "M").is_some(), "parallelogram GM");
+        assert!(d.edge_id("K", "F").is_some() && d.edge_id("M", "L").is_some());
+        let height = (d.at("F").y - d.at("H").y) / hm;
+        assert!((height - 0.889).abs() < 0.01, "height {height}");
+        let kflm = d.highlight("KFLM");
+        assert!(has(&kflm, "fk") && has(&kflm, "fg") && has(&kflm, "gl") && has(&kflm, "ml"), "KFLM: {kflm:?}");
+        assert!(has(&kflm, "kh") && has(&kflm, "hm"), "base KM: {kflm:?}");
+    }
+
+    #[test]
+    fn prop46_matches_english_plate() {
+        let d = book1_prop46();
+        let ab = d.at("A").dist(d.at("B"));
+        assert!((ab - 100.0).abs() < 0.05, "AB scale {ab}");
+        assert!((d.at("A").y - d.at("B").y).abs() < 1e-6, "AB level");
+        assert!((d.at("D").y - d.at("E").y).abs() < 1e-6, "DE level");
+        assert!((d.at("A").x - d.at("D").x).abs() < 1e-6, "AD plumb");
+        assert!((d.at("B").x - d.at("E").x).abs() < 1e-6, "BE plumb");
+        assert!((d.at("A").dist(d.at("D")) - ab).abs() < 0.05, "AD = AB");
+        assert!((d.at("D").dist(d.at("E")) - ab).abs() < 0.05, "DE = AB");
+        assert!(d.at("D").on_seg(d.at("C"), d.at("A"), 1e-3), "D on CA");
+        assert!(d.at("C").y > d.at("D").y, "C past D");
+        assert!((angle_at(&d, "B", "A", "D").to_degrees() - 90.0).abs() < 0.05, "right angle at A");
     }
 
     fn letter_offset(html: &str, id: &str) -> (f64, f64) {
