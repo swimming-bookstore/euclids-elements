@@ -2418,14 +2418,28 @@ mod tests {
         assert!(d.at("G").on_seg(d.at("F"), d.at("L"), 1e-3), "G on FL");
         assert!(d.at("H").on_seg(d.at("K"), d.at("M"), 1e-3), "H on KM");
         assert!(d.edge_id("D", "B").is_some(), "DB joined");
-        assert!(d.edge_id("F", "H").is_some(), "parallelogram FH");
-        assert!(d.edge_id("G", "M").is_some(), "parallelogram GM");
+        // The plate draws the sides, not the diagonals. FH is FK–KH–HG–GF;
+        // GM is GH–HM–ML–LG.
+        let segs = d.stroke_ids();
+        assert!(d.edge_id("F", "H").is_none(), "plate has no FH diagonal: {segs:?}");
+        assert!(d.edge_id("G", "M").is_none(), "plate has no GM diagonal: {segs:?}");
+        for (a, b) in [("F", "K"), ("K", "H"), ("H", "G"), ("G", "F"), ("G", "H"), ("H", "M"), ("M", "L"), ("L", "G")] {
+            assert!(d.edge_id(a, b).is_some(), "parallelogram side {a}{b}: {segs:?}");
+        }
         assert!(d.edge_id("K", "F").is_some() && d.edge_id("M", "L").is_some());
+        // Page-45 English path: height/HM = 800/3, upright run/HM = 200/3.
         let height = (d.at("F").y - d.at("H").y) / hm;
-        assert!((height - 0.889).abs() < 0.01, "height {height}");
+        assert!((height - 8.0 / 3.0).abs() < 0.01, "height {height}");
+        let run = (d.at("F").x - d.at("K").x) / hm;
+        assert!((run - 2.0 / 3.0).abs() < 0.01, "upright run {run}");
+        // KFLM is the outer parallelogram. H and G lie on its sides, so the
+        // spoken name lights those pieces rather than a diagonal.
         let kflm = d.highlight("KFLM");
-        assert!(has(&kflm, "fk") && has(&kflm, "fg") && has(&kflm, "gl") && has(&kflm, "ml"), "KFLM: {kflm:?}");
-        assert!(has(&kflm, "kh") && has(&kflm, "hm"), "base KM: {kflm:?}");
+        assert!(
+            has(&kflm, "kf") && has(&kflm, "fg") && has(&kflm, "gl") && has(&kflm, "ml") && has(&kflm, "kh") && has(&kflm, "hm"),
+            "KFLM: {kflm:?}"
+        );
+        assert!(!kflm.iter().any(|id| id == "fh" || id == "gm"), "no diagonal: {kflm:?}");
     }
 
     #[test]
