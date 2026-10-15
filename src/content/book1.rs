@@ -11,6 +11,7 @@ use crate::figure::{
     book1_prop35, book1_prop36, book1_prop37, book1_prop38,
     book1_prop39, book1_prop40, book1_prop41, book1_prop42,
     book1_prop43, book1_prop44, book1_prop45, book1_prop46,
+    book1_prop47, book1_prop48,
 };
 
 pub const PROP_1: Proposition = Proposition {
@@ -1129,10 +1130,71 @@ pub const PROP_46: Proposition = Proposition {
     ],
 };
 
+pub const PROP_47: Proposition = Proposition {
+    book: 1,
+    number: 47,
+    enunciation: "In right-angled triangles, the square on the side subtending the right-angle is equal to the (sum of the) squares on the sides containing the right-angle.",
+    figure: book1_prop47,
+    phrases: &[
+        s(1, "Let *ABC* be a right-angled triangle having the angle *angle(BAC)* a right-angle."),
+        s(1, "I say that the square on *BC* is equal to the (sum of the) squares on *BA* and *AC*."),
+        s(2, "For let the square *BDEC* have been described on *BC*, and (the squares) *GB* and *HC* on *AB* and *AC* (respectively).{[Prop. 1.46]}"),
+        s(2, "And let *AL* have been drawn through point *A* parallel to either of *BD* or *CE*.{[Prop. 1.31]}"),
+        s(2, "And let *AD* and *FC* have been joined."),
+        s(2, "And since angles *angle(BAC)* and *angle(BAG)* are each right-angles, then two straight-lines *AC* and *AG*, not lying on the same side, make the adjacent angles with some straight-line *BA*, at the point *A* on it, (whose sum is) equal to two right-angles."),
+        s(2, "Thus, *CA* is straight-on to *AG*.{[Prop. 1.14]}"),
+        s(2, "So, for the same (reasons), *BA* is also straight-on to *AH*."),
+        s(2, "And since angle *angle(DBC)* is equal to *angle(FBA)*, for (they are) both right-angles, let *angle(ABC)* have been added to both."),
+        s(2, "Thus, the whole (angle) *angle(DBA)* is equal to the whole (angle) *angle(FBC)*."),
+        s(2, "And since *DB* is equal to *BC*, and *FB* to *BA*, the two (straight-lines) *DB*, *BA* are equal to the two (straight-lines) *CB*, *BF*, respectively."),
+        s(2, "And angle *angle(DBA)* (is) equal to angle *angle(FBC)*."),
+        s(2, "Thus, the base *AD* [is] equal to the base *FC*, and the triangle *ABD* is equal to the triangle *FBC*.{[Prop. 1.4]}"),
+        s(2, "And parallelogram *BL* [is] double (the area) of triangle *ABD*."),
+        s(2, "For they have the same base, *BD*, and are between the same parallels, *BD* and *AL*.{[Prop. 1.41]}"),
+        s(2, "And square *GB* is double (the area) of triangle *FBC*."),
+        s(2, "For again they have the same base, *FB*, and are between the same parallels, *FB* and *GC*.{[Prop. 1.41]}"),
+        s(2, "[And the doubles of equal things are equal to one another.] Thus, the parallelogram *BL* is also equal to the square *GB*."),
+        s(2, "So, similarly, *AE* and *BK* being joined, the parallelogram *CL* can be shown (to be) equal to the square *HC*."),
+        s(2, "Thus, the whole square *BDEC* is equal to the (sum of the) two squares *GB* and *HC*."),
+        s(2, "And the square *BDEC* is described on *BC*, and the (squares) *GB* and *HC* on *BA* and *AC* (respectively)."),
+        s(2, "Thus, the square on the side *BC* is equal to the (sum of the) squares on the sides *BA* and *AC*."),
+        s(3, "Thus, in right-angled triangles, the square on the side subtending the right-angle is equal to the (sum of the) squares on the sides surrounding the right-[angle]."),
+        s(3, "(Which is) the very thing it was required to show."),
+    ],
+};
+
+pub const PROP_48: Proposition = Proposition {
+    book: 1,
+    number: 48,
+    enunciation: "If the square on one of the sides of a triangle is equal to the (sum of the) squares on the two remaining sides of the triangle then the angle contained by the two remaining sides of the triangle is a right-angle.",
+    figure: book1_prop48,
+    phrases: &[
+        s(1, "For let the square on one of the sides, *BC*, of triangle *ABC* be equal to the (sum of the) squares on the sides *BA* and *AC*."),
+        s(1, "I say that angle *angle(BAC)* is a right-angle."),
+        s(2, "For let *AD* have been drawn from point *A* at right-angles to the straight-line *AC*,{[Prop. 1.11]} and let *AD* have been made equal to *BA*,{[Prop. 1.3]} and let *DC* have been joined."),
+        s(2, "Since *DA* is equal to *AB*, the square on *DA* is thus also equal to the square on *AB*."),
+        s(2, "Let the square on *AC* have been added to both."),
+        s(2, "Thus, the (sum of the) squares on *DA* and *AC* is equal to the (sum of the) squares on *BA* and *AC*."),
+        s(2, "But, the (square) on *DC* is equal to the (sum of the squares) on *DA* and *AC*."),
+        s(2, "For angle *angle(DAC)* is a right-angle.{[Prop. 1.47]}"),
+        s(2, "But, the (square) on *BC* is equal to (sum of the squares) on *BA* and *AC*."),
+        s(2, "For (that) was assumed."),
+        s(2, "Thus, the square on *DC* is equal to the square on *BC*."),
+        s(2, "So side *DC* is also equal to (side) *BC*."),
+        s(2, "And since *DA* is equal to *AB*, and *AC* (is) common, the two (straight-lines) *DA*, *AC* are equal to the two (straight-lines) *BA*, *AC*."),
+        s(2, "And the base *DC* is equal to the base *BC*."),
+        s(2, "Thus, angle *angle(DAC)* [is] equal to angle *angle(BAC)*.{[Prop. 1.8]}"),
+        s(2, "But *angle(DAC)* is a right-angle."),
+        s(2, "Thus, *angle(BAC)* is also a right-angle."),
+        s(3, "Thus, if the square on one of the sides of a triangle is equal to the (sum of the) squares on the remaining two sides of the triangle then the angle contained by the remaining two sides of the triangle is a right-angle."),
+        s(3, "(Which is) the very thing it was required to show."),
+    ],
+};
+
 pub const PROPOSITIONS: &[Proposition] = &[
     PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6, PROP_7, PROP_8, PROP_9, PROP_10, PROP_11,
     PROP_12, PROP_13, PROP_14, PROP_15, PROP_16, PROP_17, PROP_18, PROP_19, PROP_20, PROP_21,
     PROP_22, PROP_23, PROP_24, PROP_25, PROP_26, PROP_27, PROP_28, PROP_29, PROP_30,
     PROP_31, PROP_32, PROP_33, PROP_34, PROP_35, PROP_36, PROP_37, PROP_38, PROP_39, PROP_40,
-    PROP_41, PROP_42, PROP_43, PROP_44, PROP_45, PROP_46,
+    PROP_41, PROP_42, PROP_43, PROP_44, PROP_45, PROP_46, PROP_47, PROP_48,
 ];

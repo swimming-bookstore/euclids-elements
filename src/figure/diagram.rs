@@ -682,7 +682,7 @@ mod tests {
         book1_prop33, book1_prop34, book1_prop35, book1_prop36,
         book1_prop37, book1_prop38, book1_prop39, book1_prop40,
         book1_prop41, book1_prop42, book1_prop43, book1_prop44,
-        book1_prop45, book1_prop46,
+        book1_prop45, book1_prop46, book1_prop47, book1_prop48,
     };
 
     fn has(v: &[String], id: &str) -> bool {
@@ -2456,6 +2456,51 @@ mod tests {
         assert!(d.at("D").on_seg(d.at("C"), d.at("A"), 1e-3), "D on CA");
         assert!(d.at("C").y > d.at("D").y, "C past D");
         assert!((angle_at(&d, "B", "A", "D").to_degrees() - 90.0).abs() < 0.05, "right angle at A");
+    }
+
+    #[test]
+    fn prop47_matches_english_plate() {
+        let d = book1_prop47();
+        let bc = d.at("B").dist(d.at("C"));
+        assert!((bc - 100.0).abs() < 0.05, "BC scale {bc}");
+        assert!((d.at("B").y - d.at("C").y).abs() < 1e-6, "BC level");
+        assert!((d.at("D").y - d.at("E").y).abs() < 1e-6, "DE level");
+        assert!((d.at("B").x - d.at("D").x).abs() < 1e-6, "BD plumb");
+        assert!((d.at("C").x - d.at("E").x).abs() < 1e-6, "CE plumb");
+        assert!((d.at("A").x - d.at("L").x).abs() < 1e-6, "AL plumb");
+        assert!(d.at("L").on_seg(d.at("D"), d.at("E"), 1e-3), "L on DE");
+        assert!((angle_at(&d, "B", "A", "C").to_degrees() - 85.4).abs() < 0.2, "plate angle BAC");
+        assert!((d.at("A").dist(d.at("B")) / bc - 0.469).abs() < 0.01, "AB/BC");
+        assert!((d.at("A").dist(d.at("C")) / bc - 0.921).abs() < 0.01, "AC/BC");
+        assert!((d.at("F").dist(d.at("B")) / bc - 0.470).abs() < 0.01, "FB/BC");
+        assert!((d.at("A").dist(d.at("G")) / bc - 0.471).abs() < 0.01, "AG/BC");
+        assert!((d.at("A").dist(d.at("H")) / bc - 0.939).abs() < 0.01, "AH/BC");
+        assert!((d.at("C").dist(d.at("K")) / bc - 0.934).abs() < 0.01, "CK/BC");
+        for (a, b) in [("A", "D"), ("F", "C"), ("A", "E"), ("B", "K"), ("A", "L")] {
+            assert!(d.edge_id(a, b).is_some(), "stroke {a}{b}");
+        }
+        let bdec = d.highlight("BDEC");
+        assert!(
+            has(&bdec, "bd") && has(&bdec, "dl") && has(&bdec, "le") && has(&bdec, "ce") && has(&bdec, "bc"),
+            "square BDEC: {bdec:?}"
+        );
+    }
+
+    #[test]
+    fn prop48_matches_english_plate() {
+        let d = book1_prop48();
+        let db = d.at("D").dist(d.at("B"));
+        assert!((db - 100.0).abs() < 0.05, "DB scale {db}");
+        assert!((d.at("D").y - d.at("B").y).abs() < 1e-6, "DB level");
+        assert!(d.at("A").on_seg(d.at("D"), d.at("B"), 1e-6), "A on DB");
+        assert!((d.at("D").dist(d.at("A")) - d.at("A").dist(d.at("B"))).abs() < 1e-6, "DA = AB");
+        assert!((d.at("A").x - d.at("C").x).abs() < 1e-6, "AC plumb");
+        assert!(((d.at("C").y - d.at("A").y) / db - 7.0 / 6.0).abs() < 0.01, "AC/DB");
+        assert!((angle_at(&d, "D", "A", "C").to_degrees() - 90.0).abs() < 0.05, "right angle DAC");
+        assert!((angle_at(&d, "B", "A", "C").to_degrees() - 90.0).abs() < 0.05, "right angle BAC");
+        for (a, b) in [("D", "A"), ("A", "B"), ("A", "C"), ("D", "C"), ("B", "C")] {
+            assert!(d.edge_id(a, b).is_some(), "stroke {a}{b}");
+        }
     }
 
     fn letter_offset(html: &str, id: &str) -> (f64, f64) {
