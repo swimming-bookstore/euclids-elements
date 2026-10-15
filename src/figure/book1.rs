@@ -1138,3 +1138,67 @@ pub fn book1_prop46() -> Diagram {
     d.chain(&["C", "D", "A", "B", "E", "D"]);
     d
 }
+
+/// I.47 — Fitzpatrick English plate (Elements PDF p. 47, the right-hand figure).
+///
+/// Right-angled triangle ABC with ∠BAC a right-angle; square BDEC on BC,
+/// squares GB (F–B–A–G) on AB and HC (A–C–K–H) on AC; AL drawn through A
+/// parallel to BD and CE; AD, FC, AE, and BK joined.
+///
+/// Vertices from the page-47 content stream, one scale BC = 100.
+/// AB/BC = 0.469, AC/BC = 0.921, BD = CE = BC = 100, BL/BC = 0.186.
+/// On the plate ∠BAC is 85.4°, so CA and AG meet at a slight bend while
+/// squares GB and HC are right-angled on their own sides. A sits above the
+/// apex in the gap between GB and HC; B–H and K–L sit one letter-radius out
+/// on the measured tip→glyph heading.
+pub fn book1_prop47() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("B", V2::new(0.0, 0.0), Place::Deg(-141.5));
+    d.level("C", "B", 100.0, Place::Deg(-5.9));
+    d.put("D", V2::new(0.0, -100.0), Place::Deg(-84.6));
+    d.level("L", "D", 18.608, Place::Deg(-96.4));
+    d.level("E", "D", 100.0, Place::Deg(-77.3));
+    d.put("A", V2::new(18.608, 43.099), Place::Deg(105.8));
+    d.put("F", V2::new(-43.191, 18.653), Place::Deg(175.6));
+    d.put("G", V2::new(-24.584, 61.922), Place::Deg(133.9));
+    d.put("H", V2::new(62.462, 126.062), Place::Deg(101.7));
+    d.put("K", V2::new(144.609, 82.101), Place::Deg(6.5));
+    // Triangle ABC and square BDEC (with L on DE).
+    d.join("A", "B");
+    d.join("A", "C");
+    d.join("B", "C");
+    d.join("B", "D");
+    d.chain(&["D", "L", "E"]);
+    d.join("C", "E");
+    // Squares GB (FBAG) and HC (ACKH).
+    d.chain(&["F", "G", "A", "H", "K", "C"]);
+    d.join("F", "B");
+    // Parallel AL and construction lines AD, FC, AE, BK.
+    d.join("A", "L");
+    d.join("A", "D");
+    d.join("F", "C");
+    d.join("A", "E");
+    d.join("B", "K");
+    d.dots(&["A", "B", "C", "D", "E", "F", "G", "H", "K", "L"]);
+    d
+}
+
+/// I.48 — Fitzpatrick English plate (Elements PDF p. 48, the right-hand figure).
+///
+/// Triangle ABC with AD drawn from A at right-angles to AC and AD = BA; DC
+/// joined. D–A–B is level, A the midpoint of DB; AC rises plumb from A.
+/// One scale DB = 100: DA = AB = 50, AC = 350/3 (116.667). D, A, and B hang
+/// below the base; C sits above the apex.
+pub fn book1_prop48() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("D", V2::new(0.0, 0.0), Place::Deg(-91.5));
+    d.level("A", "D", 50.0, Place::Deg(-94.2));
+    d.level("B", "D", 100.0, Place::Deg(-96.0));
+    d.plumb("C", "A", 350.0 / 3.0, Place::Deg(75.1));
+    d.chain(&["D", "A", "B"]);
+    d.join("A", "C");
+    d.join("D", "C");
+    d.join("B", "C");
+    d.dots(&["A", "B", "C", "D"]);
+    d
+}

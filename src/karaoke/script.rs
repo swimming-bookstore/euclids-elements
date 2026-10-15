@@ -271,7 +271,9 @@ fn words_after(chars: &[char], mut i: usize) -> Vec<String> {
 /// "angle *BDC* greater than (angle) *BAC*" is two angles. "in triangle *CDE*
 /// the external angle *BDC*" names the angle after the triangle. "But, *BDC*
 /// was shown greater than *CEB*" has the comparison after the name — a
-/// three-letter name next to "greater than" is the angle, not the triangle.
+/// three-letter name next to "greater than" or "equal to" is the angle, not
+/// the triangle. "In fact, *BAC* is not equal to *EDF*" is that case: the
+/// comparison follows the name, so both letter-runs are angles.
 fn letters_are_angles(recent: &[String], following: &[String]) -> bool {
     let mut angle = false;
     let mut compared = false;
@@ -287,7 +289,7 @@ fn letters_are_angles(recent: &[String], following: &[String]) -> bool {
             compared = false;
             continue;
         }
-        if w == "than" || w == "to" {
+        if w == "than" || w == "to" || w == "equal" || w == "unequal" {
             compared = true;
         }
         // "the given rectilinear angle *DCE*" keeps the angle through the
@@ -304,12 +306,17 @@ fn letters_are_angles(recent: &[String], following: &[String]) -> bool {
         let w = stem(word);
         w.starts_with("angle") || w == "angles"
     });
-    if following.iter().any(|word| stem(word) == "than") {
+    if following.iter().any(|word| {
+        let w = stem(word);
+        w == "than" || w == "equal" || w == "unequal"
+    }) {
         compared = true;
     }
     // "and *DCE* the given rectilinear angle" names the angle after the
-    // letters. "than" alone still only applies to a three-letter name that
-    // an earlier "angle" introduced.
+    // letters. "than" / "equal to" alone still only apply to a three-letter
+    // name that an earlier "angle" introduced — a two-letter name is a side.
+    // The caller also drops this when the letters were introduced as a figure
+    // ("triangle *ABC* is equal to *DEF*").
     angle || followed_by_angle || compared
 }
 
@@ -651,6 +658,36 @@ mod tests {
         assert!(
             !shown.iter().any(|s| s == "bc"),
             "BDC greater than CEB is an angle: {shown:?}"
+        );
+    }
+
+    #[test]
+    fn equal_to_three_letters_is_an_angle() {
+        // I.25: "In fact, *BAC* is not equal to *EDF*." BAC is an angle.
+        // The comparison follows the name, so the triangle highlight is wrong.
+        let phrases = crate::content::get(1, 25).unwrap().phrases;
+        let script = compile(phrases, &crate::figure::book1_prop25(), Timing::default());
+        let bare: Vec<Vec<String>> = script
+            .lines
+            .iter()
+            .flat_map(|l| l.tokens.iter())
+            .filter(|t| letter_key(&t.text) == "BAC")
+            .map(|t| t.parts.clone())
+            .collect();
+        assert!(bare.len() >= 2, "BAC runs: {bare:?}");
+        for (i, parts) in bare.iter().enumerate() {
+            assert!(
+                parts.iter().any(|s| s == "ab" || s == "ba")
+                    && parts.iter().any(|s| s == "ac" || s == "ca")
+                    && !parts.iter().any(|s| s == "bc"),
+                "BAC run {i} is an angle, not triangle ABC: {parts:?}"
+            );
+        }
+        // I.19 uses the same "is not equal to" shape for sides. Those stay sides.
+        let ac = parts_of("In fact, *AC* is not equal to *AB*.", "AC");
+        assert!(
+            ac.iter().any(|s| s == "ac" || s == "ca") && !ac.iter().any(|s| s == "bc"),
+            "a two-letter name next to equal is a side: {ac:?}"
         );
     }
 
