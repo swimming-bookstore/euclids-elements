@@ -524,7 +524,15 @@ pub fn book1_prop26() -> Diagram {
     d.put("B", V2::new(0.0, 0.0), Place::Deg(-151.1));
     d.put("A", V2::new(15.072, 66.377), Place::Deg(92.4));
     d.level("C", "B", 100.0, Place::Deg(-23.5));
-    d.put("G", V2::new(8.116, 36.232), Place::Deg(134.5));
+    // G is on AB (BG = DE). The measured tip is 0.11 off the stroke; a point
+    // that far off is not collinear, so ∠ABC lit only BG.
+    let g = {
+        let b = V2::new(0.0, 0.0);
+        let a = V2::new(15.072, 66.377);
+        let t = 36.232_f64 / 66.377;
+        b.add(a.sub(b).mul(t))
+    };
+    d.put("G", g, Place::Deg(134.5));
     d.level("H", "B", 78.55, Place::Deg(-89.2));
     d.put("D", V2::new(141.594, 99.42), Place::Deg(90.3));
     d.put("E", V2::new(126.376, 33.043), Place::Deg(-156.0));

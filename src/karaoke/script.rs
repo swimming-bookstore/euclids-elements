@@ -178,11 +178,29 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
                 let following = words_after(&chars, i);
                 // angle(DCE) is the object. Words around it do not reclassify it.
                 let wrapped = angle_object(piece);
-                let angle = wrapped.is_some()
-                    || (n == 0
-                        && letters_are_angles(&recent, &following)
-                        && !introduced_as_figure(&recent));
                 let spoken = wrapped.as_deref().unwrap_or(piece);
+                // "*DEF*, and *BCA*" — the comma is part of the italic run, but it
+                // is not part of the name. Record the bare name before classifying
+                // so "equal to" still names the next three-letter run.
+                let name = spoken.trim_matches(|c: char| !c.is_ascii_alphabetic());
+                if !name.is_empty() {
+                    recent.push(name.to_string());
+                    if recent.len() > 24 {
+                        recent.remove(0);
+                    }
+                }
+                let carried = n > 0 && letters_are_angles(&recent, &[]);
+                // The name just pushed is this run, not an earlier introducer.
+                let before: Vec<String> = if recent.last().is_some_and(|w| w == name) {
+                    recent[..recent.len() - 1].to_vec()
+                } else {
+                    recent.clone()
+                };
+                let angle = wrapped.is_some()
+                    || ((n == 0 || carried)
+                        && letters_are_angles(if carried { &[] } else { &before }, &following)
+                        && !introduced_as_figure(&before))
+                    || carried;
                 push_words(
                     &mut out,
                     spoken,
@@ -289,28 +307,56 @@ fn letters_are_angles(recent: &[String], following: &[String]) -> bool {
             compared = false;
             continue;
         }
-        if w == "than" || w == "to" || w == "equal" || w == "unequal" {
+        if w == "than" || w == "equal" || w == "unequal" {
             compared = true;
+        }
+        // "But," is punctuation, not a new subject. It must not wipe the
+        // comparison that names "*EFD* is equal to *BCA*".
+        if matches!(w.as_str(), "but" | "and" | "thus" | "so" | "again" | "also") {
+            continue;
         }
         // "the given rectilinear angle *DCE*" keeps the angle through the
         // adjective. A later figure word ("triangle *ABC*") still clears it.
         // A noun between "angle" and the letters ("point") clears it too.
+        // "equal to" is the comparison itself. "to" must not clear it, or
+        // "*BCA* to *EFD*" lights triangle EFD.
         if figure_word(&w) {
             angle = false;
             compared = false;
-        } else if !is_angle_adjective(&w) {
+        } else if w != "to" && !is_angle_adjective(&w) {
             angle = false;
+            if w != "than" && w != "equal" && w != "unequal" {
+                compared = false;
+            }
         }
     }
-    let followed_by_angle = following.iter().any(|word| {
-        let w = stem(word);
-        w.starts_with("angle") || w == "angles"
-    });
+    // "be two triangles having the two angles" names this run as the triangle.
+    // A later "angles" belongs to the next letter-runs, not this one.
+    // "*DCE* the given rectilinear angle" still names the angle: no figure
+    // word comes before it.
+    let followed_by_angle = followed_by_angle_name(following);
     if following.iter().any(|word| {
         let w = stem(word);
         w == "than" || w == "equal" || w == "unequal"
     }) {
         compared = true;
+    }
+    // "(That is) *ABC* (equal) to *DEF*, and *BCA* to *EFD*".
+    // The only word before the next name is "to", so this run is the angle
+    // too. "to the points" still has an ordinary word after "to".
+    if following.len() == 1 && following.first().is_some_and(|w| stem(w) == "to") {
+        compared = true;
+    }
+    // "*BCA* to *EFD*." — "to" is the whole introducer, and the sentence ends.
+    if recent.len() == 1 && recent.first().is_some_and(|w| stem(w) == "to") && following.is_empty()
+    {
+        compared = true;
+    }
+    // "Let *ABC* and *DEF* be two triangles having the two angles…"
+    // The following clause names angles, but this letter-run is the triangle.
+    // "having" is not a comparison ("equal to" / "greater than").
+    if following.first().is_some_and(|word| stem(word) == "having") {
+        compared = false;
     }
     // "and *DCE* the given rectilinear angle" names the angle after the
     // letters. "than" / "equal to" alone still only apply to a three-letter
@@ -318,6 +364,22 @@ fn letters_are_angles(recent: &[String], following: &[String]) -> bool {
     // The caller also drops this when the letters were introduced as a figure
     // ("triangle *ABC* is equal to *DEF*").
     angle || followed_by_angle || compared
+}
+
+/// True when a later "angle" names this letter-run, not a figure introduced
+/// before that word. "be two triangles having the two angles" is the triangle.
+fn followed_by_angle_name(following: &[String]) -> bool {
+    let mut saw_figure = false;
+    for word in following {
+        let w = stem(word);
+        if figure_word(&w) {
+            saw_figure = true;
+        }
+        if w.starts_with("angle") || w == "angles" {
+            return !saw_figure;
+        }
+    }
+    false
 }
 
 /// "triangle *ABE*" and "side *AB*" name a figure even when a later clause
@@ -697,6 +759,89 @@ mod tests {
         assert!(ab.iter().any(|s| s == "ab") && !ab.iter().any(|s| s == "bc"));
         let abc = parts_of("of the triangle *ABC* greater than *AB*", "ABC");
         assert!(abc.iter().any(|s| s == "bc"), "a named triangle stays a triangle: {abc:?}");
+    }
+
+    #[test]
+    fn triangles_having_angles_are_not_angles() {
+        // I.26 opens "Let *ABC* and *DEF* be two triangles having the two angles…".
+        // "having" is not "equal to". ABC is the triangle, not ∠ABC.
+        let phrases = crate::content::get(1, 26).unwrap().phrases;
+        let script = compile(phrases, &crate::figure::book1_prop26(), Timing::default());
+        let abc = first_parts(&script, "ABC");
+        assert!(
+            abc.iter().any(|s| s == "ab" || s == "ag")
+                && abc.iter().any(|s| s == "bc" || s == "bh")
+                && abc.iter().any(|s| s == "ac" || s == "ca"),
+            "first ABC is triangle ABC, not ∠ABC: {abc:?}"
+        );
+        let def = first_parts(&script, "DEF");
+        assert!(
+            def.iter().any(|s| s == "de" || s == "ed")
+                && def.iter().any(|s| s == "ef" || s == "fe")
+                && def.iter().any(|s| s == "df" || s == "fd"),
+            "first DEF is triangle DEF, not ∠DEF: {def:?}"
+        );
+        let def_angle = script
+            .lines
+            .iter()
+            .flat_map(|l| l.tokens.iter())
+            .filter(|t| letter_key(&t.text) == "DEF")
+            .nth(1)
+            .map(|t| t.parts.clone())
+            .unwrap_or_default();
+        assert!(
+            def_angle.iter().any(|s| s == "de" || s == "ed")
+                && def_angle.iter().any(|s| s == "ef" || s == "fe")
+                && !def_angle.iter().any(|s| s == "df" || s == "fd"),
+            "DEF equal to ABC is ∠DEF: {def_angle:?}"
+        );
+        let later = script
+            .lines
+            .iter()
+            .flat_map(|l| l.tokens.iter())
+            .filter(|t| letter_key(&t.text) == "ABC")
+            .nth(1)
+            .map(|t| t.parts.clone())
+            .unwrap_or_default();
+        assert!(
+            later.iter().any(|s| s == "ag" || s == "gb")
+                && later.iter().any(|s| s == "bc" || s == "bh")
+                && later.iter().any(|s| s == "A")
+                && !later.iter().any(|s| s == "ac" || s == "ca"),
+            "the two angles ABC is ∠ABC, both rays: {later:?}"
+        );
+        // "(That is) *ABC* (equal) to *DEF*, and *BCA* to *EFD*."
+        // The period after DEF splits the italic run. BCA is still the angle.
+        let bca = script
+            .lines
+            .iter()
+            .flat_map(|l| l.tokens.iter())
+            .filter(|t| letter_key(&t.text) == "BCA")
+            .map(|t| t.parts.clone())
+            .collect::<Vec<_>>();
+        assert!(
+            bca.len() >= 2
+                && bca[0].iter().any(|s| s == "bc" || s == "cb" || s == "bh" || s == "hc")
+                && bca[0].iter().any(|s| s == "ca" || s == "ac")
+                && !bca[0].iter().any(|s| s == "ab" || s == "ba"),
+            "BCA equal to EFD is ∠BCA, not triangle BCA: {bca:?}"
+        );
+        let efd = script
+            .lines
+            .iter()
+            .flat_map(|l| l.tokens.iter())
+            .filter(|t| letter_key(&t.text) == "EFD")
+            .map(|t| t.parts.clone())
+            .collect::<Vec<_>>();
+        assert!(
+            efd.len() >= 2
+                && efd.iter().all(|parts| {
+                    parts.iter().any(|s| s == "ef" || s == "fe")
+                        && parts.iter().any(|s| s == "fd" || s == "df")
+                        && !parts.iter().any(|s| s == "de" || s == "ed")
+                }),
+            "every EFD in I.26 is ∠EFD, not triangle EFD: {efd:?}"
+        );
     }
     fn parts_of_fig(text: &'static str, word: &str, fig: &impl PartsMap) -> Vec<String> {
         let phrases = [Phrase { para: 1, text }];
