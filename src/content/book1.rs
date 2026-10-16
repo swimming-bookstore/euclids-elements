@@ -609,7 +609,7 @@ pub const PROP_26: Proposition = Proposition {
     enunciation: "If two triangles have two angles equal to two angles, respectively, and one side equal to one side—in fact, either that by the equal angles, or that subtending one of the equal angles—then (the triangles) will also have the remaining sides equal to the [corresponding] remaining sides, and the remaining angle (equal) to the remaining angle.",
     figure: book1_prop26,
     phrases: &[
-        s(1, "Let *ABC* and *angle(DEF)* be two triangles having the two angles *angle(ABC)* and *angle(BCA)* equal to the two (angles) *angle(DEF)* and *angle(EFD)*, respectively."),
+        s(1, "Let *ABC* and *DEF* be two triangles having the two angles *angle(ABC)* and *angle(BCA)* equal to the two (angles) *angle(DEF)* and *angle(EFD)*, respectively."),
         s(1, "(That is) *ABC* (equal) to *DEF*, and *BCA* to *EFD*."),
         s(1, "And let them also have one side equal to one side."),
         s(1, "First of all, the (side) by the equal angles."),
