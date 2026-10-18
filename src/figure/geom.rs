@@ -54,7 +54,16 @@ impl V2 {
         Self::new(self.x + r * a.cos(), self.y + r * a.sin())
     }
 
-    /// `self` lies on segment `a`—`b` (inclusive), within `eps`.
+    /// `self` lies on the straight-line through `a` and `b`, within `eps`.
+    pub fn on_line(self, a: Self, b: Self, eps: f64) -> bool {
+        let ab = b.sub(a);
+        let len = ab.len();
+        if len < eps {
+            return self.dist(a) < eps;
+        }
+        let ap = self.sub(a);
+        (ab.x * ap.y - ab.y * ap.x).abs() / len < eps
+    }
     pub fn on_seg(self, a: Self, b: Self, eps: f64) -> bool {
         let ab = a.dist(b);
         if ab < eps {

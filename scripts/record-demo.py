@@ -43,10 +43,12 @@ def main() -> None:
     args = parser.parse_args()
 
     os.environ.setdefault("DISPLAY", ":0.0")
+    if not (ROOT / "index.html").exists():
+        raise SystemExit(f"missing {ROOT}/index.html — trunk build first")
     DOCS.mkdir(exist_ok=True)
-    out = DOCS / f"demo_book{args.book}_{args.slug}.mp4"
-    title = f"euclid-book{args.book}-{args.slug}"
     port = free_port()
+    out = DOCS / f"demo_book{args.book}_{args.slug}.mp4"
+    title = f"plate-retake-{args.book}-{args.slug}-{port}"
     httpd = serve(port)
     # Hash must be in the URL Chromium navigates to. A fragment after a
     # query on SimpleHTTP's path is dropped, so book/prop ride in the query.
@@ -62,7 +64,9 @@ def main() -> None:
         height=800,
         fps=15,
         max_sec=args.hold + 40,
-        cdp_port=9331 + args.prop,
+        cdp_port=9331 + args.prop + (port % 200),
+        user_data_dir=DOCS.parent / "target" / f"chrome-{port}",
+        wm_class=f"Plate{port}",
     )
     rec.attach_chrome()
     try:
@@ -73,9 +77,6 @@ def main() -> None:
         )
         rec.start_capture()
         # Hold until the last sung word, then a beat of the finished plate.
-        # A fixed hold cut I.8 off in the middle of the proof.
-        # Last sung word keeps .sing after play stops, so watch the Play
-        # button instead: idle start has no .sung, finished plate does.
         rec.wait_js(
             "document.querySelector('.karaoke-play .play')?.textContent.trim() === 'Play'"
             " && document.querySelectorAll('.karaoke .word.sung').length > 0",

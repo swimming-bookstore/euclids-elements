@@ -550,26 +550,30 @@ pub fn book1_prop26() -> Diagram {
     d
 }
 
-/// I.27 — Fitzpatrick Greek plate (Elements p. 30): AB ∥ CD, transversal EF,
-/// produced in the direction of B and D to meet at G. A, B `level`; C, D
-/// `level`. On the English plate E sits on AB (same height as A, B) and F
-/// on CD (same height as C, D), in the open stretch clear of the transversal.
-/// One scale AB = 100. Plate: CD/AB = 1.083. Letter x from the PDF word
-/// boxes: E is 0.531 of AB from A, F is 0.320 of CD from C.
+/// I.27 — Fitzpatrick plate (Elements p. 30): AB ∥ CD, transversal EF,
+/// then AB and CD bent at B and D to meet at G. A, B `level`; C, D `level`.
+/// E and F are the crossings of the transversal with AB and CD. The parallels
+/// themselves do not meet — the plate draws BG and DG, and nothing else.
+/// ∠EFG is the wedge at F between the transversal and CD produced (FD–DG).
+/// On the English plate the E glyph sits on AB and the F glyph on CD, in
+/// the open stretch clear of the transversal.
+/// One scale AB = 100. Plate: CD/AB = 1.0875.
 pub fn book1_prop27() -> Diagram {
     let mut d = Diagram::new();
     d.put("A", V2::new(0.0, 0.0), Place::Deg(90.0));
     d.level("B", "A", 100.0, Place::Deg(90.0));
-    d.put("C", V2::new(0.0, -34.65), Place::Deg(-90.0));
-    d.level("D", "C", 108.26, Place::Deg(-90.0));
-    d.put("E", V2::new(67.03, 20.66), Place::Deg(90.0));
-    d.put("F", V2::new(24.03, -51.01), Place::Deg(-90.0));
-    d.put("G", V2::new(152.42, -14.92), Place::Deg(28.0));
-    d.chain(&["A", "B", "G"]);
-    d.chain(&["C", "D", "G"]);
-    d.join("E", "F");
+    d.put("C", V2::new(0.0, -35.0), Place::Deg(-90.0));
+    d.level("D", "C", 108.75, Place::Deg(-90.0));
+    d.pin("Etip", V2::new(68.75, 22.5));
+    d.pin("Ftip", V2::new(23.75, -52.5));
+    d.pin("E", V2::new(55.25, 0.0));
+    d.pin("F", V2::new(34.25, -35.0));
+    d.put("G", V2::new(153.75, -15.0), Place::Deg(28.0));
+    d.chain(&["A", "E", "B", "G"]);
+    d.chain(&["C", "F", "D", "G"]);
+    d.chain(&["Etip", "E", "F", "Ftip"]);
     d.label_at("E", V2::new(53.079, 0.0), Place::Deg(90.0));
-    d.label_at("F", V2::new(34.681091, -34.65), Place::Deg(-90.0));
+    d.label_at("F", V2::new(34.8380625, -35.0), Place::Deg(-90.0));
     d.dots(&["A", "B", "C", "D", "E", "F", "G"]);
     d
 }

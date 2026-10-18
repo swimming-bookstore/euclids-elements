@@ -552,12 +552,74 @@ impl Diagram {
         }
         // The two rays from the vertex. A chain that detours through
         // another point (A–E–C when E lies on AC) is the triangle, not
-        // the angle.
+        // the angle. A named end that is not on a ray from the vertex
+        // (∠EFG: the plate has no FG) still names the ray that leaves the
+        // vertex toward that point (FD–DG).
         let mut out = self.angle_ray(v, a);
         out.extend(self.angle_ray(v, c));
+        if !self.ray_reaches(v, a) {
+            out.extend(self.ray_toward(v, a));
+        }
+        if !self.ray_reaches(v, c) {
+            out.extend(self.ray_toward(v, c));
+        }
         out.sort();
         out.dedup();
         out
+    }
+
+    fn ray_reaches(&self, v: &'static str, end: &'static str) -> bool {
+        self.straight(v, end).is_some() || self.edge_id(v, end).is_some()
+    }
+
+    /// The drawn ray that leaves `v` toward `end` when `end` itself is not
+    /// on a stroke from `v`. Prefer the neighbour of `v` whose direction is
+    /// closest to `end`, then keep walking the drawn chain while each next
+    /// stroke still heads toward `end` (F→D→G — the plate bends at D).
+    fn ray_toward(&self, v: &'static str, end: &'static str) -> Vec<String> {
+        let pv = self.at(v);
+        let pe = self.at(end);
+        let want = pe.sub(pv);
+        let Some(edges) = self.adj.get(v) else {
+            return vec![v.to_string()];
+        };
+        let best = edges.iter().filter_map(|e| {
+            let d = self.at(e.to).sub(pv);
+            let cross = want.x * d.y - want.y * d.x;
+            let dot = want.dot(d);
+            (dot > 0.0).then_some((cross.abs() / dot, e.to))
+        }).min_by(|x, y| x.0.partial_cmp(&y.0).unwrap_or(std::cmp::Ordering::Equal));
+        let Some((_, name)) = best else {
+            return vec![v.to_string()];
+        };
+        let mut ids = self.angle_ray(v, name);
+        let mut cur = name;
+        loop {
+            let here = self.at(cur);
+            let Some(nexts) = self.adj.get(cur) else { break };
+            let step = nexts.iter().filter(|e| !ids.iter().any(|id| id == e.to)).filter_map(|e| {
+                let d = self.at(e.to).sub(here);
+                let aim = pe.sub(here);
+                let dot = aim.dot(d);
+                (dot > 1e-6).then_some((
+                    (aim.x * d.y - aim.y * d.x).abs() / dot,
+                    e.to,
+                    e.id.clone(),
+                ))
+            }).min_by(|x, y| x.0.partial_cmp(&y.0).unwrap_or(std::cmp::Ordering::Equal));
+            // Stop once the chain has bent away from the named point.
+            let Some((err, to, id)) = step else { break };
+            if err > 0.4 {
+                break;
+            }
+            ids.push(to.to_string());
+            ids.push(id);
+            if to == end {
+                break;
+            }
+            cur = to;
+        }
+        ids
     }
 
     /// Edges from `v` toward `end`: the collinear segment if one exists,
@@ -1830,19 +1892,35 @@ mod tests {
     fn prop27_paths() {
         let d = book1_prop27();
         let ab = d.highlight("AB");
-        assert!(has(&ab, "ab") || has(&ab, "ba"), "AB: {ab:?}");
+        assert!(has(&ab, "ae") && has(&ab, "eb"), "AB via E: {ab:?}");
         let cd = d.highlight("CD");
-        assert!(has(&cd, "cd") || has(&cd, "dc"), "CD: {cd:?}");
+        assert!(has(&cd, "cf") && has(&cd, "fd"), "CD via F: {cd:?}");
         let ef = d.highlight("EF");
         assert!(has(&ef, "ef") || has(&ef, "fe"), "EF: {ef:?}");
         let bg = d.highlight("BG");
         assert!(has(&bg, "bg") || has(&bg, "gb"), "AB produced to G: {bg:?}");
         let dg = d.highlight("DG");
         assert!(has(&dg, "dg") || has(&dg, "gd"), "CD produced to G: {dg:?}");
+        let efg = d.highlight_angle("EFG");
+        assert!(
+            (has(&efg, "ef") || has(&efg, "fe"))
+                && (has(&efg, "fd") || has(&efg, "df"))
+                && (has(&efg, "dg") || has(&efg, "gd")),
+            "∠EFG is the transversal and CD produced, not a new FG: {efg:?}"
+        );
+        assert!(
+            !efg.iter().any(|id| id == "fg" || id == "gf"),
+            "plate has no FG stroke: {efg:?}"
+        );
         let aef = d.highlight_angle("AEF");
         assert!(
-            (has(&aef, "ef") || has(&aef, "fe")),
-            "∠AEF lights the transversal: {aef:?}"
+            (has(&aef, "ae") || has(&aef, "ea")) && (has(&aef, "ef") || has(&aef, "fe")),
+            "∠AEF is AE and EF, not a detour: {aef:?}"
+        );
+        let efd = d.highlight_angle("EFD");
+        assert!(
+            (has(&efd, "ef") || has(&efd, "fe")) && (has(&efd, "fd") || has(&efd, "df")),
+            "∠EFD is EF and FD: {efd:?}"
         );
         assert!((d.at("A").y - d.at("B").y).abs() < 1e-9, "B level with A");
         assert!((d.at("C").y - d.at("D").y).abs() < 1e-9, "D level with C");
@@ -1851,21 +1929,27 @@ mod tests {
         // G is the meeting of AB and CD produced, on the B/D side.
         assert!(d.at("G").x > d.at("B").x && d.at("G").x > d.at("D").x, "G beyond B and D");
         let ab_len = d.at("A").dist(d.at("B"));
-        assert!((d.at("C").dist(d.at("D")) / ab_len - 1.083).abs() < 0.01, "CD/AB");
-        // EF crosses both parallels; E and F are the crossings, not the tips.
-        assert!((d.at("E").x - d.at("F").x).abs() > 10.0, "EF should lean");
-        assert!(d.at("E").y > d.at("A").y && d.at("F").y < d.at("C").y, "EF crosses both");
+        assert!((d.at("C").dist(d.at("D")) / ab_len - 1.0875).abs() < 0.01, "CD/AB");
+        assert!(d.at("E").on_seg(d.at("A"), d.at("B"), 1e-3), "E on AB");
+        assert!(d.at("F").on_seg(d.at("C"), d.at("D"), 1e-3), "F on CD");
+        assert!(d.at("E").on_seg(d.at("Etip"), d.at("Ftip"), 1e-3), "E on the transversal");
+        assert!(d.at("F").on_seg(d.at("Etip"), d.at("Ftip"), 1e-3), "F on the transversal");
         // G sits off the wedge, on the side away from EF.
         let html = d.svg(&[] as &[String]);
         let (gdx, gdy) = letter_offset(&html, "G");
         assert!(gdx > 0.3, "G right of the meeting, --dx={gdx} --dy={gdy}");
-        // English plate: E on AB, glyph above the line; F on CD, glyph below.
+        // English plate: E glyph on AB, above the line; F glyph on CD, below.
         // CSS y is down. E at 90° points up the page (negative dy); F at -90°
-        // points down (positive dy).
+        // points down (positive dy). The marks themselves are the crossings.
         let (edx, edy) = letter_offset(&html, "E");
         assert!(edy < -0.5 && edx.abs() < 0.2, "E above AB, --dx={edx} --dy={edy}");
         let (fdx, fdy) = letter_offset(&html, "F");
         assert!(fdy > 0.5 && fdx.abs() < 0.2, "F below CD, --dx={fdx} --dy={fdy}");
+        for name in ["AEF", "EFD", "EFG"] {
+            let ids = d.highlight_angle(name);
+            std::fs::write(format!("/tmp/p27/{name}.svg"), d.svg(&ids)).ok();
+            eprintln!("{name}: {ids:?}");
+        }
     }
 
     #[test]

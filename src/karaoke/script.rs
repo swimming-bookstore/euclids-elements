@@ -604,7 +604,7 @@ fn push_one(
 mod tests {
     use super::*;
     use crate::content::Phrase;
-    use crate::figure::{book1_prop4, book1_prop21, book1_prop23};
+    use crate::figure::{book1_prop4, book1_prop21, book1_prop23, book1_prop27};
 
     fn parts_of(text: &'static str, word: &str) -> Vec<String> {
         let phrases = [Phrase { para: 1, text }];
@@ -907,5 +907,31 @@ mod tests {
         assert_eq!(runs.len(), 2, "runs={runs:?}");
         assert!(!runs[0].iter().any(|s| s == "ac"), "first ABC is an angle: {runs:?}");
         assert!(runs[1].iter().any(|s| s == "bc"), "second ABC is the triangle");
+    }
+
+    #[test]
+    fn prop27_efg_is_the_wedge_at_f() {
+        let phrases = [Phrase {
+            para: 2,
+            text: "So, for the triangle *GEF*, the external angle *angle(AEF)* is equal to the interior and opposite (angle) *angle(EFG)*.",
+        }];
+        let script = compile(&phrases, &book1_prop27(), Timing::default());
+        let mut found = false;
+        for line in &script.lines {
+            for t in &line.tokens {
+                if t.text.contains("EFG") {
+                    found = true;
+                    assert!(
+                        t.parts.iter().any(|p| p == "fd" || p == "df" || p == "dg" || p == "gd")
+                            && t.parts.iter().any(|p| p == "ef" || p == "fe")
+                            && !t.parts.iter().any(|p| p == "fg" || p == "gf"),
+                        "sung ∠EFG lights the wedge at F, not a drawn FG, got {:?} for {:?}",
+                        t.parts,
+                        t.text
+                    );
+                }
+            }
+        }
+        assert!(found, "no EFG token");
     }
 }
