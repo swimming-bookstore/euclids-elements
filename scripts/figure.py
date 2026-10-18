@@ -1596,46 +1596,51 @@ def book1_prop26() -> Fig:
 
 
 def book1_prop27() -> Fig:
-    # Fitzpatrick Greek plate, printed p. 30 (PDF p. 30). The English plate
-    # stops at B and D; the Greek one — the figure the proof describes —
-    # produces AB and CD in the direction of B and D until they meet at G.
-    # Strokes (300 dpi, pt, y down): AB y=527.40 x 67.68..210.00,
-    # CD y=576.72 x 67.68..221.76, EF (163.08, 498.00)..(101.88, 600.00),
-    # meeting G (284.6, 548.64). One scale AB = 100, origin A, y-up.
-    # Plate: CD/AB = 1.083.
+    # Fitzpatrick plate, printed p. 30 (PDF p. 30). Both columns draw the same
+    # strokes: AB ∥ CD, transversal EF, then AB and CD bent at B and D to meet
+    # at G (the reductio). The parallels themselves never meet — the plate
+    # draws BG and DG as the produced lines. One scale AB = 100, origin A, y-up.
+    # Plate paths (PS, y-up): AB (675.76, 2645.35)..(2089.34, 2645.35),
+    # CD (675.76, 2150.6)..(2213.03, 2150.6), EF (1647.6, 2963.41)..(1011.48, 1903.22),
+    # BG–DG meeting (2849.14, 2433.32).
     s = Sketch()
     s.put("A", 0.0, 0.0)
     s.level("B", "A", 100.0)
-    s.put("C", 0.0, -34.65)
-    s.level("D", "C", 108.26)
-    s.put("E", 67.03, 20.66)
-    s.put("F", 24.03, -51.01)
-    s.put("G", 152.42, -14.92)
-    # English plate: E on AB, F on CD, clear of the transversal.
+    s.put("C", 0.0, -35.0)
+    s.level("D", "C", 108.75)
+    e_tip = (68.75, 22.5)
+    f_tip = (23.75, -52.5)
+    s.put("Etip", *e_tip)
+    s.put("Ftip", *f_tip)
+    s.meet("E", "A", "B", "Etip", "Ftip")
+    s.meet("F", "C", "D", "Etip", "Ftip")
+    s.put("G", 153.75, -15.0)
+    # E and F glyphs stay on the parallels, clear of the transversal.
     s.letters(A=90.0, B=90.0, C=-90.0, D=-90.0, E=90.0, F=-90.0, G=28.0)
     f = Fig(
         "book1_prop27",
-        "I.27 — Fitzpatrick Greek plate (Elements p. 30): AB ∥ CD, transversal EF,\n"
-        "produced in the direction of B and D to meet at G. A, B `level`; C, D\n"
-        "`level`. On the English plate E sits on AB (same height as A, B) and F\n"
-        "on CD (same height as C, D), in the open stretch clear of the transversal.\n"
-        "One scale AB = 100. Plate: CD/AB = 1.083. Letter x from the PDF word\n"
-        "boxes: E is 0.531 of AB from A, F is 0.320 of CD from C.",
+        "I.27 — Fitzpatrick plate (Elements p. 30): AB ∥ CD, transversal EF,\n"
+        "then AB and CD bent at B and D to meet at G. A, B `level`; C, D `level`.\n"
+        "E and F are the crossings of the transversal with AB and CD. The parallels\n"
+        "themselves do not meet — the plate draws BG and DG, and nothing else.\n"
+        "∠EFG is the wedge at F between the transversal and CD produced (FD–DG).\n"
+        "On the English plate the E glyph sits on AB and the F glyph on CD, in\n"
+        "the open stretch clear of the transversal.\n"
+        "One scale AB = 100. Plate: CD/AB = 1.0875.",
         sketch=s,
     )
     f.put("A", *s.at("A"))
     f.level("B", "A", s.at("B")[0])
     f.put("C", *s.at("C"))
     f.level("D", "C", s.at("D")[0])
-    f.put("E", *s.at("E"))
-    f.put("F", *s.at("F"))
+    f.pin("Etip", *e_tip)
+    f.pin("Ftip", *f_tip)
+    f.pin("E", *s.at("E"))
+    f.pin("F", *s.at("F"))
     f.put("G", *s.at("G"))
-    f.chain("A", "B", "G")
-    f.chain("C", "D", "G")
-    f.join("E", "F")
-    # English plate (PDF p. 30): E shares AB's height, F shares CD's. Both sit
-    # in the open stretch of the parallel, clear of the transversal, and the
-    # glyph points back at the line. x from the page word boxes.
+    f.chain("A", "E", "B", "G")
+    f.chain("C", "F", "D", "G")
+    f.chain("Etip", "E", "F", "Ftip")
     ax, ay = s.at("A")
     bx, _by = s.at("B")
     cx, cy = s.at("C")
