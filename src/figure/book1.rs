@@ -580,16 +580,19 @@ pub fn book1_prop27() -> Diagram {
 
 /// I.28 — Fitzpatrick plate (Elements p. 31): AB ∥ CD, transversal EF
 /// cutting AB at G and CD at H. A, G, B and C, H, D `level`; A plumb with C,
-/// B plumb with D. One scale CD = 100. Plate: GH/CD = 0.530. E sits just under
-/// the free tip, right of the stroke. G is a little above-right of the crossing.
+/// B plumb with D. One scale CD = 100. Plate (300 dpi, thin stroke only):
+/// AB = CD, AC/CD = 0.382, EF/CD = 1.007, GH/CD = 0.447, EF slope 1.636.
+/// E is an outline capital just right of the free tip, a little below it
+/// (ink tip → glyph ≈ −4°). A letter on the stroke heading (about −59°) is
+/// cut by the line. G is a little above-right of the crossing.
 pub fn book1_prop28() -> Diagram {
     let mut d = Diagram::new();
     d.put("C", V2::new(0.0, 0.0), Place::Deg(151.1));
-    d.plumb("A", "C", 45.2, Place::Deg(151.0));
+    d.plumb("A", "C", 38.16, Place::Deg(151.0));
     d.level("B", "A", 100.0, Place::Deg(29.1));
     d.plumb("D", "B", 0.0, Place::Deg(27.9));
-    d.put("E", V2::new(19.21, 61.62), Place::Deg(-55.0));
-    d.put("F", V2::new(71.19, -23.44), Place::Deg(55.0));
+    d.put("E", V2::new(18.883, 62.150), Place::Deg(-4.0));
+    d.put("F", V2::new(71.410, -23.790), Place::Deg(55.0));
     d.meet("G", "A", "B", "E", "F", Place::Deg(62.0));
     d.meet("H", "C", "D", "E", "F", Place::Deg(50.3));
     d.chain(&["A", "G", "B"]);

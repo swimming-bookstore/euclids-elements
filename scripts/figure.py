@@ -1654,29 +1654,32 @@ def book1_prop27() -> Fig:
 def book1_prop28() -> Fig:
     # Fitzpatrick printed p. 31 (PDF p. 31). AB ∥ CD. Transversal EF cuts AB
     # at G and CD at H. A, G, B `level`; C, H, D `level`; A, C `plumb`;
-    # B, D `plumb`. One scale CD = 100. Plate strokes (300 dpi, letters
-    # blanked): AB/CD = 1, AC/CD = 0.452, EF slope 1.636. Free tips of EF are
-    # measured with letters left in (blanking swallows the E tip).
+    # B, D `plumb`. One scale CD = 100. Plate (300 dpi, thin stroke only —
+    # glyph ink is not a tip): AB = CD = 180.48 pt, AC = 68.88 pt,
+    # EF from (380.40, 355.20) to (475.20, 509.76), slope 1.636,
+    # crossings x = 406.86 and 448.96. C at x = 346.32.
     s = Sketch()
     s.put("C", 0.0, 0.0)
-    s.plumb("A", "C", 45.20)
+    s.plumb("A", "C", 38.16)
     s.level("B", "A", 100.0)
     s.plumb("D", "B", 0.0)
-    # E, F free tips of the transversal, letters left in (300 dpi). The tip is
-    # the stroke end, not the nearest ink to the glyph — that lands inside E.
-    s.put("E", 19.21, 61.62)
-    s.put("F", 71.19, -23.44)
+    s.put("E", 18.883, 62.150)
+    s.put("F", 71.410, -23.790)
     s.meet("G", "A", "B", "E", "F")
     s.meet("H", "C", "D", "E", "F")
-    # E just under the tip (right of the stroke). G a little above-right, not
-    # straight above the crossing. F beside the lower tip, not under it.
-    s.letters(A=151.0, B=29.1, C=151.1, D=27.9, E=-55.0, F=55.0, G=62.0, H=50.3)
+    # E is an outline capital. The stroke leaves the tip at about −59°, so a
+    # letter on that heading is cut by the line. On the plate the capital sits
+    # just right of the free tip, a little below it (ink tip → glyph ≈ −4°).
+    # Same radius as every other letter.
+    s.letters(A=151.0, B=29.1, C=151.1, D=27.9, E=-4.0, F=55.0, G=62.0, H=50.3)
     f = Fig(
         "book1_prop28",
         "I.28 — Fitzpatrick plate (Elements p. 31): AB ∥ CD, transversal EF\n"
         "cutting AB at G and CD at H. A, G, B and C, H, D `level`; A plumb with C,\n"
-        "B plumb with D. One scale CD = 100. Plate: GH/CD = 0.530. E sits just under\n"
-        "the free tip, right of the stroke. G is a little above-right of the crossing.",
+        "B plumb with D. One scale CD = 100. Plate: AC/CD = 0.382, EF/CD = 1.007,\n"
+        "GH/CD = 0.447. E is an outline capital just right of the free tip, a little\n"
+        "below it (tip→glyph ≈ −4°). A letter on the stroke heading (about −59°) is\n"
+        "cut by the line. G is a little above-right of the crossing.",
         sketch=s,
     )
     f.put("C", *s.at("C"))
