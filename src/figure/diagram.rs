@@ -1995,8 +1995,20 @@ mod tests {
         let (gdx, gdy) = letter_offset(&html, "G");
         let (edx, edy) = letter_offset(&html, "E");
         assert!(gdx > 0.15 && gdy < -0.45, "G above-right of the crossing, --dx={gdx} --dy={gdy}");
-        assert!(edx > 0.2 && edy > 0.2, "E below-right of the tip, --dx={edx} --dy={edy}");
+        // The stroke leaves E at about −59°. A letter on that heading is cut by
+        // the line. The plate capital sits just right of the tip, a little below
+        // it (CSS y down, so a small positive dy).
+        assert!(
+            edx > 0.4 && edy > 0.0 && edy < 0.5,
+            "E just right of the tip, a little below, --dx={edx} --dy={edy}"
+        );
         assert!((d.at("A").dist(d.at("B")) / cd_len - 1.0).abs() < 0.01, "AB/CD");
+        let ef_len = d.at("E").dist(d.at("F")) / cd_len;
+        assert!((ef_len - 1.005).abs() < 0.02, "EF/CD = {ef_len}");
+        let ac = (d.at("A").y - d.at("C").y).abs() / cd_len;
+        assert!((ac - 0.382).abs() < 0.01, "AC/CD = {ac}");
+        let gh = d.at("G").dist(d.at("H")) / cd_len;
+        assert!((gh - 0.447).abs() < 0.02, "GH/CD = {gh}");
     }
 
     #[test]
