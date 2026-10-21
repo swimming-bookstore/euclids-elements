@@ -623,25 +623,30 @@ pub fn book1_prop29() -> Diagram {
     d
 }
 
-/// I.30 — Fitzpatrick plate (Elements p. 33): AB ∥ EF ∥ CD, transversal GK
-/// cutting AB at G, EF at H, and CD at K. A, G, B and E, H, F and C, K, D
-/// `level`; A plumb with E and C, B plumb with F and D. One scale AB = 100.
-/// Plate: AE/AB = 0.236. G, H, K sit above-left of their crossings.
+/// I.30 — Fitzpatrick English plate (Elements PDF p. 33): AB ∥ EF ∥ CD,
+/// transversal GK falling down-left across them, cutting AB at G, EF at H,
+/// and CD at K. A, G, B and E, H, F and C, K, D `level`; A plumb with E and
+/// C, B plumb with F and D. One scale AB = 100. Plate path: AE/AB = 40/170,
+/// AC/AB = 80/170, G is 4/7 of AB from A, GK overshoots each outer parallel
+/// by 30/170. Letters sit above the strokes. G, H, K sit above-left of the
+/// crossings.
 pub fn book1_prop30() -> Diagram {
     let mut d = Diagram::new();
-    d.put("A", V2::new(0.0, 0.0), Place::Deg(160.0));
-    d.level("B", "A", 100.0, Place::Deg(15.0));
-    d.plumb("E", "A", -23.56, Place::Deg(160.0));
-    d.level("F", "E", 100.0, Place::Deg(15.0));
-    d.plumb("C", "E", -47.12, Place::Deg(160.0));
-    d.level("D", "C", 100.0, Place::Deg(15.0));
-    d.put("G", V2::new(64.89, 17.84), Place::Deg(125.0));
-    d.put("K", V2::new(29.13, -65.5), Place::Deg(125.0));
-    d.meet("H", "E", "F", "G", "K", Place::Deg(125.0));
+    d.put("A", V2::new(0.0, 0.0), Place::Deg(165.3));
+    d.level("B", "A", 100.0, Place::Deg(12.9));
+    d.plumb("E", "A", -23.5294118, Place::Deg(166.0));
+    d.level("F", "E", 100.0, Place::Deg(13.6));
+    d.plumb("C", "E", -47.0588235, Place::Deg(165.4));
+    d.level("D", "C", 100.0, Place::Deg(12.2));
+    d.pin("G0", V2::new(64.7058824, 17.6470588));
+    d.pin("K0", V2::new(29.4117647, -64.7058824));
+    d.meet("G", "A", "B", "G0", "K0", Place::Deg(122.4));
+    d.meet("H", "E", "F", "G0", "K0", Place::Deg(122.4));
+    d.meet("K", "C", "D", "G0", "K0", Place::Deg(124.5));
     d.chain(&["A", "G", "B"]);
     d.chain(&["E", "H", "F"]);
     d.chain(&["C", "K", "D"]);
-    d.chain(&["G", "H", "K"]);
+    d.chain(&["G0", "G", "H", "K", "K0"]);
     d.dots(&["A", "B", "C", "D", "E", "F", "G", "H", "K"]);
     d
 }

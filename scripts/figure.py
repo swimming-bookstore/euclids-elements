@@ -1741,33 +1741,43 @@ def book1_prop29() -> Fig:
 
 
 def book1_prop30() -> Fig:
-    # Fitzpatrick printed p. 33 (PDF p. 33). Three parallels AB, EF, CD.
-    # Transversal GK falls across them, cutting AB at G, EF at H, CD at K.
-    # A, G, B `level`; E, H, F `level`; C, K, D `level`; A plumb with E and C,
-    # B plumb with F and D. One scale AB = 100. Strokes (300 dpi, glyph boxes
-    # blanked): AB y=292.32, EF y=332.64, CD y=372.96, each x 350.16..521.28.
-    # GK fit y = −2.33067x + 1336.710 (PDF y down), free tips (400.0, 404.4)
-    # and (461.2, 261.8). Crossings G x=448.11, H x=430.81, K x=413.51.
+    # Fitzpatrick English plate, PDF p. 33 (printed p. 33). Path endpoints in
+    # the page stream, one scale AB = 100. Three equal parallels AB, EF, CD.
+    # Transversal GK falls down-left, cutting AB at G, EF at H, CD at K —
+    # not down-right. A, G, B `level`; E, H, F `level`; C, K, D `level`;
+    # A plumb with E and C, B plumb with F and D. AE/AB = AC/2 = 40/170.
+    # GK overshoots AB and CD by the same 30/170. G is 4/7 of AB from A.
+    # Letters sit above the strokes: ends just outside the tips, G/H/K
+    # above-left of the crossings (tip→glyph headings from the plate).
     s = Sketch()
     s.put("A", 0.0, 0.0)
     s.level("B", "A", 100.0)
-    s.plumb("E", "A", -23.56)
+    s.plumb("E", "A", -40.0 * 100.0 / 170.0)
     s.level("F", "E", 100.0)
-    s.plumb("C", "E", -47.12)
+    s.plumb("C", "E", -80.0 * 100.0 / 170.0)
     s.level("D", "C", 100.0)
-    s.put("G", 64.89, 17.84)
-    s.put("K", 29.13, -65.50)
-    s.meet("H", "E", "F", "G", "K")
-    # Left-end letters sit outside, above-left; right-end letters outside,
-    # above-right. G, H, K sit above-left of their crossings, clear of the
-    # transversal (plate glyph centers, ~124°).
-    s.letters(A=160.0, B=15.0, C=160.0, D=15.0, E=160.0, F=15.0, G=125.0, H=125.0, K=125.0)
+    # Free tips of GK, then the crossings as meets — G and K lie on the
+    # parallels, not above and below them.
+    s.put("G0", 110.0 * 100.0 / 170.0, 30.0 * 100.0 / 170.0)
+    s.put("K0", 50.0 * 100.0 / 170.0, -110.0 * 100.0 / 170.0)
+    s.meet("G", "A", "B", "G0", "K0")
+    s.meet("H", "E", "F", "G0", "K0")
+    s.meet("K", "C", "D", "G0", "K0")
+    s.require_ratio("A", "E", "A", "B", 40.0 / 170.0, eps=0.001)
+    s.require_ratio("A", "C", "A", "B", 80.0 / 170.0, eps=0.001)
+    s.require_ratio("G", "H", "H", "K", 1.0, eps=0.001)
+    s.letters(
+        A=165.3, B=12.9, C=165.4, D=12.2, E=166.0, F=13.6, G=122.4, H=122.4, K=124.5
+    )
     f = Fig(
         "book1_prop30",
-        "I.30 — Fitzpatrick plate (Elements p. 33): AB ∥ EF ∥ CD, transversal GK\n"
-        "cutting AB at G, EF at H, and CD at K. A, G, B and E, H, F and C, K, D\n"
-        "`level`; A plumb with E and C, B plumb with F and D. One scale AB = 100.\n"
-        "Plate: AE/AB = 0.236. G, H, K sit above-left of their crossings.",
+        "I.30 — Fitzpatrick English plate (Elements PDF p. 33): AB ∥ EF ∥ CD,\n"
+        "transversal GK falling down-left across them, cutting AB at G, EF at H,\n"
+        "and CD at K. A, G, B and E, H, F and C, K, D `level`; A plumb with E and\n"
+        "C, B plumb with F and D. One scale AB = 100. Plate path: AE/AB = 40/170,\n"
+        "AC/AB = 80/170, G is 4/7 of AB from A, GK overshoots each outer parallel\n"
+        "by 30/170. Letters sit above the strokes. G, H, K sit above-left of the\n"
+        "crossings.",
         sketch=s,
     )
     f.put("A", *s.at("A"))
@@ -1776,13 +1786,16 @@ def book1_prop30() -> Fig:
     f.level("F", "E", s.at("F")[0])
     f.plumb("C", "E", s.at("C")[1])
     f.level("D", "C", s.at("D")[0])
-    f.put("G", *s.at("G"))
-    f.put("K", *s.at("K"))
-    f.meet("H", "E", "F", "G", "K")
+    # Unlettered tips of the transversal, then the three crossings.
+    f.pin("G0", *s.at("G0"))
+    f.pin("K0", *s.at("K0"))
+    f.meet("G", "A", "B", "G0", "K0")
+    f.meet("H", "E", "F", "G0", "K0")
+    f.meet("K", "C", "D", "G0", "K0")
     f.chain("A", "G", "B")
     f.chain("E", "H", "F")
     f.chain("C", "K", "D")
-    f.chain("G", "H", "K")
+    f.chain("G0", "G", "H", "K", "K0")
     f.dots("A", "B", "C", "D", "E", "F", "G", "H", "K")
     return f
 
