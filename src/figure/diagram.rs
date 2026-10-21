@@ -2031,10 +2031,24 @@ mod tests {
         let d = book1_prop30();
         let gk = d.highlight("GK");
         assert!(has(&gk, "gh") && has(&gk, "hk"), "GK via H: {gk:?}");
-        assert!(d.at("H").on_seg(d.at("E"), d.at("F"), 1e-3));
+        assert!(d.at("G").on_seg(d.at("A"), d.at("B"), 1e-3), "G on AB");
+        assert!(d.at("H").on_seg(d.at("E"), d.at("F"), 1e-3), "H on EF");
+        assert!(d.at("K").on_seg(d.at("C"), d.at("D"), 1e-3), "K on CD");
+        assert!(d.at("G").on_seg(d.at("G0"), d.at("K0"), 1e-3), "G on GK");
+        assert!(d.at("K").on_seg(d.at("G0"), d.at("K0"), 1e-3), "K on GK");
         assert!((d.at("A").y - d.at("B").y).abs() < 1e-9);
         assert!((d.at("E").y - d.at("F").y).abs() < 1e-9);
         assert!((d.at("C").y - d.at("D").y).abs() < 1e-9);
+        assert!((d.at("A").x - d.at("E").x).abs() < 1e-9, "A plumb with E");
+        assert!((d.at("E").x - d.at("C").x).abs() < 1e-9, "E plumb with C");
+        let ab = d.at("A").dist(d.at("B"));
+        assert!((d.at("A").dist(d.at("E")) / ab - 40.0 / 170.0).abs() < 0.001, "AE/AB");
+        assert!((d.at("A").dist(d.at("C")) / ab - 80.0 / 170.0).abs() < 0.001, "AC/AB");
+        // Plate transversal falls down-left: G is right of K.
+        assert!(d.at("G").x > d.at("K").x, "GK leans down-left, as on the plate");
+        let gh = d.at("G").dist(d.at("H"));
+        let hk = d.at("H").dist(d.at("K"));
+        assert!((gh - hk).abs() < 1e-6, "equal gaps GH and HK");
     }
 
     #[test]

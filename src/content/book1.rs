@@ -745,7 +745,7 @@ pub const PROP_30: Proposition = Proposition {
         s(3, "Thus, *AGK* is also equal to *GKD*."),
         s(3, "And they are alternate (angles)."),
         s(3, "Thus, *AB* is parallel to *CD*.{[Prop. 1.27]}"),
-        s(4, "Thus, (straight-lines) parallel to the same straight-line are also parallel to one another."),
+        s(4, "[Thus, (straight-lines) parallel to the same straight-line are also parallel to one another.]"),
         s(4, "(Which is) the very thing it was required to show."),
     ],
 };
