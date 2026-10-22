@@ -315,6 +315,9 @@ class Fig:
         return rust_place(place)
 
     def put(self, name: str, x: float, y: float, place=None, r: float | None = None) -> None:
+        if place == "none":
+            self.pin(name, x, y)
+            return
         if r is None:
             self._add(
                 f'    d.put("{name}", V2::new({f64(x)}, {f64(y)}), {self._place(name, place)});'
@@ -332,6 +335,10 @@ class Fig:
         )
 
     def level(self, name: str, of: str, x: float, place=None, r: float | None = None) -> None:
+        if place == "none":
+            y = self.sketch.at(of)[1]
+            self.pin(name, x, y)
+            return
         if r is None:
             self._add(
                 f'    d.level("{name}", "{of}", {f64(x)}, {self._place(name, place)});'
@@ -342,6 +349,10 @@ class Fig:
             )
 
     def plumb(self, name: str, of: str, y: float, place=None, r: float | None = None) -> None:
+        if place == "none":
+            x = self.sketch.at(of)[0]
+            self.pin(name, x, y)
+            return
         if r is None:
             self._add(
                 f'    d.plumb("{name}", "{of}", {f64(y)}, {self._place(name, place)});'
@@ -1801,36 +1812,47 @@ def book1_prop30() -> Fig:
 
 
 def book1_prop31() -> Fig:
-    # Fitzpatrick English plate, printed p. 34. EAF ∥ BC, AD falling left
-    # onto BC. Ink tips at 160 dpi, glyph boxes left in (they are not the
-    # stroke). One scale EF = 100. Plate: BC/EF = 1, gap/EF = 0.332.
-    # A is 0.558 of EF from E. D is left of A.
+    # Fitzpatrick English plate, PDF p. 34 (printed p. 34). Path endpoints in
+    # the page stream (matrix 0.1, 0, 0, −0.1, 0, 792), one scale EF = 100.
+    # EAF is the upper parallel, BC the lower. AD falls down-left onto BC.
+    # E plumb with B, F plumb with C. A is 4/7 of EF from E. D is 1/3 of BC
+    # from B, so D is left of A. Plate: BC/EF = 1, gap/EF = 1/3, AD/EF = 0.410.
+    # Letters are the measured tip→glyph headings: E and B just outside the
+    # left tips, a hair above the stroke; F and C just outside the right tips,
+    # the same way. A sits above the stroke; D hangs under the foot.
     s = Sketch()
     s.put("E", 0.0, 0.0)
     s.level("F", "E", 100.0)
-    s.plumb("B", "E", -33.24)
+    s.plumb("B", "E", -100.0 / 3.0)
     s.level("C", "B", 100.0)
-    s.put("A", 55.76, 0.0)
-    s.put("D", 35.02, -33.24)
-    # E, B just outside the left tips, a hair above the stroke. F, C just
-    # outside the right tips. Not above the line.
-    s.letters(A=90.0, B=171.0, C=16.0, D=-75.0, E=168.0, F=21.0)
+    s.level("A", "E", 400.0 / 7.0)
+    s.level("D", "B", 100.0 / 3.0)
+    s.require_ratio("B", "C", "E", "F", 1.0)
+    s.require_ratio("E", "B", "E", "F", 1.0 / 3.0, eps=0.001)
+    s.require_ratio("E", "A", "E", "F", 4.0 / 7.0, eps=0.001)
+    s.require_ratio("B", "D", "B", "C", 1.0 / 3.0, eps=0.001)
+    s.require_ratio("A", "D", "E", "F", 0.410, eps=0.002)
+    # Tip→glyph headings from the page-34 path ends and letter boxes.
+    # Distance is the shared default (LETTER_R), point to letter center.
+    s.letters(A=78.8, B=165.5, C=12.9, D=-91.3, E=165.8, F=13.8)
     f = Fig(
         "book1_prop31",
-        "I.31 — Fitzpatrick English plate (Elements p. 34): EAF ∥ BC, AD falling\n"
-        "on BC at D. Ink tips, one scale EF = 100. Plate: BC/EF = 1, gap/EF = 0.332.\n"
-        "A is 0.558 of EF from E. AD leans left (D is left of A).\n"
-        "E and B sit just outside the left tips, a hair above the stroke — not\n"
-        "above the line. F and C sit just outside the right tips, the same way.\n"
-        "A sits just above the stroke; D below it, right of the foot.",
+        "I.31 — Fitzpatrick English plate (Elements PDF p. 34): EAF ∥ BC, AD\n"
+        "falling down-left onto BC at D. Path endpoints, one scale EF = 100.\n"
+        "E plumb with B, F plumb with C. Plate: BC/EF = 1, gap/EF = 1/3,\n"
+        "A is 4/7 of EF from E, D is 1/3 of BC from B, AD/EF = 0.410.\n"
+        "E and B sit outside the left tips, a hair above the stroke — not\n"
+        "above the line. F and C sit outside the right tips, the same way.\n"
+        "A sits above the stroke; D hangs under the foot. Letter centers are\n"
+        "the shared default radius from the point, not a plate-specific gap.",
         sketch=s,
     )
     f.put("E", *s.at("E"))
     f.level("F", "E", s.at("F")[0])
     f.plumb("B", "E", s.at("B")[1])
     f.level("C", "B", s.at("C")[0])
-    f.put("A", *s.at("A"))
-    f.put("D", *s.at("D"))
+    f.level("A", "E", s.at("A")[0])
+    f.level("D", "B", s.at("D")[0])
     f.chain("E", "A", "F")
     f.chain("B", "D", "C")
     f.join("A", "D")
