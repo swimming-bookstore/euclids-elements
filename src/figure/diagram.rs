@@ -2067,6 +2067,10 @@ mod tests {
         assert!((d.at("E").y - d.at("F").y).abs() < 1e-9, "EF level");
         assert!((d.at("B").y - d.at("C").y).abs() < 1e-9, "BC level");
         assert!((d.at("B").dist(d.at("C")) / d.at("E").dist(d.at("F")) - 1.0).abs() < 0.01);
+        assert!((d.at("E").dist(d.at("B")) / d.at("E").dist(d.at("F")) - 1.0 / 3.0).abs() < 0.01);
+        assert!((d.at("E").dist(d.at("A")) / d.at("E").dist(d.at("F")) - 4.0 / 7.0).abs() < 0.01);
+        assert!((d.at("B").dist(d.at("D")) / d.at("B").dist(d.at("C")) - 1.0 / 3.0).abs() < 0.01);
+        assert!((d.at("A").dist(d.at("D")) / d.at("E").dist(d.at("F")) - 0.410).abs() < 0.002);
         assert!(d.at("A").on_seg(d.at("E"), d.at("F"), 1e-6), "A on EF");
         assert!(d.at("D").on_seg(d.at("B"), d.at("C"), 1e-6), "D on BC");
         assert!(d.at("D").x < d.at("A").x, "AD leans left, as on the plate");

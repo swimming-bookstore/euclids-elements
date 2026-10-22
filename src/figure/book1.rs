@@ -651,20 +651,22 @@ pub fn book1_prop30() -> Diagram {
     d
 }
 
-/// I.31 — Fitzpatrick English plate (Elements p. 34): EAF ∥ BC, AD falling
-/// on BC at D. Ink tips, one scale EF = 100. Plate: BC/EF = 1, gap/EF = 0.332.
-/// A is 0.558 of EF from E. AD leans left (D is left of A).
-/// E and B sit just outside the left tips, a hair above the stroke — not
-/// above the line. F and C sit just outside the right tips, the same way.
-/// A sits just above the stroke; D below it, right of the foot.
+/// I.31 — Fitzpatrick English plate (Elements PDF p. 34): EAF ∥ BC, AD
+/// falling down-left onto BC at D. Path endpoints, one scale EF = 100.
+/// E plumb with B, F plumb with C. Plate: BC/EF = 1, gap/EF = 1/3,
+/// A is 4/7 of EF from E, D is 1/3 of BC from B, AD/EF = 0.410.
+/// E and B sit outside the left tips, a hair above the stroke — not
+/// above the line. F and C sit outside the right tips, the same way.
+/// A sits above the stroke; D hangs under the foot. Letter centers are
+/// the shared default radius from the point.
 pub fn book1_prop31() -> Diagram {
     let mut d = Diagram::new();
-    d.put("E", V2::new(0.0, 0.0), Place::Deg(168.0));
-    d.level("F", "E", 100.0, Place::Deg(21.0));
-    d.plumb("B", "E", -33.24, Place::Deg(171.0));
-    d.level("C", "B", 100.0, Place::Deg(16.0));
-    d.put("A", V2::new(55.76, 0.0), Place::Deg(90.0));
-    d.put("D", V2::new(35.02, -33.24), Place::Deg(-75.0));
+    d.put("E", V2::new(0.0, 0.0), Place::Deg(165.8));
+    d.level("F", "E", 100.0, Place::Deg(13.8));
+    d.plumb("B", "E", -33.3333333, Place::Deg(165.5));
+    d.level("C", "B", 100.0, Place::Deg(12.9));
+    d.level("A", "E", 57.1428571, Place::Deg(78.8));
+    d.level("D", "B", 33.3333333, Place::Deg(-91.3));
     d.chain(&["E", "A", "F"]);
     d.chain(&["B", "D", "C"]);
     d.join("A", "D");
