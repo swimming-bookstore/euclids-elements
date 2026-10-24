@@ -678,22 +678,26 @@ pub fn book1_prop31() -> Diagram {
 /// produced to D, CE through C parallel to AB. Ink tips, one scale BC = 100.
 /// Plate: AB/BC = 1.394, AC/BC = 1.333, CD/BC = 1.145. ∠ABC = 65.2°,
 /// ∠ACB = 71.8°. B, C sit just under the base. A sits just above the apex,
-/// a hair left. E sits just above the free tip, a hair right. D is not at the
-/// tip: its letter hangs under the stroke, just left of the end, on the same
-/// baseline as B and C.
+/// a hair left. E sits just above the free tip, a hair right. The D letter
+/// hangs under the stroke, just left of the end, on the same baseline as B
+/// and C. Its dot is not the ink tip: it sits on the stroke, above that letter.
 pub fn book1_prop32() -> Diagram {
     let mut d = Diagram::new();
     d.put("B", V2::new(0.0, 0.0), Place::Deg(-98.1));
     d.level("C", "B", 100.0, Place::Deg(-78.6));
-    d.level("D", "B", 214.46, Place::Deg(-90.0));
+    d.pin("D", V2::new(214.46, 0.0));
     d.put("A", V2::new(58.43, 126.6), Place::Deg(94.4));
     d.put("E", V2::new(155.98, 126.54), Place::Deg(81.2));
     d.chain(&["A", "B"]);
     d.chain(&["B", "C", "D"]);
     d.join("A", "C");
     d.chain(&["E", "C"]);
-    d.label_at("D", V2::new(199.54, 0.0), Place::Deg(-90.0));
-    d.dots(&["A", "B", "C", "D", "E"]);
+    // Letter under the stroke, just left of the tip. The mark is on the
+    // stroke, directly above that letter — not at the end of CD.
+    let d_letter = V2::new(199.54, 0.0);
+    d.label_at("D", d_letter, Place::Deg(-90.0));
+    d.dots(&["A", "B", "C", "E"]);
+    d.dot_at("D", d_letter);
     d
 }
 

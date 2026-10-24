@@ -575,7 +575,7 @@ fn push_one(
     timing: &Timing,
     angle: bool,
 ) {
-    let bare: String = word.chars().filter(|c| !opens_word(*c)).collect();
+    let bare: String = word.chars().filter(|c| c.is_ascii_alphabetic()).collect();
     let parts = if italic {
         if angle {
             map.angle_parts(&bare)
@@ -604,7 +604,7 @@ fn push_one(
 mod tests {
     use super::*;
     use crate::content::Phrase;
-    use crate::figure::{book1_prop4, book1_prop21, book1_prop23, book1_prop27};
+    use crate::figure::{book1_prop4, book1_prop21, book1_prop23, book1_prop27, book1_prop32};
 
     fn parts_of(text: &'static str, word: &str) -> Vec<String> {
         let phrases = [Phrase { para: 1, text }];
@@ -873,6 +873,84 @@ mod tests {
                 && !first.iter().any(|s| s == "de" || s == "ed"),
             "first spoken DCE is an angle: {first:?}"
         );
+    }
+
+    #[test]
+    fn prop32_added_acb_is_an_angle() {
+        let phrases = crate::content::get(1, 32).unwrap().phrases;
+        let say = phrases.iter().find(|p| p.text.contains("added to both")).unwrap().text;
+        assert!(say.contains("*angle(ACB)*"), "added ACB is an angle: {say}");
+        let script = compile(phrases, &book1_prop32(), Timing::default());
+        let parts = first_parts(&script, "ACB");
+        assert!(
+            parts.iter().any(|s| s == "ac" || s == "ca")
+                && parts.iter().any(|s| s == "bc" || s == "cb")
+                && !parts.iter().any(|s| s == "ab" || s == "ba"),
+            "added ACB is the angle, not triangle ABC: {parts:?}"
+        );
+    }
+
+    #[test]
+    fn prop32_final_sum_names_angles() {
+        let phrases = crate::content::get(1, 32).unwrap().phrases;
+        let say = phrases
+            .iter()
+            .find(|p| p.text.contains("is also equal to two right-angles"))
+            .unwrap()
+            .text;
+        assert!(
+            say.contains("*angle(ACB)*")
+                && say.contains("*angle(CBA)*")
+                && say.contains("*angle(CAB)*"),
+            "the final sum names angles: {say}"
+        );
+        let script = compile(phrases, &book1_prop32(), Timing::default());
+        for (word, closed) in [("ACB", ["ab", "ba"]), ("CBA", ["ac", "ca"]), ("CAB", ["bc", "cb"])] {
+            let parts = script
+                .lines
+                .iter()
+                .flat_map(|l| &l.tokens)
+                .filter(|t| {
+                    t.text
+                        .chars()
+                        .filter(|c| c.is_ascii_alphabetic())
+                        .collect::<String>()
+                        == word
+                })
+                .last()
+                .map(|t| t.parts.clone())
+                .unwrap_or_default();
+            assert!(
+                closed.iter().all(|s| !parts.iter().any(|p| p == s)),
+                "{word} in the final sum is an angle, not the triangle: {parts:?}"
+            );
+            assert!(parts.len() >= 2, "{word} lights both rays: {parts:?}");
+        }
+    }
+
+    #[test]
+    fn prop32_three_internal_angles_are_angles() {
+        let phrases = crate::content::get(1, 32).unwrap().phrases;
+        let script = compile(phrases, &book1_prop32(), Timing::default());
+        let say = phrases[1].text;
+        assert!(
+            say.contains("*angle(ABC)*")
+                && say.contains("*angle(BCA)*")
+                && say.contains("*angle(CAB)*"),
+            "the three internal angles are marked: {say}"
+        );
+        for (word, rays, closed) in [
+            ("ABC", ["ab", "ba", "bc", "cb"], ["ac", "ca"]),
+            ("BCA", ["bc", "cb", "ac", "ca"], ["ab", "ba"]),
+            ("CAB", ["ac", "ca", "ab", "ba"], ["bc", "cb"]),
+        ] {
+            let parts = first_parts(&script, word);
+            let rays_hit = rays.iter().filter(|s| parts.iter().any(|p| p == *s)).count();
+            assert!(
+                rays_hit >= 2 && closed.iter().all(|s| !parts.iter().any(|p| p == s)),
+                "{word} is an angle, not the triangle: {parts:?}"
+            );
+        }
     }
 
     #[test]
