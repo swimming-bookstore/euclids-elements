@@ -348,6 +348,13 @@ impl Diagram {
         self
     }
 
+    /// A plate mark that is not the named point (I.32 D sits on the stroke
+    /// above its letter, not at the end of the produced side).
+    pub fn dot_at(&mut self, name: &'static str, p: V2) -> &mut Self {
+        self.fig.dot(name, p);
+        self
+    }
+
     pub fn join(&mut self, a: &'static str, b: &'static str) -> &mut Self {
         let id = format!("{}{}", a.to_ascii_lowercase(), b.to_ascii_lowercase());
         self.stroke(a, b, id)
