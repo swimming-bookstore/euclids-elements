@@ -821,7 +821,7 @@ pub const PROP_34: Proposition = Proposition {
         s(1, "I say that for parallelogram *ACDB*, the opposite sides and angles are equal to one another, and the diagonal *BC* cuts it in half."),
         s(2, "For since *AB* is parallel to *CD*, and the straight-line *BC* has fallen across them, the alternate angles *angle(ABC)* and *angle(BCD)* are equal to one another.{[Prop. 1.29]}"),
         s(2, "Again, since *AC* is parallel to *BD*, and *BC* has fallen across them, the alternate angles *angle(ACB)* and *angle(CBD)* are equal to one another.{[Prop. 1.29]}"),
-        s(2, "So *ABC* and *angle(BCD)* are two triangles having the two angles *angle(ABC)* and *angle(BCA)* equal to the two (angles) *angle(BCD)* and *angle(CBD)*, respectively, and one side equal to one side—the (one) by the equal angles and common to them, (namely) *BC*."),
+        s(2, "So *ABC* and *BCD* are two triangles having the two angles *angle(ABC)* and *angle(BCA)* equal to the two (angles) *angle(BCD)* and *angle(CBD)*, respectively, and one side equal to one side—the (one) by the equal angles and common to them, (namely) *BC*."),
         s(2, "Thus, they will also have the remaining sides equal to the corresponding remaining (sides), and the remaining angle (equal) to the remaining angle.{[Prop. 1.26]}"),
         s(2, "Thus, side *AB* is equal to *CD*, and *AC* to *BD*."),
         s(2, "Furthermore, angle *angle(BAC)* is equal to *angle(CDB)*."),

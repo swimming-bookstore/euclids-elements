@@ -197,10 +197,11 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
                     recent.clone()
                 };
                 let angle = wrapped.is_some()
-                    || ((n == 0 || carried)
-                        && letters_are_angles(if carried { &[] } else { &before }, &following)
-                        && !introduced_as_figure(&before))
-                    || carried;
+                    || (name.chars().filter(|c| c.is_ascii_alphabetic()).count() == 3
+                        && ((n == 0 || carried)
+                            && letters_are_angles(if carried { &[] } else { &before }, &following)
+                            && !introduced_as_figure(&before)
+                            || carried));
                 push_words(
                     &mut out,
                     spoken,
@@ -291,7 +292,9 @@ fn words_after(chars: &[char], mut i: usize) -> Vec<String> {
 /// was shown greater than *CEB*" has the comparison after the name — a
 /// three-letter name next to "greater than" or "equal to" is the angle, not
 /// the triangle. "In fact, *BAC* is not equal to *EDF*" is that case: the
-/// comparison follows the name, so both letter-runs are angles.
+/// comparison follows the name, so both letter-runs are angles. A longer
+/// name is a figure (*ACDB* the parallelogram, *AB* a side) even when the
+/// sentence says "equal".
 fn letters_are_angles(recent: &[String], following: &[String]) -> bool {
     let mut angle = false;
     let mut compared = false;
@@ -759,6 +762,20 @@ mod tests {
         assert!(ab.iter().any(|s| s == "ab") && !ab.iter().any(|s| s == "bc"));
         let abc = parts_of("of the triangle *ABC* greater than *AB*", "ABC");
         assert!(abc.iter().any(|s| s == "bc"), "a named triangle stays a triangle: {abc:?}");
+    }
+
+    #[test]
+    fn parallelogram_acdb_is_the_outline() {
+        let phrases = crate::content::get(1, 34).unwrap().phrases;
+        let script = compile(phrases, &crate::figure::book1_prop34(), Timing::default());
+        let acdb = first_parts(&script, "ACDB");
+        assert!(
+            acdb.iter().any(|s| s == "ab")
+                && acdb.iter().any(|s| s == "ac")
+                && acdb.iter().any(|s| s == "cd")
+                && acdb.iter().any(|s| s == "bd"),
+            "parallelogram ACDB lights its outline: {acdb:?}"
+        );
     }
 
     #[test]
