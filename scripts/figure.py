@@ -2022,8 +2022,10 @@ def book1_prop35() -> Fig:
     f.chain("A", "D", "E", "F")
     f.chain("B", "C")
     f.join("A", "B")
-    f.join("D", "C")
-    f.join("E", "B")
+    # G is the crossing, so each cut line is two strokes. Otherwise △DGE
+    # and the remaining trapezia cannot turn at G.
+    f.chain("D", "G", "C")
+    f.chain("E", "G", "B")
     f.join("F", "C")
     f.dots("A", "B", "C", "D", "E", "F", "G")
     return f
