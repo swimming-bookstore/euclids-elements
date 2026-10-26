@@ -519,6 +519,19 @@ impl Diagram {
         out
     }
 
+    /// `pair`, plus a corner that only lies on a longer stroke (G on DC).
+    /// A triangle must not take this shortcut: G on AB is not side AG when
+    /// AG is drawn separately (I.23).
+    fn pair_on(&self, a: &'static str, b: &'static str) -> Vec<String> {
+        let mut out = vec![a.to_string(), b.to_string()];
+        if let Some(id) = self.stroke_through(a, b).or_else(|| self.stroke_through(b, a)) {
+            out.push(id);
+            return out;
+        }
+        out.extend(self.path(a, b));
+        out
+    }
+
     fn triple(&self, a: &'static str, b: &'static str, c: &'static str, key: &str) -> Vec<String> {
         if let Some(circ) = self.named_circle(key) {
             return vec![
@@ -536,7 +549,10 @@ impl Diagram {
         out
     }
 
-    /// A four-letter figure name (*ACDB*) is the polygon of those vertices in order.
+    /// A four-letter figure name (*ACDB*, trapezium *ABGD*) is the polygon of
+    /// those vertices in order. A corner that only lies on a stroke (G, the
+    /// crossing EB × DC) still names that stroke, so ABGD turns at G instead
+    /// of taking the diagonal shortcut through the interior.
     fn quad(
         &self,
         a: &'static str,
@@ -544,13 +560,33 @@ impl Diagram {
         c: &'static str,
         d: &'static str,
     ) -> Vec<String> {
-        let mut out = self.pair(a, b);
-        out.extend(self.pair(b, c));
-        out.extend(self.pair(c, d));
-        out.extend(self.pair(d, a));
+        let mut out = self.side(a, b);
+        out.extend(self.side(b, c));
+        out.extend(self.side(c, d));
+        out.extend(self.side(d, a));
         out.sort();
         out.dedup();
         out
+    }
+
+    /// One side of a named polygon, from `a` to `b`.
+    ///
+    /// The spoken straight-line wins when it is drawn (AF along A–D–E–F, or
+    /// a single stroke AB). A corner that only lies on a longer stroke (G on
+    /// DC, G on EB) still names that stroke. Anything else is the graph path.
+    fn side(&self, a: &'static str, b: &'static str) -> Vec<String> {
+        if let Some(ids) = self.straight(a, b) {
+            let mut out = vec![a.to_string(), b.to_string()];
+            out.extend(ids);
+            return out;
+        }
+        if self.edge_id(a, b).is_some() {
+            return self.pair(a, b);
+        }
+        if self.stroke_through(a, b).is_some() || self.stroke_through(b, a).is_some() {
+            return self.pair_on(a, b);
+        }
+        self.pair(a, b)
     }
 
     fn angle(&self, a: &'static str, v: &'static str, c: &'static str, key: &str) -> Vec<String> {
@@ -694,7 +730,23 @@ impl Diagram {
     }
 
     fn edge_id(&self, a: &str, b: &str) -> Option<String> {
-        self.adj.get(a)?.iter().find(|e| e.to == b).map(|e| e.id.clone())
+        self.adj
+            .get(a)
+            .and_then(|es| es.iter().find(|e| e.to == b).map(|e| e.id.clone()))
+    }
+
+    /// Id of the drawn stroke that runs through `b` with `a` as an end.
+    ///
+    /// G in I.35 is the crossing EB × DC, not an end, so GB has no edge of
+    /// its own — but G lies on stroke `eb`, and that stroke is what the
+    /// trapezium lights. A merely collinear neighbour (A and L on the I.44
+    /// base, with no stroke between them) is not a hit: `b` must sit on the
+    /// segment that was actually drawn.
+    fn stroke_through(&self, a: &str, b: &str) -> Option<String> {
+        let pb = self.at(b);
+        self.adj.get(a)?.iter().find_map(|e| {
+            (e.to != b && pb.on_seg(self.at(a), self.at(e.to), 1e-3)).then(|| e.id.clone())
+        })
     }
 
     fn bfs(&self, start: &'static str, goal: &'static str) -> Vec<String> {
@@ -2173,12 +2225,20 @@ mod tests {
         let d = book1_prop35();
         let abcd = d.highlight("ABCD");
         assert!(
-            has(&abcd, "ab") && has(&abcd, "ad") && has(&abcd, "dc") && has(&abcd, "bc"),
+            has(&abcd, "ab")
+                && has(&abcd, "ad")
+                && (has(&abcd, "dg") || has(&abcd, "gd"))
+                && (has(&abcd, "gc") || has(&abcd, "cg"))
+                && has(&abcd, "bc"),
             "ABCD: {abcd:?}"
         );
         let ebcf = d.highlight("EBCF");
         assert!(
-            has(&ebcf, "eb") && has(&ebcf, "bc") && has(&ebcf, "fc") && has(&ebcf, "ef"),
+            (has(&ebcf, "ge") || has(&ebcf, "eg"))
+                && (has(&ebcf, "gb") || has(&ebcf, "bg"))
+                && has(&ebcf, "bc")
+                && has(&ebcf, "fc")
+                && has(&ebcf, "ef"),
             "EBCF: {ebcf:?}"
         );
         let af = d.highlight("AF");
@@ -2188,21 +2248,74 @@ mod tests {
         let df = d.highlight("DF");
         assert!(has(&df, "de") && has(&df, "ef"), "DF: {df:?}");
         let eb = d.highlight("EB");
-        assert!(has(&eb, "eb"), "EB: {eb:?}");
+        assert!((has(&eb, "ge") || has(&eb, "eg")) && (has(&eb, "gb") || has(&eb, "bg")), "EB: {eb:?}");
         let fc = d.highlight("FC");
         assert!(has(&fc, "fc"), "FC: {fc:?}");
         let eab = d.highlight("EAB");
-        assert!(has(&eab, "ab") && has(&eab, "eb"), "△EAB: {eab:?}");
+        assert!(
+            has(&eab, "ab")
+                && (has(&eab, "ge") || has(&eab, "eg"))
+                && (has(&eab, "gb") || has(&eab, "bg")),
+            "△EAB: {eab:?}"
+        );
         let dfc = d.highlight("DFC");
-        assert!(has(&dfc, "fc") && has(&dfc, "dc"), "△DFC: {dfc:?}");
+        assert!(
+            has(&dfc, "fc")
+                && (has(&dfc, "dg") || has(&dfc, "gd"))
+                && (has(&dfc, "gc") || has(&dfc, "cg")),
+            "△DFC: {dfc:?}"
+        );
         let gb = d.highlight("GB");
-        assert!(has(&gb, "G") && has(&gb, "B"), "GB: {gb:?}");
+        assert!(has(&gb, "gb") || has(&gb, "bg"), "GB: {gb:?}");
         let gc = d.highlight("GC");
-        assert!(has(&gc, "G") && has(&gc, "C"), "GC: {gc:?}");
+        assert!(has(&gc, "gc") || has(&gc, "cg"), "GC: {gc:?}");
         let gbc = d.highlight("GBC");
-        assert!(has(&gbc, "G") && has(&gbc, "B") && has(&gbc, "C"), "△GBC: {gbc:?}");
+        assert!(
+            (has(&gbc, "gb") || has(&gbc, "bg"))
+                && (has(&gbc, "gc") || has(&gbc, "cg"))
+                && has(&gbc, "bc"),
+            "△GBC: {gbc:?}"
+        );
+        // △DGE is taken away from both. It is the two cut pieces meeting at G,
+        // not the whole of EB and DC, and not the trapezium underneath.
+        let dge = d.highlight("DGE");
+        assert!(
+            (has(&dge, "dg") || has(&dge, "gd"))
+                && (has(&dge, "ge") || has(&dge, "eg"))
+                && has(&dge, "de"),
+            "△DGE: {dge:?}"
+        );
+        assert!(
+            !has(&dge, "gc") && !has(&dge, "cg") && !has(&dge, "gb") && !has(&dge, "bg"),
+            "DGE stops at G: {dge:?}"
+        );
+        // What remains turns at G: AB–BG–GD–DA, and EG–GC–CF–FE.
+        let abgd = d.highlight("ABGD");
+        assert!(
+            has(&abgd, "ab")
+                && (has(&abgd, "gb") || has(&abgd, "bg"))
+                && (has(&abgd, "dg") || has(&abgd, "gd"))
+                && has(&abgd, "ad"),
+            "trapezium ABGD: {abgd:?}"
+        );
+        assert!(
+            !has(&abgd, "de") && !has(&abgd, "ge") && !has(&abgd, "eg") && !has(&abgd, "bc"),
+            "ABGD no DE/GE/BC: {abgd:?}"
+        );
+        let egcf = d.highlight("EGCF");
+        assert!(
+            (has(&egcf, "ge") || has(&egcf, "eg"))
+                && (has(&egcf, "gc") || has(&egcf, "cg"))
+                && has(&egcf, "fc")
+                && has(&egcf, "ef"),
+            "trapezium EGCF: {egcf:?}"
+        );
+        assert!(
+            !has(&egcf, "de") && !has(&egcf, "dg") && !has(&egcf, "gd") && !has(&egcf, "bc"),
+            "EGCF no DE/DG/BC: {egcf:?}"
+        );
         let fdc = d.highlight_angle("FDC");
-        assert!(has(&fdc, "de") && has(&fdc, "dc"), "∠FDC: {fdc:?}");
+        assert!(has(&fdc, "de") && (has(&fdc, "dg") || has(&fdc, "gd")), "∠FDC: {fdc:?}");
         let eab_ang = d.highlight_angle("EAB");
         assert!(has(&eab_ang, "ad") && has(&eab_ang, "ab"), "∠EAB: {eab_ang:?}");
         assert!(d.at("G").on_seg(d.at("E"), d.at("B"), 1e-3), "G on EB");
@@ -2657,4 +2770,3 @@ mod tests {
         assert!(b.contains("class=\"letter"));
     }
 }
-

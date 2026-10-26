@@ -760,8 +760,10 @@ pub fn book1_prop35() -> Diagram {
     d.chain(&["A", "D", "E", "F"]);
     d.chain(&["B", "C"]);
     d.join("A", "B");
-    d.join("D", "C");
-    d.join("E", "B");
+    // G is the crossing, so each cut line is two strokes. Otherwise △DGE
+    // and the remaining trapezia cannot turn at G.
+    d.chain(&["D", "G", "C"]);
+    d.chain(&["E", "G", "B"]);
     d.join("F", "C");
     d.dots(&["A", "B", "C", "D", "E", "F", "G"]);
     d
