@@ -961,7 +961,17 @@ mod tests {
             ("BCA", ["bc", "cb", "ac", "ca"], ["ab", "ba"]),
             ("CAB", ["ac", "ca", "ab", "ba"], ["bc", "cb"]),
         ] {
-            let parts = first_parts(&script, word);
+            // The first ABC in the proof is the triangle. The internal angles
+            // are the later angle(…) tokens in this sentence.
+            let parts = script
+                .lines
+                .iter()
+                .filter(|l| l.para == 1)
+                .flat_map(|l| l.tokens.iter())
+                .filter(|t| letter_key(&t.text) == word)
+                .last()
+                .map(|t| t.parts.clone())
+                .unwrap_or_default();
             let rays_hit = rays.iter().filter(|s| parts.iter().any(|p| p == *s)).count();
             assert!(
                 rays_hit >= 2 && closed.iter().all(|s| !parts.iter().any(|p| p == s)),
