@@ -24,6 +24,7 @@ pub enum Atom {
 /// `widths` are advance widths in the same unit as `width` (em, px, …).
 /// A word that does not fit the remaining space of the current row starts
 /// the next row. The returned row index is 0-based.
+#[cfg(test)]
 pub fn wrap_rows(word_widths: &[f32], width: f32) -> Vec<usize> {
     let mut rows = Vec::with_capacity(word_widths.len());
     let mut row = 0usize;
@@ -42,6 +43,7 @@ pub fn wrap_rows(word_widths: &[f32], width: f32) -> Vec<usize> {
 
 /// How many wrapped rows to shift a finished sentence so only its last
 /// wrap remains in a one-line previous slot.
+#[cfg(test)]
 pub fn last_row(rows: &[usize]) -> usize {
     rows.last().copied().unwrap_or(0)
 }
@@ -49,6 +51,7 @@ pub fn last_row(rows: &[usize]) -> usize {
 /// Wrap to keep in the one-line previous slot: the wrap of the last
 /// cited word, so a margin cite is not clipped when the sentence
 /// continues (`[Prop. 1.1]` on *DE,* then “and let *FC*…”).
+#[cfg(test)]
 pub fn prev_row(rows: &[usize], cited: &[bool]) -> usize {
     cited
         .iter()
@@ -927,6 +930,17 @@ mod tests {
         assert!(qed.contains(
             "(of the latter). (Which is) the very thing it was required to show."
         ));
+    }
+
+    #[test]
+    fn i36_interpolation_strips_italic_marks() {
+        let i36 = layout_of(1, 36);
+        let proof = para_text(&i36[1]);
+        assert!(
+            proof.contains("[thus, EB and HC are also equal and parallel]"),
+            "{proof}"
+        );
+        assert!(!proof.contains('*'), "{proof}");
     }
 
     #[test]

@@ -145,19 +145,27 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
         }
         if chars[i] == '[' {
             // Fitzpatrick's square-bracket interpolation ("[And the halves…]").
-            // Not a citation — those are wrapped in `{…}`.
-            let start = i;
+            // Not a citation — those are wrapped in `{…}`. Italic runs inside
+            // the brackets are markup, same as the rest of the sentence.
             i += 1;
+            let start = i;
             while i < chars.len() && chars[i] != ']' {
                 i += 1;
             }
+            let inner: String = chars[start..i].iter().collect();
             if i < chars.len() {
                 i += 1;
             }
-            let word: String = chars[start..i].iter().collect();
-            if word.chars().any(|c| c.is_ascii_alphabetic()) {
-                recent.push(word.clone());
-                push_words(&mut out, &word, false, map, timing, false, &mut pending_open);
+            if inner.chars().any(|c| c.is_ascii_alphabetic()) {
+                let before = out.len();
+                let nested = tokenize(&inner, map, timing);
+                out.extend(nested);
+                if let Some(first) = out.get_mut(before) {
+                    first.text.insert(0, '[');
+                }
+                if let Some(last) = out.iter_mut().rev().find(|t| !t.cite) {
+                    last.text.push(']');
+                }
             }
             continue;
         }
