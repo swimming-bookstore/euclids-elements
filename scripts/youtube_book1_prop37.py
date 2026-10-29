@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """YouTube thumbnail for the Book I Proposition 37 demo.
 
-1280×720. Cream plate, same family as the LinkedIn card. The three lines sit as
-a header; the Fitzpatrick figure fills the field under them: triangles ABC and
-DBC on the same base BC, between the parallels EF and BC.
+1280×720. Cream plate, same family as the LinkedIn card. One header line —
+Euclid's Elements Book 1 Proposition 37 — sits close over the Fitzpatrick
+figure: triangles ABC and DBC on the same base BC, between the parallels EF and BC.
 """
 
 from __future__ import annotations
@@ -115,24 +115,18 @@ def main():
     cr.set_source(pat)
     cr.paint()
 
-    # Header. Same size, same navy, one shared baseline. Centering each phrase
-    # on its own ink box lifts "Proposition" (the p descends) above the others.
-    size = 46
-    gap = 28
-    lines = ("Euclid's Elements", "Book 1", "Proposition 37")
-    font(cr, size, bold=True)
-    widths = [cr.text_extents(line).x_advance for line in lines]
-    block_w = sum(widths) + gap * (len(lines) - 1)
-    x = (W - block_w) / 2
-    baseline = 92
+    # One header line, every word the same size, close over the figure.
+    # One shared baseline so a descending p does not lift "Proposition".
+    title = "Euclid's Elements Book 1 Proposition 37"
+    title_size = 44
+    font(cr, title_size, bold=True)
+    title_w = cr.text_extents(title).x_advance
     cr.set_source_rgb(*rgb(NAVY))
-    for line, width in zip(lines, widths):
-        cr.move_to(x, baseline)
-        cr.show_text(line)
-        x += width + gap
+    font(cr, title_size, bold=True)
+    cr.move_to((W - title_w) / 2, 168)
+    cr.show_text(title)
 
-    # Figure, centered in the field under the header. Side padding includes the
-    # letter labels, which sit outside the strokes.
+    # Figure stays centered, as it was under the earlier one-line header.
     xs = [p[0] for p in RAW.values()]
     ys = [p[1] for p in RAW.values()]
     minx, maxx = min(xs), max(xs)
@@ -143,7 +137,7 @@ def main():
     scale = min((W - 2 * side) / (maxx - minx), (H - top - bottom) / (maxy - miny))
     ox = (W - (maxx - minx) * scale) / 2 - minx * scale
     # y grows up in the plate and down on screen. Mid-height of the
-    # construction lands on the mid-height of the field under the header.
+    # construction lands on the mid-height of the field under the old header.
     oy = (top + H - bottom) / 2 + (maxy + miny) / 2 * scale
 
     def pt(name):
