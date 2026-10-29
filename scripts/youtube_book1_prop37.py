@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """YouTube thumbnail for the Book I Proposition 37 demo.
 
-1280×720. Cream plate, same family as the LinkedIn card. One header line —
-Euclid's Elements Book 1 Proposition 37 — sits close over the Fitzpatrick
-figure: triangles ABC and DBC on the same base BC, between the parallels EF and BC.
+1280×720. Cream plate, same family as the LinkedIn card. Two header lines,
+same size — Euclid's Elements, then Book 1 Proposition 37 — sit close over the
+Fitzpatrick figure: triangles ABC and DBC on the same base BC, between the
+parallels EF and BC.
 """
 
 from __future__ import annotations
@@ -115,16 +116,20 @@ def main():
     cr.set_source(pat)
     cr.paint()
 
-    # One header line, every word the same size, close over the figure.
-    # One shared baseline so a descending p does not lift "Proposition".
-    title = "Euclid's Elements Book 1 Proposition 37"
-    title_size = 44
-    font(cr, title_size, bold=True)
+    # Two header lines, every word the same size, close over the figure.
+    # One shared baseline per line so a descending p does not lift "Proposition".
+    title = "Euclid's Elements"
+    subtitle = "Book 1 Proposition 37"
+    size = 48
+    font(cr, size, bold=True)
     title_w = cr.text_extents(title).x_advance
+    sub_w = cr.text_extents(subtitle).x_advance
     cr.set_source_rgb(*rgb(NAVY))
-    font(cr, title_size, bold=True)
-    cr.move_to((W - title_w) / 2, 168)
+    font(cr, size, bold=True)
+    cr.move_to((W - title_w) / 2, 132)
     cr.show_text(title)
+    cr.move_to((W - sub_w) / 2, 188)
+    cr.show_text(subtitle)
 
     # Figure stays centered, as it was under the earlier one-line header.
     xs = [p[0] for p in RAW.values()]
