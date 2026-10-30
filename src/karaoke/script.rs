@@ -209,6 +209,7 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
                         && ((n == 0 || carried)
                             && letters_are_angles(if carried { &[] } else { &before }, &following)
                             && !introduced_as_figure(&before)
+                            && !paired_with_figure(&before, &following)
                             || carried));
                 push_words(
                     &mut out,
@@ -391,6 +392,26 @@ fn followed_by_angle_name(following: &[String]) -> bool {
         }
     }
     false
+}
+
+/// "Let *ABC* and *DEF* be triangles" names both runs. The second has only
+/// "and" behind it, and "equal to" in front, which would otherwise make DEF
+/// an angle. A figure word after that "and" ("be triangles") still names this
+/// run. An angle word before any figure word does not.
+/// "angle *ABC* equal to *DEF*" has no figure word, so DEF stays the angle.
+/// "equal to the given rectilinear angle *DCE*" is not paired with a figure:
+/// "angle" comes before any figure word.
+fn paired_with_figure(before: &[String], following: &[String]) -> bool {
+    before.iter().any(|w| stem(w) == "and")
+        && following.iter().any(|w| {
+            let s = stem(w);
+            s == "triangle" || s == "triangles"
+        })
+        && !following.iter().any(|w| {
+            let s = stem(w);
+            let fig = s == "triangle" || s == "triangles";
+            !fig && (s.starts_with("angle") || s == "angles")
+        })
 }
 
 /// "triangle *ABE*" and "side *AB*" name a figure even when a later clause
@@ -805,6 +826,21 @@ mod tests {
                 && def.iter().any(|s| s == "ef" || s == "fe")
                 && def.iter().any(|s| s == "df" || s == "fd"),
             "first DEF is triangle DEF, not ∠DEF: {def:?}"
+        );
+        // I.38: "Let *ABC* and *DEF* be triangles … equal to triangle *DEF*".
+        // "equal to" follows the first DEF, but the sentence already named it
+        // a triangle alongside ABC.
+        let i38 = compile(
+            crate::content::get(1, 38).unwrap().phrases,
+            &crate::figure::book1_prop38(),
+            Timing::default(),
+        );
+        let def38 = first_parts(&i38, "DEF");
+        assert!(
+            def38.iter().any(|s| s == "de" || s == "ed")
+                && def38.iter().any(|s| s == "ef" || s == "fe")
+                && def38.iter().any(|s| s == "df" || s == "fd"),
+            "I.38 DEF is triangle DEF, not ∠DEF: {def38:?}"
         );
         let def_angle = script
             .lines
