@@ -5,6 +5,8 @@ pub const BOOKS: [u8; 13] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 /// One spoken sentence. `*AB*` italic, `{[Post. 3]}` right-margin citation.
 /// `*angle(DCE)*` is an angle object: the letters are spoken, the wrapper
 /// is the kind, so a triangle of the same letters is not lit.
+/// `*triangle(DBC)*` is the same idea for a triangle that "equal to" would
+/// otherwise light as an angle.
 /// `para` groups sentences into Fitzpatrick’s paragraphs for reading.
 #[derive(Clone, Copy, Debug)]
 pub struct Phrase {

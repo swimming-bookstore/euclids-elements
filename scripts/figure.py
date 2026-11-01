@@ -385,6 +385,17 @@ class Fig:
         """Letter at the pinned point, shared radius, heading from s.letters."""
         self._add(f'    d.label("{name}", {self._place(name, place)});')
 
+    def label_r(self, name: str, r_em: float, place=None) -> None:
+        """Letter at `r_em` from the point, heading from s.letters.
+
+        Use this when the plate gap is a letter-height, not a fixed ink
+        coordinate. A glyph center copied in BC units drops too far once
+        the on-screen type is smaller than the plate's.
+        """
+        self._add(
+            f'    d.label_r("{name}", {self._place(name, place)}, {f64(r_em)});'
+        )
+
     def glyph(self, name: str, x: float | None = None, y: float | None = None) -> None:
         """Letter center exactly at the plate glyph, not an offset from the mark.
 
@@ -2149,17 +2160,19 @@ def book1_prop39() -> Fig:
     s.require_ratio("E", "C", "B", "C", 0.569, eps=0.01)
     s.require_angle("A", "E", "C", 125.3, eps=1.0)
     # Same LETTER_R as every other plate. Headings are tip → glyph on the
-    # PDF (BC = 100, B at the origin). E does not sit on a heading from the
-    # junction — its center is the plate glyph.
-    s.letters(A=137.6, B=-165.3, C=-6.4, D=42.2)
-    s.plate_glyphs(E=(70.86, 39.94))
+    # PDF (BC = 100, B at the origin). E's ink center is 7.62 under the
+    # crossing, but that box is one plate letter (10 pt) below the junction,
+    # not a fixed slice of BC. On screen the type is smaller than the plate's,
+    # so the ink coordinate sat too low. Hang E one letter under the cross.
+    s.letters(A=137.6, B=-165.3, C=-6.4, D=42.2, E=-99.5)
     f = Fig(
         "book1_prop39",
         "I.39 — Fitzpatrick English plate (Elements PDF p. 40, 300 dpi).\n"
         "ABCD first. E is where AE meets DB, so E touches BD. AE joins A to E;\n"
         "EC joins E to C. AE/BC = 0.664, EC/BC = 0.569, ∠AEC = 125.3°.\n"
         "A–D use the same letter radius as the other plates, on the measured\n"
-        "tip→glyph heading. E is the plate glyph center, off the junction.",
+        "tip→glyph heading. E is one letter under the crossing (−99.5°), the\n"
+        "plate gap in letter-heights, not the ink center in BC units.",
         sketch=s,
     )
     f.pin("B", *s.at("B"))
@@ -2171,12 +2184,14 @@ def book1_prop39() -> Fig:
     f.point("B")
     f.point("C")
     f.point("D")
-    f.glyph("E")
+    f.label_r("E", 1.05)
     f.join("A", "D")
     f.join("B", "C")
     f.join("A", "B")
     f.join("A", "C")
-    f.join("D", "B")
+    # E is the crossing on BD. Split there so △DBC and △EBC turn at E
+    # instead of walking around through A.
+    f.chain("B", "E", "D")
     f.join("D", "C")
     f.join("A", "E")
     f.join("E", "C")
