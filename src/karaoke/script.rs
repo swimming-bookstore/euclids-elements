@@ -97,14 +97,27 @@ pub fn display_letters(text: &str) -> String {
     if let Some(name) = angle_object(text) {
         return name;
     }
+    if let Some(name) = triangle_object(text) {
+        return name;
+    }
     text.to_string()
 }
 
 /// `*angle(DCE)*` is an angle object. The letters are the name; the wrapper
 /// is the kind. Nearby words cannot turn it back into a triangle.
 fn angle_object(piece: &str) -> Option<String> {
+    wrapped_letters(piece, "angle")
+}
+
+/// `*triangle(DBC)*` is a triangle object. The letters are spoken; the
+/// wrapper is the kind. "equal to" cannot turn it into an angle (I.39).
+fn triangle_object(piece: &str) -> Option<String> {
+    wrapped_letters(piece, "triangle")
+}
+
+fn wrapped_letters(piece: &str, kind: &str) -> Option<String> {
     let t = piece.trim();
-    let rest = t.strip_prefix("angle(")?.strip_suffix(')')?;
+    let rest = t.strip_prefix(kind)?.strip_prefix('(')?.strip_suffix(')')?;
     let name: String = rest
         .chars()
         .filter(|c| c.is_ascii_alphabetic())
@@ -184,9 +197,14 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
                 // A period inside the italic run starts a new sentence, so
                 // the next piece is not still "the angle …".
                 let following = words_after(&chars, i);
-                // angle(DCE) is the object. Words around it do not reclassify it.
+                // angle(DCE) / triangle(DBC) is the object. Words around it do not
+                // reclassify it.
                 let wrapped = angle_object(piece);
-                let spoken = wrapped.as_deref().unwrap_or(piece);
+                let as_triangle = triangle_object(piece);
+                let spoken = wrapped
+                    .as_deref()
+                    .or(as_triangle.as_deref())
+                    .unwrap_or(piece);
                 // "*DEF*, and *BCA*" — the comma is part of the italic run, but it
                 // is not part of the name. Record the bare name before classifying
                 // so "equal to" still names the next three-letter run.
@@ -204,13 +222,14 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
                 } else {
                     recent.clone()
                 };
-                let angle = wrapped.is_some()
-                    || (name.chars().filter(|c| c.is_ascii_alphabetic()).count() == 3
-                        && ((n == 0 || carried)
-                            && letters_are_angles(if carried { &[] } else { &before }, &following)
-                            && !introduced_as_figure(&before)
-                            && !paired_with_figure(&before, &following)
-                            || carried));
+                let angle = as_triangle.is_none()
+                    && (wrapped.is_some()
+                        || (name.chars().filter(|c| c.is_ascii_alphabetic()).count() == 3
+                            && ((n == 0 || carried)
+                                && letters_are_angles(if carried { &[] } else { &before }, &following)
+                                && !introduced_as_figure(&before)
+                                && !paired_with_figure(&before, &following)
+                                || carried)));
                 push_words(
                     &mut out,
                     spoken,
@@ -1082,5 +1101,50 @@ mod tests {
             }
         }
         assert!(found, "no EFG token");
+    }
+
+    #[test]
+    fn i39_dbc_is_the_triangle() {
+        // "Let *ABC* and *DBC* be equal triangles" — "equal" follows DBC, but
+        // the sentence already named it a triangle alongside ABC.
+        let phrases = crate::content::get(1, 39).unwrap().phrases;
+        let script = compile(phrases, &crate::figure::book1_prop39(), Timing::default());
+        let runs = |word: &str| -> Vec<Vec<String>> {
+            script
+                .lines
+                .iter()
+                .flat_map(|l| l.tokens.iter())
+                .filter(|t| letter_key(&t.text) == word)
+                .map(|t| t.parts.clone())
+                .collect()
+        };
+        let triangle = |parts: &[String], sides: &[&str]| {
+            sides.iter().all(|s| parts.iter().any(|p| p == s))
+        };
+        let dbc = runs("DBC");
+        assert!(dbc.len() >= 3, "DBC runs: {dbc:?}");
+        for (i, parts) in dbc.iter().enumerate() {
+            assert!(
+                triangle(parts, &["be", "ed", "dc", "bc"]),
+                "DBC run {i} is △DBC, not ∠DBC: {parts:?}"
+            );
+        }
+        let abc = runs("ABC");
+        assert!(
+            abc.len() >= 2 && triangle(&abc[0], &["ab", "ac", "bc"]),
+            "opening ABC is △ABC: {abc:?}"
+        );
+        assert!(
+            triangle(&abc[1], &["ab", "ac", "bc"]),
+            "ABC equal to EBC is the triangle: {abc:?}"
+        );
+        let ebc = runs("EBC");
+        assert!(
+            ebc.len() >= 2
+                && ebc.iter().all(|parts| triangle(parts, &["be", "bc", "ec"])
+                    && !parts.iter().any(|p| p == "ab" || p == "ae")),
+            "every EBC is △EBC: {ebc:?}"
+        );
+        assert_eq!(display_letters("triangle(DBC)"), "DBC");
     }
 }

@@ -833,7 +833,8 @@ pub fn book1_prop38() -> Diagram {
 /// ABCD first. E is where AE meets DB, so E touches BD. AE joins A to E;
 /// EC joins E to C. AE/BC = 0.664, EC/BC = 0.569, ∠AEC = 125.3°.
 /// A–D use the same letter radius as the other plates, on the measured
-/// tip→glyph heading. E is the plate glyph center, off the junction.
+/// tip→glyph heading. E is one letter under the crossing (−99.5°), the
+/// plate gap in letter-heights, not the ink center in BC units.
 pub fn book1_prop39() -> Diagram {
     let mut d = Diagram::new();
     d.pin("B", V2::new(0.0, 0.0));
@@ -845,12 +846,16 @@ pub fn book1_prop39() -> Diagram {
     d.label("B", Place::Deg(-165.3));
     d.label("C", Place::Deg(-6.4));
     d.label("D", Place::Deg(42.2));
-    d.glyph("E", V2::new(70.86, 39.94));
+    // One plate letter under the crossing. The ink-box coordinate (7.62 in
+    // BC units) sat too low once the type was smaller than Fitzpatrick's.
+    d.label_r("E", Place::Deg(-99.5), 1.05);
     d.join("A", "D");
     d.join("B", "C");
     d.join("A", "B");
     d.join("A", "C");
-    d.join("D", "B");
+    // E is the crossing on BD. Split there so △DBC and △EBC turn at E
+    // instead of walking around through A.
+    d.chain(&["B", "E", "D"]);
     d.join("D", "C");
     d.join("A", "E");
     d.join("E", "C");

@@ -87,6 +87,15 @@ impl Diagram {
         self
     }
 
+    /// Letter on an already named point, at `r_em` instead of the shared radius.
+    ///
+    /// I.39's E is one plate letter under the crossing. A fixed glyph center
+    /// (the ink box) sits too low once the type is smaller than Fitzpatrick's.
+    pub fn label_r(&mut self, name: &'static str, place: Place, r_em: f64) -> &mut Self {
+        self.fig.label_at_r(name, self.at(name), place, r_em);
+        self
+    }
+
     /// Name a point; letter center at `r_em` from the mark.
     pub fn put_r(&mut self, name: &'static str, p: V2, place: Place, r_em: f64) -> V2 {
         self.pin(name, p);
@@ -2440,10 +2449,26 @@ mod tests {
         assert!(has(&aeh, "ae"), "AE joined: {aeh:?}");
         let ech = d.highlight("EC");
         assert!(has(&ech, "ec"), "EC joined: {ech:?}");
+        let html = d.svg(&[] as &[String]);
+        let (edx, edy) = letter_offset(&html, "E");
+        // Plate: E's ink center is one letter (10 pt) under the crossing, heading −99.5°.
+        // A BC-unit glyph sits too low once the type is smaller than Fitzpatrick's.
+        assert!(
+            (edx - (-0.173)).abs() < 0.03 && (edy - 1.036).abs() < 0.03,
+            "E is 1.05em under the crossing, not on it and not a BC-unit drop: --dx={edx} --dy={edy}"
+        );
         let abc = d.highlight("ABC");
         assert!(has(&abc, "ab") && has(&abc, "ac") && has(&abc, "bc"), "△ABC: {abc:?}");
         let dbc = d.highlight("DBC");
-        assert!(has(&dbc, "db") && has(&dbc, "dc") && has(&dbc, "bc"), "△DBC: {dbc:?}");
+        assert!(
+            has(&dbc, "be") && has(&dbc, "ed") && has(&dbc, "dc") && has(&dbc, "bc"),
+            "△DBC: {dbc:?}"
+        );
+        let ebc = d.highlight("EBC");
+        assert!(
+            has(&ebc, "be") && has(&ebc, "bc") && has(&ebc, "ec") && !has(&ebc, "ab") && !has(&ebc, "ae"),
+            "△EBC is the triangle on BD, not a walk through A: {ebc:?}"
+        );
         let ad = d.highlight("AD");
         assert!(has(&ad, "ad"), "AD: {ad:?}");
     }
@@ -2752,6 +2777,37 @@ mod tests {
                 .unwrap()
         };
         (grab("--dx"), grab("--dy"))
+    }
+
+    fn letter_percent(html: &str, id: &str) -> (f64, f64) {
+        let needle = format!("class=\"letter\" data-id=\"{id}\"");
+        let start = html.find(&needle).expect(id);
+        let chunk = &html[start..html[start..].find("</span>").map(|i| start + i).unwrap()];
+        let grab = |key: &str| {
+            let k = format!("{key}:");
+            let i = chunk.find(&k).unwrap() + k.len();
+            chunk[i..]
+                .split(|c: char| c == '%' || c == ';')
+                .next()
+                .unwrap()
+                .parse::<f64>()
+                .unwrap()
+        };
+        (grab("left"), grab("top"))
+    }
+
+    fn dot_xy(html: &str, id: &str) -> (f64, f64, f64, f64) {
+        let vb = html.find("viewBox=\"0 0 ").unwrap() + "viewBox=\"0 0 ".len();
+        let dims = &html[vb..html[vb..].find('"').map(|i| vb + i).unwrap()];
+        let mut parts = dims.split_whitespace();
+        let vb_w: f64 = parts.next().unwrap().parse().unwrap();
+        let vb_h: f64 = parts.next().unwrap().parse().unwrap();
+        let needle = format!("data-id=\"{id}\" cx=\"");
+        let start = html.find(&needle).unwrap() + needle.len();
+        let cx: f64 = html[start..].split('"').next().unwrap().parse().unwrap();
+        let cy_at = html[start..].find("cy=\"").unwrap() + start + 4;
+        let cy: f64 = html[cy_at..].split('"').next().unwrap().parse().unwrap();
+        (cx, cy, vb_w, vb_h)
     }
 
     fn has_layer(html: &str) -> bool {
