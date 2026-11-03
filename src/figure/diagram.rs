@@ -2491,7 +2491,10 @@ mod tests {
         let abc = d.highlight("ABC");
         assert!(has(&abc, "ab") && has(&abc, "ac") && has(&abc, "bc"), "△ABC: {abc:?}");
         let cde = d.highlight("CDE");
-        assert!(has(&cde, "dc") && has(&cde, "de") && has(&cde, "ce"), "△CDE: {cde:?}");
+        assert!(
+            has(&cde, "df") && has(&cde, "fc") && has(&cde, "de") && has(&cde, "ce"),
+            "△CDE turns at F: {cde:?}"
+        );
         let af = d.highlight("AF");
         assert!(has(&af, "af"), "AF joined: {af:?}");
         let fe = d.highlight("FE");
@@ -2500,6 +2503,23 @@ mod tests {
         assert!(has(&ad, "ad"), "AD: {ad:?}");
         let be = d.highlight("BE");
         assert!(has(&be, "bc") && has(&be, "ce"), "BE: {be:?}");
+        let fce = d.highlight("FCE");
+        assert!(
+            has(&fce, "fc") && has(&fce, "ce") && has(&fce, "fe") && !has(&fce, "ab") && !has(&fce, "af"),
+            "△FCE is the triangle on DC, not a walk through A: {fce:?}"
+        );
+        let dce = d.highlight("DCE");
+        assert!(
+            has(&dce, "df") && has(&dce, "fc") && has(&dce, "de") && has(&dce, "ce"),
+            "△DCE turns at F: {dce:?}"
+        );
+        let html = d.svg(&[] as &[String]);
+        let (fdx, fdy) = letter_offset(&html, "F");
+        // Plate: F's ink center is one letter off the crossing, heading −151.5°.
+        assert!(
+            (fdx - (-0.923)).abs() < 0.03 && (fdy - 0.502).abs() < 0.03,
+            "F is 1.05em off the crossing: --dx={fdx} --dy={fdy}"
+        );
     }
 
     #[test]

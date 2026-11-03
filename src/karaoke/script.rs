@@ -110,7 +110,7 @@ fn angle_object(piece: &str) -> Option<String> {
 }
 
 /// `*triangle(DBC)*` is a triangle object. The letters are spoken; the
-/// wrapper is the kind. "equal to" cannot turn it into an angle (I.39).
+/// wrapper is the kind. "equal to" cannot turn it into an angle (I.39, I.40).
 fn triangle_object(piece: &str) -> Option<String> {
     wrapped_letters(piece, "triangle")
 }
@@ -1146,5 +1146,51 @@ mod tests {
             "every EBC is △EBC: {ebc:?}"
         );
         assert_eq!(display_letters("triangle(DBC)"), "DBC");
+    }
+
+    #[test]
+    fn i40_fce_is_the_triangle() {
+        // "Let *ABC* and *CDE* be equal triangles" — "equal" follows CDE, but
+        // the sentence already named it a triangle alongside ABC. Later,
+        // "equal to" must not turn DCE or FCE into angles, and FCE is the
+        // triangle on DC, not a walk through A.
+        let phrases = crate::content::get(1, 40).unwrap().phrases;
+        let script = compile(phrases, &crate::figure::book1_prop40(), Timing::default());
+        let runs = |word: &str| -> Vec<Vec<String>> {
+            script
+                .lines
+                .iter()
+                .flat_map(|l| l.tokens.iter())
+                .filter(|t| letter_key(&t.text) == word)
+                .map(|t| t.parts.clone())
+                .collect()
+        };
+        let triangle = |parts: &[String], sides: &[&str]| {
+            sides.iter().all(|s| parts.iter().any(|p| p == s))
+        };
+        let cde = runs("CDE");
+        assert!(
+            cde.len() >= 1 && triangle(&cde[0], &["df", "fc", "de", "ce"]),
+            "opening CDE is △CDE: {cde:?}"
+        );
+        let fce = runs("FCE");
+        assert!(
+            fce.len() >= 2
+                && fce.iter().all(|parts| triangle(parts, &["fc", "ce", "fe"])
+                    && !parts.iter().any(|p| p == "ab" || p == "af" || p == "ac")),
+            "every FCE is △FCE: {fce:?}"
+        );
+        let dce = runs("DCE");
+        assert!(
+            dce.len() >= 2 && dce.iter().all(|parts| triangle(parts, &["df", "fc", "de", "ce"])),
+            "every DCE is △DCE, not ∠DCE: {dce:?}"
+        );
+        let abc = runs("ABC");
+        assert!(
+            abc.len() >= 3 && abc.iter().all(|parts| triangle(parts, &["ab", "ac", "bc"])),
+            "every ABC is △ABC: {abc:?}"
+        );
+        assert_eq!(display_letters("triangle(FCE)"), "FCE");
+        assert_eq!(display_letters("triangle(DCE)"), "DCE");
     }
 }

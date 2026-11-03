@@ -868,7 +868,8 @@ pub fn book1_prop39() -> Diagram {
 /// A to F; FE joins F to E. AF is not the stroke AD, and FE is not DE.
 /// AF/BC = 1.375, FE/BC = 0.833, ∠AFE = 129.7°.
 /// A–E use the same letter radius as the other plates, on the measured
-/// tip→glyph heading. F is the plate glyph center, off the junction.
+/// tip→glyph heading. F is one letter off the crossing (−151.5°), the
+/// plate gap in letter-heights, not the ink center in BC units.
 pub fn book1_prop40() -> Diagram {
     let mut d = Diagram::new();
     d.pin("B", V2::new(0.0, 0.0));
@@ -882,11 +883,16 @@ pub fn book1_prop40() -> Diagram {
     d.label("B", Place::Deg(-178.7));
     d.label("E", Place::Deg(-5.8));
     d.label("C", Place::Deg(-77.0));
-    d.glyph("F", V2::new(140.47, 65.33));
+    // One plate letter off the crossing, the same gap I.39 uses for E.
+    // The ink-box coordinate sat a different distance once the type was
+    // smaller than Fitzpatrick's.
+    d.label_r("F", Place::Deg(-151.5), 1.05);
     d.join("A", "B");
     d.join("A", "C");
     d.join("A", "D");
-    d.join("D", "C");
+    // F is the crossing on DC. Split there so △CDE and △FCE turn at F
+    // instead of walking around through A.
+    d.chain(&["D", "F", "C"]);
     d.join("D", "E");
     d.join("B", "C");
     d.join("C", "E");
