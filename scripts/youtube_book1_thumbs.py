@@ -13,7 +13,16 @@ equal lines the enunciation names, and leave the construction ink at the
 same weight as I.1. Dimming that ink to push the subject made the plate
 look unfinished next to the first card. The wash gold is too close to the
 cream to read as a line, so those lines take a brick that sits with the
-navy type. Labels stay navy, the color every other card uses.
+navy type. I.5 keeps the whole plate — F, G, FC, GB and the rest — and
+adds a highlight only. The subject is the angles, not the triangle, so the
+mark is a pie in each corner the enunciation names: ∠ABC and ∠ACB at the
+base, ∠CBD and ∠BCE under it. The two equal pairs are two marks — yellow
+and larger at the base, rose and smaller under it — so a pair reads as one
+set and the other pair as the other. Both hues sit with the plate: the
+yellow is the angle highlight, the rose is the brick of the line cards
+lifted so it still reads as a wash. A pie fills the angle; it does not
+replace a stroke or a letter. Labels stay navy, the color every other card
+uses.
 """
 
 from __future__ import annotations
@@ -38,6 +47,12 @@ GOLD = (212, 184, 122)
 BRICK = (154, 62, 46)
 INK = (28, 32, 38)
 WASH = (232, 214, 176)
+# Angle subject. A filled corner, not an arc. Yellow reads as a highlight
+# on the plate; the wash gold is too close to the cream to mark an angle.
+# The second set is a coral lifted from the brick. A cool accent, or the
+# brick left dark, fights the cream.
+PIE = (234, 188, 64)
+PIE_ALT = (216, 122, 100)
 LETTER_R = 0.82  # plate::LETTER_R, em of the letter type
 
 # Subject regions, vertex order around the boundary. Two regions: warm, then gold,
@@ -45,7 +60,6 @@ LETTER_R = 0.82  # plate::LETTER_R, em of the letter type
 WASHES: dict[int, list[tuple[str, ...]]] = {
     1: [("A", "B", "C")],
     4: [("A", "B", "C"), ("D", "E", "F")],
-    5: [("A", "B", "C")],
     6: [("A", "B", "C")],
     7: [("A", "C", "B"), ("A", "D", "B")],
     8: [("A", "B", "C"), ("D", "E", "F")],
@@ -76,6 +90,23 @@ LINES: dict[int, list[tuple[str, str]]] = {
     2: [("A", "L"), ("B", "C")],
     # AE cut from the greater AB, equal to the lesser C.
     3: [("A", "E"), ("Cleft", "Cright")],
+}
+
+# Equal angles share a mark: (arm, vertex, arm), grouped by equality.
+# I.5: ∠ABC = ∠ACB at the base, then ∠CBD = ∠BCE under it. Each group is
+# one set: same color, same radius. The next group is the other set.
+ANGLES: dict[int, list[list[tuple[str, str, str]]]] = {
+    5: [
+        [("A", "B", "C"), ("A", "C", "B")],
+        [("C", "B", "D"), ("B", "C", "E")],
+    ],
+}
+
+# Per equality group, in ANGLES order: fill, then radius as a fraction of
+# the shorter arm. Same within a pair; different between pairs, so the two
+# sets stay distinct at thumbnail size. The larger pie is drawn first.
+ANGLE_MARK: dict[int, list[tuple[tuple[int, int, int], float]]] = {
+    5: [(PIE, 0.42), (PIE_ALT, 0.22)],
 }
 
 PLACE_DEG = {
@@ -600,7 +631,35 @@ def arc_points(a: V2, b: V2, via: V2, n: int = 48) -> list[tuple[float, float]]:
     ]
 
 
+def angle_wedge(scene: Scene, arm: str, vertex: str, other: str, radius: float) -> list[V2]:
+    """Sector of ∠(arm, vertex, other), radius in plate units.
+
+    The lesser turn is the angle the figure draws. A reflex would fill the
+    outside and read as the triangle again.
+    """
+    v = scene.at(vertex)
+    a = math.atan2((scene.at(arm).y - v.y), (scene.at(arm).x - v.x))
+    b = math.atan2((scene.at(other).y - v.y), (scene.at(other).x - v.x))
+    sweep = (b - a + math.pi) % math.tau - math.pi
+    n = max(12, int(abs(sweep) / math.tau * 64))
+    pts = [v]
+    for i in range(n + 1):
+        t = a + sweep * i / n
+        pts.append(V2(v.x + radius * math.cos(t), v.y + radius * math.sin(t)))
+    return pts
+
+
+def prepare(n: int, scene: Scene) -> None:
+    """Check the angle marks. The plate itself is not edited."""
+    for group in ANGLES.get(n, []):
+        for arm, vertex, other in group:
+            for name in (arm, vertex, other):
+                if name not in scene.pts:
+                    raise SystemExit(f"I.{n}: angle {arm}{vertex}{other} missing {name}")
+
+
 def render(n: int, scene: Scene, out: Path) -> None:
+    prepare(n, scene)
     for poly in WASHES.get(n, []):
         for name in poly:
             if name not in scene.pts:
@@ -693,6 +752,30 @@ def render(n: int, scene: Scene, out: Path) -> None:
             cr.set_source_rgba(*rgb(GOLD), 0.28)
         poly(names)
         cr.fill()
+
+    def angle_radius(arm: str, vertex: str, other: str, reach: float) -> float:
+        vv = scene.at(vertex)
+        span = min(vv.dist(scene.at(arm)), vv.dist(scene.at(other)))
+        return reach * span
+
+    # Pies under the ink, so the plate's strokes and letters stay as they
+    # are. Each equality group is one color and one radius; the next group
+    # is the other set. Larger first, so a smaller pie is not covered.
+    marks = ANGLE_MARK.get(n, [])
+    groups = ANGLES.get(n, [])
+    if len(marks) != len(groups):
+        raise SystemExit(f"I.{n}: angle mark count {len(marks)} != groups {len(groups)}")
+    order = sorted(range(len(groups)), key=lambda i: marks[i][1], reverse=True)
+    for i in order:
+        color, reach = marks[i]
+        cr.set_source_rgba(*rgb(color), 0.86)
+        for arm, vertex, other in groups[i]:
+            pts = angle_wedge(scene, arm, vertex, other, angle_radius(arm, vertex, other, reach))
+            cr.move_to(*pt_of(pts[0]))
+            for p in pts[1:]:
+                cr.line_to(*pt_of(p))
+            cr.close_path()
+            cr.fill()
 
     def clip_circles() -> None:
         if not scene.clip_box:
