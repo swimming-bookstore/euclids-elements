@@ -985,7 +985,7 @@ pub const PROP_41: Proposition = Proposition {
         s(1, "I say that parallelogram *ABCD* is double (the area) of triangle *BEC*."),
         s(2, "For let *AC* have been joined."),
         s(2, "So triangle *ABC* is equal to triangle *EBC*."),
-        s(2, "For it is on the same base, *BC*, as (*angle(EBC)*), and between the same parallels, *BC* and *AE*.{[Prop. 1.37]}"),
+        s(2, "For it is on the same base, *BC*, as (*triangle(EBC)*), and between the same parallels, *BC* and *AE*.{[Prop. 1.37]}"),
         s(2, "But, parallelogram *ABCD* is double (the area) of triangle *ABC*."),
         s(2, "For the diagonal *AC* cuts the former in half.{[Prop. 1.34]}"),
         s(2, "So parallelogram *ABCD* is also double (the area) of triangle *EBC*."),

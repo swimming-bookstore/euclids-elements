@@ -1193,4 +1193,55 @@ mod tests {
         assert_eq!(display_letters("triangle(FCE)"), "FCE");
         assert_eq!(display_letters("triangle(DCE)"), "DCE");
     }
+
+    #[test]
+    fn i41_ebc_is_the_triangle_not_the_angle() {
+        // Fitzpatrick writes "(EBC)" for the triangle already named, not an
+        // angle. "equal to" must not light ∠EBC, and ABCD stays the
+        // parallelogram (not the diagonal, not AE produced).
+        let phrases = crate::content::get(1, 41).unwrap().phrases;
+        let script = compile(phrases, &crate::figure::book1_prop41(), Timing::default());
+        let runs = |word: &str| -> Vec<Vec<String>> {
+            script
+                .lines
+                .iter()
+                .flat_map(|l| l.tokens.iter())
+                .filter(|t| letter_key(&t.text) == word)
+                .map(|t| t.parts.clone())
+                .collect()
+        };
+        let has = |parts: &[String], id: &str| parts.iter().any(|p| p == id);
+        let ebc = runs("EBC");
+        assert!(ebc.len() >= 3, "EBC runs: {ebc:?}");
+        for (i, parts) in ebc.iter().enumerate() {
+            assert!(
+                has(parts, "eb") && has(parts, "ec") && has(parts, "bc") && !has(parts, "ab"),
+                "EBC run {i} is △EBC, not ∠EBC: {parts:?}"
+            );
+        }
+        let bec = runs("BEC");
+        assert!(
+            bec.len() >= 1 && bec.iter().all(|p| has(p, "eb") && has(p, "ec") && has(p, "bc")),
+            "BEC is △BEC: {bec:?}"
+        );
+        let abc = runs("ABC");
+        assert!(
+            abc.len() >= 2 && abc.iter().all(|p| has(p, "ab") && has(p, "ac") && has(p, "bc")),
+            "ABC is △ABC: {abc:?}"
+        );
+        let abcd = runs("ABCD");
+        assert!(
+            abcd.len() >= 3
+                && abcd.iter().all(|p| {
+                    has(p, "ab") && has(p, "bc") && has(p, "dc") && has(p, "ad") && !has(p, "ac")
+                }),
+            "ABCD is the parallelogram, not the diagonal: {abcd:?}"
+        );
+        let ae = runs("AE");
+        assert!(
+            ae.iter().any(|p| has(p, "ad") && has(p, "de")),
+            "AE is the whole parallel, through D: {ae:?}"
+        );
+        assert_eq!(display_letters("triangle(EBC)"), "EBC");
+    }
 }
