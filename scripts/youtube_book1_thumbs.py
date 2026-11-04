@@ -9,9 +9,11 @@ equal parallelograms, the constructed triangle — never a construction line
 and never an angle the proposition does not fill. A proposition about an
 angle or parallels gets no wash: a wash there would light the wrong region.
 A proposition about a line has no interior to wash. I.2 and I.3 light the
-equal lines the enunciation names. The wash gold is too close to the cream
-to read as a line, so those lines take a brick that sits with the navy type.
-Labels stay navy, the color every other card uses.
+equal lines the enunciation names, and leave the construction ink at the
+same weight as I.1. Dimming that ink to push the subject made the plate
+look unfinished next to the first card. The wash gold is too close to the
+cream to read as a line, so those lines take a brick that sits with the
+navy type. Labels stay navy, the color every other card uses.
 """
 
 from __future__ import annotations
@@ -36,7 +38,6 @@ GOLD = (212, 184, 122)
 BRICK = (154, 62, 46)
 INK = (28, 32, 38)
 WASH = (232, 214, 176)
-DIM = (176, 170, 162)
 LETTER_R = 0.82  # plate::LETTER_R, em of the letter type
 
 # Subject regions, vertex order around the boundary. Two regions: warm, then gold,
@@ -713,10 +714,9 @@ def render(n: int, scene: Scene, out: Path) -> None:
         if a not in scene.pts or b not in scene.pts:
             raise SystemExit(f"I.{n}: line {a}{b} missing")
     lit_ink = {(a, b) for a, b in lit_segs} | {(b, a) for a, b in lit_segs}
-    quiet = bool(lit_segs)
-    ink = rgb(DIM if quiet else INK)
-    cr.set_source_rgb(*ink)
-    cr.set_line_width(2.4 if quiet else 3.2)
+    # Construction stays the same ink as I.1. Only the named lines are lit.
+    cr.set_source_rgb(*rgb(INK))
+    cr.set_line_width(3.2)
     cr.set_line_cap(cairo.LINE_CAP_ROUND)
     for name, r in scene.circs:
         x, y = pt(name)
@@ -732,8 +732,8 @@ def render(n: int, scene: Scene, out: Path) -> None:
         cr.stroke()
     cr.restore()
 
-    cr.set_source_rgb(*ink)
-    cr.set_line_width(2.4 if quiet else 3.2)
+    cr.set_source_rgb(*rgb(INK))
+    cr.set_line_width(3.2)
     cr.set_line_cap(cairo.LINE_CAP_ROUND)
     cr.set_line_join(cairo.LINE_JOIN_ROUND)
     for a, b in scene.segs:
@@ -756,8 +756,8 @@ def render(n: int, scene: Scene, out: Path) -> None:
     cr.new_path()
     for p in scene.dot_pts:
         x, y = pt_of(p)
-        cr.set_source_rgb(*rgb(INK if not quiet else DIM))
-        cr.arc(x, y, 3.4, 0, math.tau)
+        cr.set_source_rgb(*rgb(INK))
+        cr.arc(x, y, 4.2, 0, math.tau)
         cr.fill()
 
     for name, (anchor, deg, r_em) in scene.labels.items():
