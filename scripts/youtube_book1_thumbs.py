@@ -6,9 +6,12 @@ same size, then the figure the video draws. Geometry is the plate in
 src/figure/book1.rs (Fitzpatrick ink, not a redraw). A wash is only the
 closed figure the enunciation is about — the two equal triangles, the two
 equal parallelograms, the constructed triangle — never a construction line
-and never an angle the proposition does not fill. A proposition about a
-line, an angle, or parallels gets no wash: a wash there would light the
-wrong region.
+and never an angle the proposition does not fill. A proposition about an
+angle or parallels gets no wash: a wash there would light the wrong region.
+A proposition about a line has no interior to wash. I.2 and I.3 light the
+equal lines the enunciation names. The wash gold is too close to the cream
+to read as a line, so those lines take a brick that sits with the navy type.
+Labels stay navy, the color every other card uses.
 """
 
 from __future__ import annotations
@@ -28,8 +31,12 @@ W, H = 1280, 720
 CREAM = (255, 249, 239)
 NAVY = (29, 53, 80)
 GOLD = (212, 184, 122)
+# Line subject. The wash gold disappears on cream; a brick reads against
+# both the cream and the navy letters, and is not a second ink.
+BRICK = (154, 62, 46)
 INK = (28, 32, 38)
 WASH = (232, 214, 176)
+DIM = (176, 170, 162)
 LETTER_R = 0.82  # plate::LETTER_R, em of the letter type
 
 # Subject regions, vertex order around the boundary. Two regions: warm, then gold,
@@ -60,6 +67,14 @@ WASHES: dict[int, list[tuple[str, ...]]] = {
     # wash covers the overlap, so the parallelogram's uncovered half stays
     # the warm region and EBC reads as the second figure.
     41: [("A", "B", "C", "D"), ("E", "B", "C")],
+}
+
+# Lines the card lights. A produced ray is not the subject: only the named piece.
+LINES: dict[int, list[tuple[str, str]]] = {
+    # AL placed at A, equal to the given BC.
+    2: [("A", "L"), ("B", "C")],
+    # AE cut from the greater AB, equal to the lesser C.
+    3: [("A", "E"), ("Cleft", "Cright")],
 }
 
 PLACE_DEG = {
@@ -693,8 +708,15 @@ def render(n: int, scene: Scene, out: Path) -> None:
     # joins that point to the arc, which drew a stroke from "Proposition"
     # into the circle (I.1, I.2, I.3, I.12, I.22).
     cr.new_path()
-    cr.set_source_rgb(*rgb(INK))
-    cr.set_line_width(3.2)
+    lit_segs = LINES.get(n, [])
+    for a, b in lit_segs:
+        if a not in scene.pts or b not in scene.pts:
+            raise SystemExit(f"I.{n}: line {a}{b} missing")
+    lit_ink = {(a, b) for a, b in lit_segs} | {(b, a) for a, b in lit_segs}
+    quiet = bool(lit_segs)
+    ink = rgb(DIM if quiet else INK)
+    cr.set_source_rgb(*ink)
+    cr.set_line_width(2.4 if quiet else 3.2)
     cr.set_line_cap(cairo.LINE_CAP_ROUND)
     for name, r in scene.circs:
         x, y = pt(name)
@@ -710,20 +732,32 @@ def render(n: int, scene: Scene, out: Path) -> None:
         cr.stroke()
     cr.restore()
 
-    cr.set_source_rgb(*rgb(INK))
-    cr.set_line_width(3.2)
+    cr.set_source_rgb(*ink)
+    cr.set_line_width(2.4 if quiet else 3.2)
     cr.set_line_cap(cairo.LINE_CAP_ROUND)
     cr.set_line_join(cairo.LINE_JOIN_ROUND)
     for a, b in scene.segs:
+        if (a, b) in lit_ink:
+            continue
         cr.move_to(*pt(a))
         cr.line_to(*pt(b))
         cr.stroke()
 
-    cr.set_source_rgb(*rgb(INK))
+    # Brick, not the wash gold: gold on cream reads as mustard and fights
+    # the navy type. Labels stay navy, the color every other card uses.
+    cr.set_source_rgb(*rgb(BRICK))
+    cr.set_line_width(13)
+    cr.set_line_cap(cairo.LINE_CAP_ROUND)
+    for a, b in lit_segs:
+        cr.move_to(*pt(a))
+        cr.line_to(*pt(b))
+        cr.stroke()
+
     cr.new_path()
     for p in scene.dot_pts:
         x, y = pt_of(p)
-        cr.arc(x, y, 4.2, 0, math.tau)
+        cr.set_source_rgb(*rgb(INK if not quiet else DIM))
+        cr.arc(x, y, 3.4, 0, math.tau)
         cr.fill()
 
     for name, (anchor, deg, r_em) in scene.labels.items():
@@ -743,7 +777,7 @@ def render(n: int, scene: Scene, out: Path) -> None:
 def main() -> None:
     fns = functions()
     missing = []
-    wanted = list(range(1, 37)) + [41]
+    wanted = [int(a) for a in sys.argv[1:] if a.isdigit()] or (list(range(1, 37)) + [41])
     for n in wanted:
         out = DOCS / f"youtube-book1-proposition{n}.png"
         if out.exists() and "--force" not in sys.argv:
