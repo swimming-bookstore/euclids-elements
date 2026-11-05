@@ -989,4 +989,24 @@ mod tests {
         assert!(proof.contains("[triangle] DCE is also equal to triangle FCE"));
         assert!(!cites(&i40[2]).iter().any(|c| c.contains("triangle")));
     }
+
+    #[test]
+    fn i42_fitzpatrick_paragraphs() {
+        // The setting is its own paragraph. Construction and proof are one
+        // paragraph on the English plate; the conclusion is the next indent.
+        let i42 = layout_of(1, 42);
+        assert_eq!(i42.len(), 3, "I.42 has three Fitzpatrick paragraphs");
+        assert!(cites(&i42[0]).is_empty());
+        assert_eq!(
+            cites(&i42[1]),
+            vec!["[Prop. 1.10]", "[Prop. 1.23]", "[Prop. 1.31]", "[Prop. 1.31]", "[Prop. 1.38]", "[Prop. 1.41]"]
+        );
+        let proof = para_text(&i42[1]);
+        assert!(proof.contains("Thus, FECG is a parallelogram. And since BE is equal to EC"));
+        assert!(proof.contains("the same base as (AEC), and is between the same parallels as (AEC)"));
+        assert!(proof.contains("(FECG) also has the angle CEF equal to the given (angle) D."));
+        let close = para_text(&i42[2]);
+        assert!(close.starts_with("Thus, parallelogram FECG"));
+        assert!(close.contains("the very thing it was required to do."));
+    }
 }
