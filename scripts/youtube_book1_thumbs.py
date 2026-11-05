@@ -10,7 +10,8 @@ and never an angle the proposition does not fill. A proposition about an
 angle or parallels gets no wash: a wash there would light the wrong region.
 A proposition about a line has no interior to wash. I.42 is a construction:
 the given triangle and the parallelogram equal to it are the two regions, and
-the given angle is the mark already on the plate, not a pie. I.2 and I.3 light the
+the two equal angles take the rose pie. Yellow sits on the gold wash, so it
+does not read as a corner of the parallelogram. I.2 and I.3 light the
 equal lines the enunciation names, and leave the construction ink at the
 same weight as I.1. Dimming that ink to push the subject made the plate
 look unfinished next to the first card. The wash gold is too close to the
@@ -86,8 +87,8 @@ WASHES: dict[int, list[tuple[str, ...]]] = {
     41: [("A", "B", "C", "D"), ("E", "B", "C")],
     # Triangle ABC and the parallelogram FECG equal to it, in the given
     # angle. FECG is drawn after ABC, so the gold covers the shared half
-    # and the warm region is the triangle's uncovered half. The given
-    # angle stays the plate's own mark — a pie would invent a second one.
+    # and the warm region is the triangle's uncovered half. The angles
+    # are pies (ANGLES), not a third wash.
     42: [("A", "B", "C"), ("F", "E", "C", "G")],
 }
 
@@ -107,6 +108,8 @@ ANGLES: dict[int, list[list[tuple[str, str, str]]]] = {
         [("A", "B", "C"), ("A", "C", "B")],
         [("C", "B", "D"), ("B", "C", "E")],
     ],
+    # ∠D = ∠FEC. One set, so one mark. Arm ends of D are not lettered.
+    42: [[("Dleft", "D", "Dright"), ("F", "E", "C")]],
 }
 
 # Per equality group, in ANGLES order: fill, then radius as a fraction of
@@ -114,6 +117,11 @@ ANGLES: dict[int, list[list[tuple[str, str, str]]]] = {
 # sets stay distinct at thumbnail size. The larger pie is drawn first.
 ANGLE_MARK: dict[int, list[tuple[tuple[int, int, int], float]]] = {
     5: [(PIE, 0.42), (PIE_ALT, 0.22)],
+    # Rose, not yellow: the pie sits on the gold parallelogram, and yellow
+    # reads as more of that wash. One plate radius for the pair — a fraction
+    # of each arm would draw the longer angle larger. Short of the letter
+    # inside ∠D.
+    42: [(PIE_ALT, 14.0)],
 }
 
 PLACE_DEG = {
@@ -707,8 +715,11 @@ def prepare(n: int, scene: Scene) -> None:
     for group in ANGLES.get(n, []):
         for arm, vertex, other in group:
             for name in (arm, vertex, other):
-                if name not in scene.pts:
-                    raise SystemExit(f"I.{n}: angle {arm}{vertex}{other} missing {name}")
+                # Arm ends of a given angle live in scene.arms, not scene.pts.
+                try:
+                    scene.at(name)
+                except SystemExit:
+                    raise SystemExit(f"I.{n}: angle {arm}{vertex}{other} missing {name}") from None
 
 
 def render(n: int, scene: Scene, out: Path) -> None:
@@ -809,6 +820,10 @@ def render(n: int, scene: Scene, out: Path) -> None:
     def angle_radius(arm: str, vertex: str, other: str, reach: float) -> float:
         vv = scene.at(vertex)
         span = min(vv.dist(scene.at(arm)), vv.dist(scene.at(other)))
+        # A fraction of the shorter arm. At least 1 is a plate radius, shared
+        # by every angle in the group so a longer arm does not draw a bigger pie.
+        if reach >= 1.0:
+            return min(reach, span * 0.92)
         return reach * span
 
     # Pies under the ink, so the plate's strokes and letters stay as they
