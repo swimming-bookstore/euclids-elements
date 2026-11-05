@@ -1244,4 +1244,57 @@ mod tests {
         );
         assert_eq!(display_letters("triangle(EBC)"), "EBC");
     }
+
+    #[test]
+    fn i42_aec_is_the_triangle_and_cef_is_the_angle() {
+        // Fitzpatrick writes "(AEC)" for the triangle already named, as "(EBC)"
+        // in I.41. "equal to" must not light ∠AEC. ∠CEF is the constructed
+        // angle, and D is the given mark, not a point of the figure.
+        let phrases = crate::content::get(1, 42).unwrap().phrases;
+        let script = compile(phrases, &crate::figure::book1_prop42(), Timing::default());
+        let runs = |word: &str| -> Vec<Vec<String>> {
+            script
+                .lines
+                .iter()
+                .flat_map(|l| l.tokens.iter())
+                .filter(|t| letter_key(&t.text) == word)
+                .map(|t| t.parts.clone())
+                .collect()
+        };
+        let has = |parts: &[String], id: &str| parts.iter().any(|p| p == id);
+        let triangle = |parts: &[String], sides: &[&str]| sides.iter().all(|s| has(parts, s));
+        let aec = runs("AEC");
+        assert!(aec.len() >= 4, "AEC runs: {aec:?}");
+        for (i, parts) in aec.iter().enumerate() {
+            assert!(
+                triangle(parts, &["ae", "ec", "ac"]) && !has(parts, "ab"),
+                "AEC run {i} is △AEC, not ∠AEC: {parts:?}"
+            );
+        }
+        let abe = runs("ABE");
+        assert!(
+            abe.len() >= 1 && abe.iter().all(|p| triangle(p, &["ab", "ae", "be"])),
+            "ABE is △ABE: {abe:?}"
+        );
+        let fecg = runs("FECG");
+        assert!(
+            fecg.len() >= 4
+                && fecg.iter().all(|p| {
+                    triangle(p, &["ef", "ec", "cg", "fg"]) && !has(p, "ae") && !has(p, "ac")
+                }),
+            "FECG is the parallelogram, not the diagonal: {fecg:?}"
+        );
+        let cef = runs("CEF");
+        assert!(
+            cef.len() >= 2
+                && cef.iter().all(|p| has(p, "ec") && has(p, "ef") && !has(p, "cf") && !has(p, "ac")),
+            "CEF is ∠CEF: {cef:?}"
+        );
+        let d = runs("D");
+        assert!(
+            d.len() >= 3 && d.iter().all(|p| has(p, "ang-d")),
+            "D is the given angle: {d:?}"
+        );
+        assert_eq!(display_letters("triangle(AEC)"), "AEC");
+    }
 }

@@ -8,7 +8,9 @@ closed figure the enunciation is about — the two equal triangles, the two
 equal parallelograms, the constructed triangle — never a construction line
 and never an angle the proposition does not fill. A proposition about an
 angle or parallels gets no wash: a wash there would light the wrong region.
-A proposition about a line has no interior to wash. I.2 and I.3 light the
+A proposition about a line has no interior to wash. I.42 is a construction:
+the given triangle and the parallelogram equal to it are the two regions, and
+the given angle is the mark already on the plate, not a pie. I.2 and I.3 light the
 equal lines the enunciation names, and leave the construction ink at the
 same weight as I.1. Dimming that ink to push the subject made the plate
 look unfinished next to the first card. The wash gold is too close to the
@@ -82,6 +84,11 @@ WASHES: dict[int, list[tuple[str, ...]]] = {
     # wash covers the overlap, so the parallelogram's uncovered half stays
     # the warm region and EBC reads as the second figure.
     41: [("A", "B", "C", "D"), ("E", "B", "C")],
+    # Triangle ABC and the parallelogram FECG equal to it, in the given
+    # angle. FECG is drawn after ABC, so the gold covers the shared half
+    # and the warm region is the triangle's uncovered half. The given
+    # angle stays the plate's own mark — a pie would invent a second one.
+    42: [("A", "B", "C"), ("F", "E", "C", "G")],
 }
 
 # Lines the card lights. A produced ray is not the subject: only the named piece.
@@ -243,6 +250,15 @@ class Eval:
         if ch == "(":
             self.i += 1
             v = self.expr()
+            if self.peek() == ",":
+                pair = [v]
+                while self.peek() == ",":
+                    self.i += 1
+                    if self.peek() == ")":
+                        break
+                    pair.append(self.expr())
+                self.expect(")")
+                return tuple(pair)
             self.expect(")")
             return v
         if ch == "&":
@@ -332,11 +348,15 @@ class Scene:
         self.arc_list: list[tuple[V2, V2, V2]] = []
         self.dot_pts: list[V2] = []
         self.clip_box: tuple[V2, V2] | None = None
+        # Arm ends of a given angle (I.42's Dleft, Dright). Not lettered.
+        self.arms: dict[str, V2] = {}
 
     def at(self, name: str) -> V2:
-        if name not in self.pts:
-            raise SystemExit(f"unknown point {name}")
-        return self.pts[name]
+        if name in self.pts:
+            return self.pts[name]
+        if name in self.arms:
+            return self.arms[name]
+        raise SystemExit(f"unknown point {name}")
 
     def pin(self, name: str, p: V2) -> None:
         self.pts[name] = p
@@ -434,6 +454,39 @@ class Scene:
 
     def clip(self, a: V2, b: V2) -> None:
         self.clip_box = (a, b)
+
+    def given_angle(
+        self,
+        name: str,
+        from_: str,
+        vertex: tuple[float, float],
+        left: tuple[float, float],
+        right: tuple[float, float],
+        glyph: V2,
+    ) -> None:
+        self.given_angle_arms(name, from_, vertex, [left, right], glyph)
+
+    def given_angle_arms(
+        self,
+        name: str,
+        from_: str,
+        vertex: tuple[float, float],
+        arms: list,
+        glyph: V2,
+    ) -> None:
+        # Same construction as Diagram::given_angle_arms: vertex from a point,
+        # then each arm, then the plate glyph. The strokes share one mark.
+        v = self.at(from_).polar(vertex[0], vertex[1])
+        self.pin(name, v)
+        side = ["left", "right"]
+        for i, arm in enumerate(arms):
+            length, heading = arm
+            end = v.polar(length, heading)
+            suffix = side[i] if i < 2 else f"arm{i}"
+            self.arms[f"{name}{suffix}"] = end
+            self.segs.append((name, f"{name}{suffix}"))
+        # The capital is the plate glyph, not an offset from the vertex.
+        self.labels[name] = (glyph, 90.0, 0.0)
 
     def bounds(self) -> tuple[float, float, float, float]:
         if self.clip_box:
@@ -860,7 +913,7 @@ def render(n: int, scene: Scene, out: Path) -> None:
 def main() -> None:
     fns = functions()
     missing = []
-    wanted = [int(a) for a in sys.argv[1:] if a.isdigit()] or (list(range(1, 37)) + [41])
+    wanted = [int(a) for a in sys.argv[1:] if a.isdigit()] or (list(range(1, 37)) + [41, 42])
     for n in wanted:
         out = DOCS / f"youtube-book1-proposition{n}.png"
         if out.exists() and "--force" not in sys.argv:
