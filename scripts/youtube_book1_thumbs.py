@@ -44,8 +44,17 @@ angles encompassed by those straight-lines equal. The card keeps the plate
 the three equalities and that angle. AB and DE take the brick. AC and DF
 take the rose. BC and EF, the bases, take a bronze. ∠BAC and ∠EDF take
 one yellow pie. A wash of ABC and DEF would light the triangles, which
-the proposition does not claim. Labels stay navy, the color every other
-card uses.
+the proposition does not claim. I.9 cuts a given rectilinear angle in
+half. The card keeps the plate — D, E, AD, AE, DE and the equilateral
+DEF are the construction, not the subject — and marks the cut. ∠DAF
+and ∠EAF, the two halves, take one yellow pie. A wash of BAC would
+light the angle the proposition cuts, not the halves, and a brick on
+AD and AE would light the construction. I.10 cuts a given finite
+straight-line in half. The card keeps the plate — equilateral ABC and
+the bisector CD are the construction, not the subject — and marks the
+cut. AD and BD, the two halves, take the brick. A wash of ABC would
+light the triangle, which the proposition does not claim. Labels stay
+navy, the color every other card uses.
 """
 
 from __future__ import annotations
@@ -130,6 +139,9 @@ LINES: dict[int, list[tuple[str, str]]] = {
     # AB = DE, the first of the two sides. AC = DF and the bases are
     # LINE_EXTRA: three equalities, three hues.
     8: [("A", "B"), ("D", "E")],
+    # AD = BD, the two halves of the given AB. D lies on AB, so each
+    # half is the piece, and the whole chord is not a third stroke.
+    10: [("A", "D"), ("B", "D")],
 }
 
 # Further line equalities, each a hue that is not the angle yellow.
@@ -159,6 +171,8 @@ ANGLES: dict[int, list[list[tuple[str, str, str]]]] = {
     6: [[("A", "B", "C"), ("A", "C", "B")]],
     # ∠BAC = ∠EDF, the angles the equal sides encompass. One set.
     8: [[("B", "A", "C"), ("E", "D", "F")]],
+    # ∠DAF = ∠EAF, the two halves of the given angle. One set.
+    9: [[("D", "A", "F"), ("E", "A", "F")]],
     # ∠D = ∠FEC. One set, so one mark. Arm ends of D are not lettered.
     42: [[("Dleft", "D", "Dright"), ("F", "E", "C")]],
 }
@@ -173,6 +187,10 @@ ANGLE_MARK: dict[int, list[tuple[tuple[int, int, int], float]]] = {
     6: [(PIE, 0.32)],
     # Short of the rose sides, so the pie is the angle and not another stroke.
     8: [(PIE, 0.20)],
+    # Short of DE, so the two halves read as angles and not as a wash of
+    # the triangle. ∠BAC is narrow on the plate, so the reach is longer
+    # than the I.8 pie or the halves disappear at thumbnail size.
+    9: [(PIE, 0.55)],
     # Rose, not yellow: the pie sits on the gold parallelogram, and yellow
     # reads as more of that wash. One plate radius for the pair — a fraction
     # of each arm would draw the longer angle larger. Short of the letter
