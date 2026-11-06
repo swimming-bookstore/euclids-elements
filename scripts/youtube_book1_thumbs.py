@@ -26,7 +26,12 @@ and larger at the base, rose and smaller under it — so a pair reads as one
 set and the other pair as the other. Both hues sit with the plate: the
 yellow is the angle highlight, the rose is the brick of the line cards
 lifted so it still reads as a wash. A pie fills the angle; it does not
-replace a stroke or a letter. Labels stay navy, the color every other card
+replace a stroke or a letter. I.6 is the converse: two equal angles, and
+the sides subtending them equal. The card keeps the plate — D and DC are
+the reductio, not the subject — and marks what the enunciation names.
+∠ABC and ∠ACB take one yellow pie. AB and AC, the sides under those
+angles, take the brick. A wash of ABC would light the triangle, which the
+proposition does not claim. Labels stay navy, the color every other card
 uses.
 """
 
@@ -65,7 +70,6 @@ LETTER_R = 0.82  # plate::LETTER_R, em of the letter type
 WASHES: dict[int, list[tuple[str, ...]]] = {
     1: [("A", "B", "C")],
     4: [("A", "B", "C"), ("D", "E", "F")],
-    6: [("A", "B", "C")],
     7: [("A", "C", "B"), ("A", "D", "B")],
     8: [("A", "B", "C"), ("D", "E", "F")],
     16: [("A", "B", "C")],
@@ -104,6 +108,9 @@ LINES: dict[int, list[tuple[str, str]]] = {
     2: [("A", "L"), ("B", "C")],
     # AE cut from the greater AB, equal to the lesser C.
     3: [("A", "E"), ("Cleft", "Cright")],
+    # AB and AC, the sides subtending the equal angles. D lies on AB, so
+    # the named side is the whole chord, not the cut pieces AD and DB.
+    6: [("A", "B"), ("A", "C")],
 }
 
 # Equal angles share a mark: (arm, vertex, arm), grouped by equality.
@@ -114,6 +121,8 @@ ANGLES: dict[int, list[list[tuple[str, str, str]]]] = {
         [("A", "B", "C"), ("A", "C", "B")],
         [("C", "B", "D"), ("B", "C", "E")],
     ],
+    # ∠ABC = ∠ACB. One set. The sides under them are lines, not a second pie.
+    6: [[("A", "B", "C"), ("A", "C", "B")]],
     # ∠D = ∠FEC. One set, so one mark. Arm ends of D are not lettered.
     42: [[("Dleft", "D", "Dright"), ("F", "E", "C")]],
 }
@@ -123,6 +132,9 @@ ANGLES: dict[int, list[list[tuple[str, str, str]]]] = {
 # sets stay distinct at thumbnail size. The larger pie is drawn first.
 ANGLE_MARK: dict[int, list[tuple[tuple[int, int, int], float]]] = {
     5: [(PIE, 0.42), (PIE_ALT, 0.22)],
+    # Same absolute reach as the I.5 base pies, so the pair reads at
+    # thumbnail size. Short of D on AB, and short of the opposite side.
+    6: [(PIE, 0.32)],
     # Rose, not yellow: the pie sits on the gold parallelogram, and yellow
     # reads as more of that wash. One plate radius for the pair — a fraction
     # of each arm would draw the longer angle larger. Short of the letter
@@ -877,6 +889,9 @@ def render(n: int, scene: Scene, out: Path) -> None:
             raise SystemExit(f"I.{n}: line {a}{b} missing")
     lit_ink = {(a, b) for a, b in lit_segs} | {(b, a) for a, b in lit_segs}
     # Construction stays the same ink as I.1. Only the named lines are lit.
+    # A named side may be chained through a construction point (D on AB).
+    # The highlight is the whole chord, drawn over the pieces, so the plate's
+    # dot stays and the brick is not a second stroke beside a gap.
     cr.set_source_rgb(*rgb(INK))
     cr.set_line_width(3.2)
     cr.set_line_cap(cairo.LINE_CAP_ROUND)
