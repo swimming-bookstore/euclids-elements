@@ -37,8 +37,15 @@ another point on the same side. The card keeps the plate — AB is the
 given line, CD is joined for the reductio — and marks the two equalities.
 AC and AD, the pair from A, take the brick. CB and DB, the pair to B,
 take the yellow. A wash of ACB and ADB would light the triangles, which
-the proposition does not claim. Labels stay navy, the color every other card
-uses.
+the proposition does not claim. I.8 is the side-angle conclusion: two sides
+equal to two sides, respectively, the base equal to the base, and so the
+angles encompassed by those straight-lines equal. The card keeps the plate
+— G, EG and GF are the miss, the reductio, not the subject — and marks
+the three equalities and that angle. AB and DE take the brick. AC and DF
+take the rose. BC and EF, the bases, take a bronze. ∠BAC and ∠EDF take
+one yellow pie. A wash of ABC and DEF would light the triangles, which
+the proposition does not claim. Labels stay navy, the color every other
+card uses.
 """
 
 from __future__ import annotations
@@ -69,6 +76,9 @@ WASH = (232, 214, 176)
 # brick left dark, fights the cream.
 PIE = (234, 188, 64)
 PIE_ALT = (216, 122, 100)
+# Third line equality, when yellow is already the angle and rose is the
+# second pair. Dark enough to read on cream; warm, so it sits with the plate.
+BRONZE = (122, 72, 28)
 LETTER_R = 0.82  # plate::LETTER_R, em of the letter type
 
 # Subject regions, vertex order around the boundary. Two regions: warm, then gold,
@@ -76,7 +86,6 @@ LETTER_R = 0.82  # plate::LETTER_R, em of the letter type
 WASHES: dict[int, list[tuple[str, ...]]] = {
     1: [("A", "B", "C")],
     4: [("A", "B", "C"), ("D", "E", "F")],
-    8: [("A", "B", "C"), ("D", "E", "F")],
     16: [("A", "B", "C")],
     17: [("A", "B", "C")],
     18: [("A", "B", "C")],
@@ -118,6 +127,18 @@ LINES: dict[int, list[tuple[str, str]]] = {
     6: [("A", "B"), ("A", "C")],
     # AC = AD, the pair from A. CB = DB is the other equality (LINE_ALT).
     7: [("A", "C"), ("A", "D")],
+    # AB = DE, the first of the two sides. AC = DF and the bases are
+    # LINE_EXTRA: three equalities, three hues.
+    8: [("A", "B"), ("D", "E")],
+}
+
+# Further line equalities, each a hue that is not the angle yellow.
+# I.8: AC = DF, then the bases BC = EF. The miss (EG, GF) is not here.
+LINE_EXTRA: dict[int, list[tuple[tuple[int, int, int], tuple[tuple[str, str], ...]]]] = {
+    8: [
+        (PIE_ALT, (("A", "C"), ("D", "F"))),
+        (BRONZE, (("B", "C"), ("E", "F"))),
+    ],
 }
 
 # A second equality, a second hue. Same width as the brick. Yellow is the
@@ -136,6 +157,8 @@ ANGLES: dict[int, list[list[tuple[str, str, str]]]] = {
     ],
     # ∠ABC = ∠ACB. One set. The sides under them are lines, not a second pie.
     6: [[("A", "B", "C"), ("A", "C", "B")]],
+    # ∠BAC = ∠EDF, the angles the equal sides encompass. One set.
+    8: [[("B", "A", "C"), ("E", "D", "F")]],
     # ∠D = ∠FEC. One set, so one mark. Arm ends of D are not lettered.
     42: [[("Dleft", "D", "Dright"), ("F", "E", "C")]],
 }
@@ -148,6 +171,8 @@ ANGLE_MARK: dict[int, list[tuple[tuple[int, int, int], float]]] = {
     # Same absolute reach as the I.5 base pies, so the pair reads at
     # thumbnail size. Short of D on AB, and short of the opposite side.
     6: [(PIE, 0.32)],
+    # Short of the rose sides, so the pie is the angle and not another stroke.
+    8: [(PIE, 0.20)],
     # Rose, not yellow: the pie sits on the gold parallelogram, and yellow
     # reads as more of that wash. One plate radius for the pair — a fraction
     # of each arm would draw the longer angle larger. Short of the letter
@@ -898,10 +923,14 @@ def render(n: int, scene: Scene, out: Path) -> None:
     cr.new_path()
     lit_segs = LINES.get(n, [])
     alt_segs = LINE_ALT.get(n, [])
-    for a, b in lit_segs + alt_segs:
+    extra = LINE_EXTRA.get(n, [])
+    extra_segs = [seg for _, segs in extra for seg in segs]
+    for a, b in lit_segs + alt_segs + extra_segs:
         if a not in scene.pts or b not in scene.pts:
             raise SystemExit(f"I.{n}: line {a}{b} missing")
-    lit_ink = {(a, b) for a, b in lit_segs + alt_segs} | {(b, a) for a, b in lit_segs + alt_segs}
+    lit_ink = {(a, b) for a, b in lit_segs + alt_segs + extra_segs} | {
+        (b, a) for a, b in lit_segs + alt_segs + extra_segs
+    }
     # Construction stays the same ink as I.1. Only the named lines are lit.
     # A named side may be chained through a construction point (D on AB).
     # The highlight is the whole chord, drawn over the pieces, so the plate's
@@ -948,6 +977,22 @@ def render(n: int, scene: Scene, out: Path) -> None:
 
     stroke_lines(lit_segs, BRICK)
     stroke_lines(alt_segs, PIE)
+    for color, segs in extra:
+        stroke_lines(segs, color)
+
+    # A miss can cross a named side (EG across DF on I.8). The highlight is
+    # drawn over the plate, so the unlit strokes go back on top and the
+    # crossing stays. Other cards have no crossing to restore.
+    if n == 8:
+        cr.set_source_rgb(*rgb(INK))
+        cr.set_line_width(3.2)
+        cr.set_line_cap(cairo.LINE_CAP_ROUND)
+        for a, b in scene.segs:
+            if (a, b) in lit_ink:
+                continue
+            cr.move_to(*pt(a))
+            cr.line_to(*pt(b))
+            cr.stroke()
 
     cr.new_path()
     for p in scene.dot_pts:
