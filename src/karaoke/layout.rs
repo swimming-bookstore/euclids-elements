@@ -1009,4 +1009,27 @@ mod tests {
         assert!(close.starts_with("Thus, parallelogram FECG"));
         assert!(close.contains("the very thing it was required to do."));
     }
+
+    #[test]
+    fn i43_fitzpatrick_paragraphs() {
+        // Setting, proof, conclusion — three indents on the English plate.
+        // The proof runs over the page break and stays one paragraph.
+        let i43 = layout_of(1, 43);
+        assert_eq!(i43.len(), 3, "I.43 has three Fitzpatrick paragraphs");
+        assert!(cites(&i43[0]).is_empty());
+        assert_eq!(cites(&i43[1]), vec!["[Prop. 1.34]", "[Prop. 1.34]"]);
+        let setting = para_text(&i43[0]);
+        assert!(setting.starts_with("Let ABCD be a parallelogram, and AC its diagonal."));
+        assert!(setting.contains("And let EH and FG be the parallelograms about AC, and BK and KD the so-called complements (about AC)."));
+        assert!(setting.contains("I say that the complement BK is equal to the complement KD."));
+        let proof = para_text(&i43[1]);
+        assert!(proof.contains("triangle ABC is equal to triangle ACD."));
+        assert!(proof.contains("triangle KFC is also equal to (triangle) KGC."));
+        assert!(proof.contains("and KFC to KGC, triangle AEK plus KGC is equal to triangle AHK plus KFC."));
+        assert!(proof.contains("the whole (triangle) ADC."));
+        assert!(proof.contains("the remaining complement BK is equal to the remaining complement KD."));
+        let close = para_text(&i43[2]);
+        assert!(close.starts_with("Thus, for any parallelogramic figure"));
+        assert!(close.contains("the very thing it was required to show."));
+    }
 }

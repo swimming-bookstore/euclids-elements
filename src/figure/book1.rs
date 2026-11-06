@@ -992,11 +992,12 @@ pub fn book1_prop42() -> Diagram {
 
 /// I.43 — Fitzpatrick English plate (Elements PDF p. 43, the upper right-hand figure).
 ///
-/// The page draws the other lines first, then the two diagonals. Outer
-/// parallelogram ABCD (B–A–D–C). The inner row is EK, E on AB to K — not
-/// EH, and not through to F. HG is the inner upright, H on AD through K to
-/// G on BC. AK and AC are the last strokes: AK from A across K to F, AC the
-/// long diagonal. AB ∥ DC, AD ∥ BC. There is no FG stroke.
+/// The page draws four strokes: the outer parallelogram ABCD (B–A–D–C),
+/// the mid-row EF (E on AB through K to F on DC), the upright HG (H on AD
+/// to G on BC), and the diagonal AC. There is no EH stroke and no FG stroke.
+/// Those names, and the complements BK and KD, are opposite corners of the
+/// parallelograms about the diagonal — not sides, and not the short path
+/// between the letters.
 ///
 /// Vertices are the intersections in the page-43 content stream, not the
 /// letter boxes. One scale BC = 100. The three rows are level.
@@ -1004,6 +1005,8 @@ pub fn book1_prop42() -> Diagram {
 /// AE/AB = 0.301, AH/AD = 0.298, BG/BC = 0.295, AK/AC = 0.301.
 /// ∠ABC = 73.3°, ∠BCD = 106.7°. The uprights lean 16.7° off the vertical.
 /// A–K sit one letter-radius out from the mark, on the measured heading.
+/// AD is split at H and AC at K so a named piece lights without the rest of
+/// the stroke. H and K already lie on those lines, so the ink is the page's.
 pub fn book1_prop43() -> Diagram {
     let mut d = Diagram::new();
     d.put("B", V2::new(0.0, 0.0), Place::Deg(-96.0));
@@ -1016,22 +1019,28 @@ pub fn book1_prop43() -> Diagram {
     d.meet("F", "D", "C", "Erow", "Efar", Place::Deg(-5.2));
     d.put("H", V2::new(47.415, 58.824), Place::Deg(74.1));
     d.put("G", V2::new(29.487, 0.0), Place::Deg(-92.4));
-    // K is where the last two strokes cross: AK (through to F) and AC.
-    // The plate's own HG misses that crossing by a fraction of a unit.
+    // K is where the diagonal crosses the mid-row. The plate's own HG misses
+    // that crossing by a fraction of a unit; the proof's K is the crossing.
     d.meet("K", "A", "C", "Erow", "Efar", Place::Deg(38.9));
-    // Outer parallelogram, split at E, F, and G. Then the other inner lines.
-    // The plate has no EH and no FG. The inner row is EK, E on AB to K.
+    // Outer parallelogram, split at E, F, G, and H. The mid-row is EK then KF,
+    // the page's EF. The upright is HK then KG, the page's HG. No EH, no FG.
     d.chain(&["A", "E", "B"]);
     d.chain(&["D", "F", "C"]);
     d.chain(&["B", "G", "C"]);
-    d.join("A", "D");
+    d.chain(&["A", "H", "D"]);
     d.join("E", "K");
+    d.join("K", "F");
     d.join("H", "K");
     d.join("K", "G");
-    // AK and AC last. AK is drawn through to F.
+    // Diagonal AC, split at K so AK is the diagonal of parallelogram EH
+    // and KC the diagonal of parallelogram FG. The page draws one stroke.
     d.join("A", "K");
-    d.join("K", "F");
-    d.join("A", "C");
+    d.join("K", "C");
+    // Spoken names are opposite corners. The boundary is the parallelogram.
+    d.region("EH", &["A", "E", "K", "H"]);
+    d.region("FG", &["K", "F", "C", "G"]);
+    d.region("BK", &["B", "E", "K", "G"]);
+    d.region("KD", &["K", "F", "D", "H"]);
     d.dots(&["A", "B", "C", "D", "E", "F", "G", "H", "K"]);
     d
 }
@@ -1079,7 +1088,7 @@ pub fn book1_prop44() -> Diagram {
     // middle upright at the mid row, just left of B.
     d.join("K", "H");
     // BG is not ink on the plate. The proof calls BEFG a parallelogram, so the
-    // side is drawn — same as FG on the I.43 plate.
+    // side is drawn.
     d.join("B", "G");
     // Given triangle C, from FE. The plate draws the base first (parallel to
     // FE, longer than FE), then the apex. Corners are pinned; C is the glyph.

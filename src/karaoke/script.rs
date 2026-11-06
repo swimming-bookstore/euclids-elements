@@ -100,6 +100,9 @@ pub fn display_letters(text: &str) -> String {
     if let Some(name) = triangle_object(text) {
         return name;
     }
+    if let Some(name) = parallelogram_object(text) {
+        return name;
+    }
     text.to_string()
 }
 
@@ -113,6 +116,13 @@ fn angle_object(piece: &str) -> Option<String> {
 /// wrapper is the kind. "equal to" cannot turn it into an angle (I.39, I.40).
 fn triangle_object(piece: &str) -> Option<String> {
     wrapped_letters(piece, "triangle")
+}
+
+/// `*parallelogram(EH)*` is a parallelogram named by opposite corners.
+/// The letters are spoken; the wrapper is the kind. The straight-line
+/// between the letters is not the figure (I.43).
+fn parallelogram_object(piece: &str) -> Option<String> {
+    wrapped_letters(piece, "parallelogram")
 }
 
 fn wrapped_letters(piece: &str, kind: &str) -> Option<String> {
@@ -197,13 +207,15 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
                 // A period inside the italic run starts a new sentence, so
                 // the next piece is not still "the angle …".
                 let following = words_after(&chars, i);
-                // angle(DCE) / triangle(DBC) is the object. Words around it do not
-                // reclassify it.
+                // angle(DCE) / triangle(DBC) / parallelogram(EH) is the object.
+                // Words around it do not reclassify it.
                 let wrapped = angle_object(piece);
                 let as_triangle = triangle_object(piece);
+                let as_parallelogram = parallelogram_object(piece);
                 let spoken = wrapped
                     .as_deref()
                     .or(as_triangle.as_deref())
+                    .or(as_parallelogram.as_deref())
                     .unwrap_or(piece);
                 // "*DEF*, and *BCA*" — the comma is part of the italic run, but it
                 // is not part of the name. Record the bare name before classifying
@@ -223,6 +235,7 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
                     recent.clone()
                 };
                 let angle = as_triangle.is_none()
+                    && as_parallelogram.is_none()
                     && (wrapped.is_some()
                         || (name.chars().filter(|c| c.is_ascii_alphabetic()).count() == 3
                             && ((n == 0 || carried)
@@ -483,6 +496,10 @@ fn figure_word(w: &str) -> bool {
         w,
         "triangle"
             | "triangles"
+            | "parallelogram"
+            | "parallelograms"
+            | "complement"
+            | "complements"
             | "base"
             | "circle"
             | "straight-line"
@@ -1296,5 +1313,70 @@ mod tests {
             "D is the given angle: {d:?}"
         );
         assert_eq!(display_letters("triangle(AEC)"), "AEC");
+    }
+
+    #[test]
+    fn i43_complements_are_the_parallelograms() {
+        // Fitzpatrick names the parallelograms about the diagonal, and the
+        // complements, by opposite corners. "equal to" must not turn KFC or
+        // KGC into angles, and EH must not light the straight-line that is
+        // not on the plate.
+        let phrases = crate::content::get(1, 43).unwrap().phrases;
+        let script = compile(phrases, &crate::figure::book1_prop43(), Timing::default());
+        let runs = |word: &str| -> Vec<Vec<String>> {
+            script
+                .lines
+                .iter()
+                .flat_map(|l| l.tokens.iter())
+                .filter(|t| letter_key(&t.text) == word)
+                .map(|t| t.parts.clone())
+                .collect()
+        };
+        let has = |parts: &[String], id: &str| parts.iter().any(|p| p == id);
+        let eh = runs("EH");
+        assert!(eh.len() >= 2, "EH runs: {eh:?}");
+        for (i, parts) in eh.iter().enumerate() {
+            assert!(
+                has(parts, "ae") && has(parts, "ek") && has(parts, "hk") && has(parts, "ah") && !has(parts, "ak"),
+                "EH run {i} is parallelogram EH, not the diagonal: {parts:?}"
+            );
+        }
+        let fg = runs("FG");
+        assert!(
+            fg.len() >= 1
+                && fg.iter().all(|p| has(p, "kf") && has(p, "fc") && has(p, "gc") && has(p, "kg") && !has(p, "kc")),
+            "FG is parallelogram FG: {fg:?}"
+        );
+        let bk = runs("BK");
+        assert!(
+            bk.len() >= 3
+                && bk.iter().all(|p| has(p, "eb") && has(p, "ek") && has(p, "kg") && has(p, "bg")),
+            "BK is complement BK: {bk:?}"
+        );
+        let kd = runs("KD");
+        assert!(
+            kd.len() >= 3
+                && kd.iter().all(|p| has(p, "kf") && has(p, "df") && has(p, "hd") && has(p, "hk")),
+            "KD is complement KD: {kd:?}"
+        );
+        let kfc = runs("KFC");
+        assert!(
+            kfc.len() >= 2
+                && kfc.iter().all(|p| has(p, "kf") && has(p, "fc") && has(p, "kc") && !has(p, "kg")),
+            "KFC is triangle KFC, not an angle and not a walk through G: {kfc:?}"
+        );
+        let kgc = runs("KGC");
+        assert!(
+            kgc.len() >= 2
+                && kgc.iter().all(|p| has(p, "kg") && has(p, "gc") && has(p, "kc")),
+            "KGC is triangle KGC: {kgc:?}"
+        );
+        let ak = runs("AK");
+        assert!(
+            ak.len() >= 1 && ak.iter().all(|p| has(p, "ak") && !has(p, "kf")),
+            "AK is the diagonal of EH: {ak:?}"
+        );
+        assert_eq!(display_letters("parallelogram(EH)"), "EH");
+        assert_eq!(display_letters("triangle(KGC)"), "KGC");
     }
 }

@@ -14,6 +14,16 @@ struct Circ {
     letters: String,
 }
 
+/// A spoken name whose ink is not the straight-line between the letters.
+///
+/// I.43 calls the parallelograms about the diagonal *EH* and *FG*, and the
+/// complements *BK* and *KD*. Those are opposite corners. The plate draws no
+/// stroke EH, FG, BK, or KD — the name is the boundary, not the diagonal.
+struct Region {
+    letters: String,
+    boundary: Vec<&'static str>,
+}
+
 /// One stroke of a given angle (I.42's D). Named so tests can measure it;
 /// not a lettered point of the figure.
 struct Arm {
@@ -29,6 +39,7 @@ pub struct Diagram {
     circles: Vec<Circ>,
     named: Vec<Circ>,
     arms: Vec<Arm>,
+    regions: Vec<Region>,
 }
 
 impl Diagram {
@@ -40,6 +51,7 @@ impl Diagram {
             circles: Vec::new(),
             named: Vec::new(),
             arms: Vec::new(),
+            regions: Vec::new(),
         }
     }
 
@@ -391,6 +403,20 @@ impl Diagram {
         self
     }
 
+    /// A figure named by opposite corners, not by a drawn stroke.
+    ///
+    /// `letters` is the spoken name (*EH*, *BK*). `boundary` is the polygon in
+    /// order around the ink. Highlighting the name lights that boundary. It
+    /// does not light the diagonal the letters span, and it does not apply
+    /// when those letters are a side of some other named figure.
+    pub fn region(&mut self, letters: &'static str, boundary: &[&'static str]) -> &mut Self {
+        self.regions.push(Region {
+            letters: letters.to_ascii_uppercase(),
+            boundary: boundary.to_vec(),
+        });
+        self
+    }
+
     /// Consecutive segments along a produced line.
     pub fn chain(&mut self, names: &[&'static str]) -> &mut Self {
         for w in names.windows(2) {
@@ -524,8 +550,48 @@ impl Diagram {
 
     fn pair(&self, a: &'static str, b: &'static str) -> Vec<String> {
         let mut out = vec![a.to_string(), b.to_string()];
-        out.extend(self.path(a, b));
+        out.extend(self.link(a, b));
         out
+    }
+
+    /// The ink a two-letter name lights.
+    ///
+    /// The drawn straight-line wins: a direct stroke, then a collinear chain
+    /// (A–E–B for AB). A registered opposite-corner name (*EH*, *BK*) is the
+    /// boundary, not a path across the diagonal. A corner that only lies on a
+    /// longer stroke (K on AC) still names that stroke — a walk around the
+    /// figure would light the wrong piece. Anything else is the graph path.
+    fn link(&self, a: &'static str, b: &'static str) -> Vec<String> {
+        if let Some(ids) = self.straight(a, b) {
+            return ids;
+        }
+        if let Some(id) = self.edge_id(a, b) {
+            return vec![id];
+        }
+        if let Some(ids) = self.region_sides(a, b) {
+            return ids;
+        }
+        if let Some(id) = self.stroke_through(a, b).or_else(|| self.stroke_through(b, a)) {
+            return vec![id];
+        }
+        self.bfs(a, b)
+    }
+
+    /// Boundary strokes of the parallelogram named by opposite corners `a`, `b`.
+    fn region_sides(&self, a: &'static str, b: &'static str) -> Option<Vec<String>> {
+        let want = sorted_letters(&format!("{a}{b}"));
+        let region = self.regions.iter().find(|r| sorted_letters(&r.letters) == want)?;
+        let n = region.boundary.len();
+        if n < 3 {
+            return None;
+        }
+        let mut out = Vec::new();
+        for i in 0..n {
+            out.extend(self.side(region.boundary[i], region.boundary[(i + 1) % n]));
+        }
+        out.sort();
+        out.dedup();
+        Some(out)
     }
 
     /// `pair`, plus a corner that only lies on a longer stroke (G on DC).
@@ -2610,17 +2676,44 @@ mod tests {
         assert!((d.at("B").dist(d.at("G")) / bc - 0.295).abs() < 0.01, "BG");
         assert!((d.at("A").dist(d.at("H")) / d.at("A").dist(d.at("D")) - 0.298).abs() < 0.01, "AH");
         let abcd = d.highlight("ABCD");
-        assert!(has(&abcd, "ad"), "AD: {abcd:?}");
+        assert!(has(&abcd, "ah") && has(&abcd, "hd"), "AD: {abcd:?}");
         assert!(has(&abcd, "ae") && has(&abcd, "eb"), "AB: {abcd:?}");
         assert!(has(&abcd, "df") && has(&abcd, "fc"), "DC: {abcd:?}");
         assert!(has(&abcd, "bg") && has(&abcd, "gc"), "BC: {abcd:?}");
+        assert!(!has(&abcd, "ac") && !has(&abcd, "ak") && !has(&abcd, "kc"), "ABCD is not the diagonal: {abcd:?}");
         let segs = d.stroke_ids();
         assert!(segs.iter().any(|id| id == "ek"), "EK stroke: {segs:?}");
+        assert!(segs.iter().any(|id| id == "kf"), "KF, the rest of the page's EF: {segs:?}");
         assert!(!segs.iter().any(|id| id == "eh"), "plate has no EH stroke: {segs:?}");
         assert!(!segs.iter().any(|id| id == "fg"), "plate has no FG stroke: {segs:?}");
-        assert!(segs.iter().any(|id| id == "kf"), "KF: {segs:?}");
         let ac = d.highlight("AC");
-        assert!(has(&ac, "ac"), "diagonal AC: {ac:?}");
+        assert!(has(&ac, "ak") && has(&ac, "kc"), "diagonal AC: {ac:?}");
+        // EH and FG are the parallelograms about the diagonal, named by
+        // opposite corners. BK and KD are the complements, the same way.
+        // None of those names is the straight-line between the letters.
+        let eh = d.highlight("EH");
+        assert!(has(&eh, "ae") && has(&eh, "ek") && has(&eh, "hk") && has(&eh, "ah"), "parallelogram EH: {eh:?}");
+        assert!(!has(&eh, "ak"), "EH is not its diagonal AK: {eh:?}");
+        let fg = d.highlight("FG");
+        assert!(has(&fg, "kf") && has(&fg, "fc") && has(&fg, "gc") && has(&fg, "kg"), "parallelogram FG: {fg:?}");
+        assert!(!has(&fg, "kc"), "FG is not its diagonal KC: {fg:?}");
+        let bk = d.highlight("BK");
+        assert!(has(&bk, "eb") && has(&bk, "ek") && has(&bk, "kg") && has(&bk, "bg"), "complement BK: {bk:?}");
+        assert!(!has(&bk, "ae") && !has(&bk, "gc"), "BK is the complement, not the outer half: {bk:?}");
+        let kd = d.highlight("KD");
+        assert!(has(&kd, "kf") && has(&kd, "df") && has(&kd, "hd") && has(&kd, "hk"), "complement KD: {kd:?}");
+        assert!(!has(&kd, "ah") && !has(&kd, "fc"), "KD is the complement, not the outer half: {kd:?}");
+        let ak = d.highlight("AK");
+        assert!(has(&ak, "ak") && !has(&ak, "kc") && !has(&ak, "kf"), "AK is the diagonal of EH: {ak:?}");
+        let kfc = d.highlight("KFC");
+        assert!(has(&kfc, "kf") && has(&kfc, "fc") && has(&kfc, "kc"), "triangle KFC: {kfc:?}");
+        assert!(!has(&kfc, "kg"), "KFC does not walk around through G: {kfc:?}");
+        let kgc = d.highlight("KGC");
+        assert!(has(&kgc, "kg") && has(&kgc, "gc") && has(&kgc, "kc"), "triangle KGC: {kgc:?}");
+        let aek = d.highlight("AEK");
+        assert!(has(&aek, "ae") && has(&aek, "ek") && has(&aek, "ak"), "triangle AEK: {aek:?}");
+        let ahk = d.highlight("AHK");
+        assert!(has(&ahk, "ah") && has(&ahk, "hk") && has(&ahk, "ak"), "triangle AHK: {ahk:?}");
     }
 
     #[test]
