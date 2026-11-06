@@ -11,7 +11,9 @@ angle or parallels gets no wash: a wash there would light the wrong region.
 A proposition about a line has no interior to wash. I.42 is a construction:
 the given triangle and the parallelogram equal to it are the two regions, and
 the two equal angles take the rose pie. Yellow sits on the gold wash, so it
-does not read as a corner of the parallelogram. I.2 and I.3 light the
+does not read as a corner of the parallelogram. I.43 washes the two equal
+complements, BK and KD — the areas the enunciation names — and leaves the
+parallelograms about the diagonal as the plate. I.2 and I.3 light the
 equal lines the enunciation names, and leave the construction ink at the
 same weight as I.1. Dimming that ink to push the subject made the plate
 look unfinished next to the first card. The wash gold is too close to the
@@ -90,6 +92,10 @@ WASHES: dict[int, list[tuple[str, ...]]] = {
     # and the warm region is the triangle's uncovered half. The angles
     # are pies (ANGLES), not a third wash.
     42: [("A", "B", "C"), ("F", "E", "C", "G")],
+    # The two complements about the diagonal, BK and KD. They are the
+    # equal areas the enunciation names. The parallelograms EH and FG are
+    # the setting, not the subject, so they take no wash.
+    43: [("B", "E", "K", "G"), ("K", "F", "D", "H")],
 }
 
 # Lines the card lights. A produced ray is not the subject: only the named piece.
@@ -495,6 +501,11 @@ class Scene:
             self.segs.append((name, f"{name}{suffix}"))
         # The capital is the plate glyph, not an offset from the vertex.
         self.labels[name] = (glyph, 90.0, 0.0)
+
+    def region(self, _name: str, _boundary: list) -> None:
+        # Opposite-corner names (I.43's EH, BK). The card washes the
+        # complements; it does not redraw the plate.
+        return
 
     def bounds(self) -> tuple[float, float, float, float]:
         if self.clip_box:
@@ -928,7 +939,7 @@ def render(n: int, scene: Scene, out: Path) -> None:
 def main() -> None:
     fns = functions()
     missing = []
-    wanted = [int(a) for a in sys.argv[1:] if a.isdigit()] or (list(range(1, 37)) + [41, 42])
+    wanted = [int(a) for a in sys.argv[1:] if a.isdigit()] or (list(range(1, 37)) + [41, 42, 43])
     for n in wanted:
         out = DOCS / f"youtube-book1-proposition{n}.png"
         if out.exists() and "--force" not in sys.argv:
