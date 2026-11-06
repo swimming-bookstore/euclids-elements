@@ -31,7 +31,13 @@ the sides subtending them equal. The card keeps the plate — D and DC are
 the reductio, not the subject — and marks what the enunciation names.
 ∠ABC and ∠ACB take one yellow pie. AB and AC, the sides under those
 angles, take the brick. A wash of ABC would light the triangle, which the
-proposition does not claim. Labels stay navy, the color every other card
+proposition does not claim. I.7 is the impossibility on one straight-line:
+AC, CB cannot be constructed equal, respectively, to AD, DB, meeting at
+another point on the same side. The card keeps the plate — AB is the
+given line, CD is joined for the reductio — and marks the two equalities.
+AC and AD, the pair from A, take the brick. CB and DB, the pair to B,
+take the yellow. A wash of ACB and ADB would light the triangles, which
+the proposition does not claim. Labels stay navy, the color every other card
 uses.
 """
 
@@ -70,7 +76,6 @@ LETTER_R = 0.82  # plate::LETTER_R, em of the letter type
 WASHES: dict[int, list[tuple[str, ...]]] = {
     1: [("A", "B", "C")],
     4: [("A", "B", "C"), ("D", "E", "F")],
-    7: [("A", "C", "B"), ("A", "D", "B")],
     8: [("A", "B", "C"), ("D", "E", "F")],
     16: [("A", "B", "C")],
     17: [("A", "B", "C")],
@@ -111,6 +116,14 @@ LINES: dict[int, list[tuple[str, str]]] = {
     # AB and AC, the sides subtending the equal angles. D lies on AB, so
     # the named side is the whole chord, not the cut pieces AD and DB.
     6: [("A", "B"), ("A", "C")],
+    # AC = AD, the pair from A. CB = DB is the other equality (LINE_ALT).
+    7: [("A", "C"), ("A", "D")],
+}
+
+# A second equality, a second hue. Same width as the brick. Yellow is the
+# angle highlight, so the two pairs read as two sets, not two triangles.
+LINE_ALT: dict[int, list[tuple[str, str]]] = {
+    7: [("C", "B"), ("D", "B")],
 }
 
 # Equal angles share a mark: (arm, vertex, arm), grouped by equality.
@@ -884,10 +897,11 @@ def render(n: int, scene: Scene, out: Path) -> None:
     # into the circle (I.1, I.2, I.3, I.12, I.22).
     cr.new_path()
     lit_segs = LINES.get(n, [])
-    for a, b in lit_segs:
+    alt_segs = LINE_ALT.get(n, [])
+    for a, b in lit_segs + alt_segs:
         if a not in scene.pts or b not in scene.pts:
             raise SystemExit(f"I.{n}: line {a}{b} missing")
-    lit_ink = {(a, b) for a, b in lit_segs} | {(b, a) for a, b in lit_segs}
+    lit_ink = {(a, b) for a, b in lit_segs + alt_segs} | {(b, a) for a, b in lit_segs + alt_segs}
     # Construction stays the same ink as I.1. Only the named lines are lit.
     # A named side may be chained through a construction point (D on AB).
     # The highlight is the whole chord, drawn over the pieces, so the plate's
@@ -921,14 +935,19 @@ def render(n: int, scene: Scene, out: Path) -> None:
         cr.stroke()
 
     # Brick, not the wash gold: gold on cream reads as mustard and fights
-    # the navy type. Labels stay navy, the color every other card uses.
-    cr.set_source_rgb(*rgb(BRICK))
-    cr.set_line_width(13)
-    cr.set_line_cap(cairo.LINE_CAP_ROUND)
-    for a, b in lit_segs:
-        cr.move_to(*pt(a))
-        cr.line_to(*pt(b))
-        cr.stroke()
+    # the navy type. A second equality takes the yellow, so the pairs read
+    # as two sets. Labels stay navy, the color every other card uses.
+    def stroke_lines(segs, color) -> None:
+        cr.set_source_rgb(*rgb(color))
+        cr.set_line_width(13)
+        cr.set_line_cap(cairo.LINE_CAP_ROUND)
+        for a, b in segs:
+            cr.move_to(*pt(a))
+            cr.line_to(*pt(b))
+            cr.stroke()
+
+    stroke_lines(lit_segs, BRICK)
+    stroke_lines(alt_segs, PIE)
 
     cr.new_path()
     for p in scene.dot_pts:
