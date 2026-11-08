@@ -13,7 +13,16 @@ the given triangle and the parallelogram equal to it are the two regions, and
 the two equal angles take the rose pie. Yellow sits on the gold wash, so it
 does not read as a corner of the parallelogram. I.43 washes the two equal
 complements, BK and KD — the areas the enunciation names — and leaves the
-parallelograms about the diagonal as the plate. I.2 and I.3 light the
+parallelograms about the diagonal as the plate. I.44 is the application:
+triangle C and the parallelogram LB equal to it, applied to AB, are the two
+regions, and the angle the parallelogram stands in takes the same rose pie as
+the given angle. I.45 constructs one parallelogram equal to the given
+rectilinear figure, in the given angle. The two figures are equal, so the
+card washes them in one color — two hues would read as two areas. The
+given angle and the angle the parallelogram stands in take one rose pie.
+That pie is the I.42 radius, the default for a given angle and the angle
+the construction stands in.
+I.2 and I.3 light the
 equal lines the enunciation names, and leave the construction ink at the
 same weight as I.1. Dimming that ink to push the subject made the plate
 look unfinished next to the first card. The wash gold is too close to the
@@ -123,7 +132,18 @@ WASHES: dict[int, list[tuple[str, ...]]] = {
     # equal areas the enunciation names. The parallelograms EH and FG are
     # the setting, not the subject, so they take no wash.
     43: [("B", "E", "K", "G"), ("K", "F", "D", "H")],
+    # Triangle C and the parallelogram LB equal to it, applied to AB in the
+    # given angle. LB is drawn after C; they do not overlap. The angles are
+    # pies (ANGLES), not a third wash. P, Q, R are the unlettered corners.
+    44: [("P", "Q", "R"), ("A", "B", "M", "L")],
+    # Rectilinear figure ABCD and the parallelogram KFLM equal to it, in
+    # the given angle. They do not overlap. The angles are pies (ANGLES),
+    # not a third wash. Same area, so one wash (SAME_WASH), not two hues.
+    45: [("A", "B", "C", "D"), ("K", "H", "M", "L", "G", "F")],
 }
+
+# Equal areas share a wash. Two hues would say the figures differ.
+SAME_WASH = {45}
 
 # Lines the card lights. A produced ray is not the subject: only the named piece.
 LINES: dict[int, list[tuple[str, str]]] = {
@@ -175,11 +195,23 @@ ANGLES: dict[int, list[list[tuple[str, str, str]]]] = {
     9: [[("D", "A", "F"), ("E", "A", "F")]],
     # ∠D = ∠FEC. One set, so one mark. Arm ends of D are not lettered.
     42: [[("Dleft", "D", "Dright"), ("F", "E", "C")]],
+    # ∠D = ∠ABM, the given angle and the angle the applied parallelogram
+    # stands in. One set. Arm ends of D are not lettered.
+    44: [[("Dleft", "D", "Dright"), ("A", "B", "M")]],
+    # ∠E = ∠FKM, the given angle and the angle the constructed
+    # parallelogram stands in. One set. Arm ends of E are not lettered.
+    45: [[("Eleft", "E", "Eright"), ("F", "K", "M")]],
 }
+
+# Plate radius of the rose pie on a given angle and the angle the
+# construction stands in. I.42 sets it: 14, short of the letter inside ∠D.
+# I.44 and I.45 take this, not a radius grown to the card.
+GIVEN_ANGLE_PIE = 14.0
 
 # Per equality group, in ANGLES order: fill, then radius as a fraction of
 # the shorter arm. Same within a pair; different between pairs, so the two
 # sets stay distinct at thumbnail size. The larger pie is drawn first.
+# A missing entry takes the I.42 pie.
 ANGLE_MARK: dict[int, list[tuple[tuple[int, int, int], float]]] = {
     5: [(PIE, 0.42), (PIE_ALT, 0.22)],
     # Same absolute reach as the I.5 base pies, so the pair reads at
@@ -194,8 +226,9 @@ ANGLE_MARK: dict[int, list[tuple[tuple[int, int, int], float]]] = {
     # Rose, not yellow: the pie sits on the gold parallelogram, and yellow
     # reads as more of that wash. One plate radius for the pair — a fraction
     # of each arm would draw the longer angle larger. Short of the letter
-    # inside ∠D.
-    42: [(PIE_ALT, 14.0)],
+    # inside ∠D. This radius is the default (GIVEN_ANGLE_PIE) for a given
+    # angle and the angle the construction stands in.
+    42: [(PIE_ALT, GIVEN_ANGLE_PIE)],
 }
 
 PLACE_DEG = {
@@ -466,6 +499,25 @@ class Scene:
             raise SystemExit(f"{a}{b} parallel to {c}{d}")
         t = ((pa.x - pc.x) * (pc.y - pd.y) - (pa.y - pc.y) * (pc.x - pd.x)) / den
         self.put(name, V2(pa.x + t * (pb.x - pa.x), pa.y + t * (pb.y - pa.y)), place)
+
+    def put_r(self, name: str, p: V2, place: Place, r_em: float) -> None:
+        self.pin(name, p)
+        self._label(name, p, place, r_em)
+
+    def glyph(self, name: str, at: V2) -> None:
+        # Plate glyph: the capital's center is the measured point, not an
+        # offset from a vertex. Pin so a wash can name it.
+        self.pin(name, at)
+        self.labels[name] = (at, 90.0, 0.0)
+
+    def highlight_arc(self, _a: str, _b: str, _center: str) -> None:
+        # Lit only in the demo. The card washes the pentagon, not the arcs.
+        return
+
+    def named_outline(self, _letters: str, boundary: list) -> None:
+        self.chain(list(boundary))
+        if boundary and boundary[0] != boundary[-1]:
+            self.join(boundary[-1], boundary[0])
 
     def label(self, name: str, place: Place) -> None:
         self._label(name, self.at(name), place)
@@ -801,9 +853,11 @@ def prepare(n: int, scene: Scene) -> None:
                     raise SystemExit(f"I.{n}: angle {arm}{vertex}{other} missing {name}") from None
 
 
-def render(n: int, scene: Scene, out: Path) -> None:
+def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
+    if washes is None:
+        washes = WASHES
     prepare(n, scene)
-    for poly in WASHES.get(n, []):
+    for poly in washes.get(n, []):
         for name in poly:
             if name not in scene.pts:
                 raise SystemExit(f"I.{n}: wash vertex {name} missing")
@@ -817,7 +871,7 @@ def render(n: int, scene: Scene, out: Path) -> None:
     cr.paint()
 
     title = "Euclid's Elements"
-    subtitle = f"Book 1 Proposition {n}"
+    subtitle = f"Book {book} Proposition {n}"
     size = 48
     font(cr, size, bold=True)
     title_w = cr.text_extents(title).x_advance
@@ -885,9 +939,9 @@ def render(n: int, scene: Scene, out: Path) -> None:
             cr.line_to(*pt(name))
         cr.close_path()
 
-    regions = WASHES.get(n, [])
+    regions = washes.get(n, [])
     for i, names in enumerate(regions):
-        if len(regions) == 1:
+        if len(regions) == 1 or n in SAME_WASH:
             cr.set_source_rgba(*rgb(WASH), 0.85)
         elif i == 0:
             cr.set_source_rgba(*rgb(WASH), 0.85)
@@ -908,8 +962,8 @@ def render(n: int, scene: Scene, out: Path) -> None:
     # Pies under the ink, so the plate's strokes and letters stay as they
     # are. Each equality group is one color and one radius; the next group
     # is the other set. Larger first, so a smaller pie is not covered.
-    marks = ANGLE_MARK.get(n, [])
     groups = ANGLES.get(n, [])
+    marks = ANGLE_MARK.get(n, [(PIE_ALT, GIVEN_ANGLE_PIE)] * len(groups))
     if len(marks) != len(groups):
         raise SystemExit(f"I.{n}: angle mark count {len(marks)} != groups {len(groups)}")
     order = sorted(range(len(groups)), key=lambda i: marks[i][1], reverse=True)
@@ -1033,13 +1087,53 @@ def render(n: int, scene: Scene, out: Path) -> None:
     surf.write_to_png(out)
 
 
+def functions_in(path: Path, prefix: str) -> dict[int, str]:
+    text = path.read_text()
+    out = {}
+    for chunk in re.split(r"\npub fn ", text)[1:]:
+        m = re.match(prefix + r"(\d+)", chunk)
+        if not m:
+            continue
+        n = int(m.group(1))
+        body = chunk.split("{", 1)[1]
+        depth = 1
+        i = 0
+        while i < len(body) and depth:
+            if body[i] == "{":
+                depth += 1
+            elif body[i] == "}":
+                depth -= 1
+            i += 1
+        out[n] = body[: i - 1]
+    return out
+
+
+# The constructed pentagon. The circle is the given setting, not a second wash.
+WASHES4 = {
+    11: [("A", "B", "C", "D", "E")],
+    12: [("G", "H", "K", "L", "M")],
+}
+
+
 def main() -> None:
-    fns = functions()
+    args = sys.argv[1:]
+    book = 1
+    if "--book" in args:
+        i = args.index("--book")
+        book = int(args[i + 1])
+        args = args[:i] + args[i + 2 :]
+    if book == 1:
+        fns = functions()
+        washes = WASHES
+        wanted = [int(a) for a in args if a.isdigit()] or (list(range(1, 37)) + [41, 42, 43, 44, 45])
+    else:
+        fns = functions_in(ROOT / "src" / "figure" / f"book{book}.rs", f"book{book}_prop")
+        washes = WASHES4 if book == 4 else {}
+        wanted = [int(a) for a in args if a.isdigit()] or sorted(fns)
     missing = []
-    wanted = [int(a) for a in sys.argv[1:] if a.isdigit()] or (list(range(1, 37)) + [41, 42, 43])
     for n in wanted:
-        out = DOCS / f"youtube-book1-proposition{n}.png"
-        if out.exists() and "--force" not in sys.argv:
+        out = DOCS / f"youtube-book{book}-proposition{n}.png"
+        if out.exists() and "--force" not in args:
             continue
         missing.append(n)
     if not missing:
@@ -1047,8 +1141,8 @@ def main() -> None:
         return
     for n in missing:
         scene = load_scene(n, fns[n])
-        out = DOCS / f"youtube-book1-proposition{n}.png"
-        render(n, scene, out)
+        out = DOCS / f"youtube-book{book}-proposition{n}.png"
+        render(n, scene, out, book=book, washes=washes)
         print(out)
 
 

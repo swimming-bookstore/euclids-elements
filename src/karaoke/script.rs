@@ -22,6 +22,14 @@ pub trait PartsMap {
     fn angle_parts(&self, word: &str) -> Vec<String> {
         self.parts(word)
     }
+    /// `*circle(ABCDE)*` lights the circle, not the pentagon of the same letters.
+    fn circle_parts(&self, word: &str) -> Vec<String> {
+        self.parts(word)
+    }
+    /// `*arc(ABCD)*` lights the circumference in letter order, not the closing chord.
+    fn arc_parts(&self, word: &str) -> Vec<String> {
+        self.parts(word)
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -103,6 +111,15 @@ pub fn display_letters(text: &str) -> String {
     if let Some(name) = parallelogram_object(text) {
         return name;
     }
+    if let Some(name) = circle_object(text) {
+        return name;
+    }
+    if let Some(name) = arc_object(text) {
+        return name;
+    }
+    if let Some(name) = pentagon_object(text) {
+        return name;
+    }
     text.to_string()
 }
 
@@ -125,6 +142,21 @@ fn parallelogram_object(piece: &str) -> Option<String> {
     wrapped_letters(piece, "parallelogram")
 }
 
+/// `*circle(ABCDE)*` is the circle, not the pentagon of the same letters (IV.11).
+fn circle_object(piece: &str) -> Option<String> {
+    wrapped_letters(piece, "circle")
+}
+
+/// `*arc(ABCD)*` is a circumference in letter order, not the polygon.
+fn arc_object(piece: &str) -> Option<String> {
+    wrapped_letters(piece, "arc")
+}
+
+/// `*pentagon(ABCDE)*` is the polygon. The letters are spoken.
+fn pentagon_object(piece: &str) -> Option<String> {
+    wrapped_letters(piece, "pentagon")
+}
+
 fn wrapped_letters(piece: &str, kind: &str) -> Option<String> {
     let t = piece.trim();
     let rest = t.strip_prefix(kind)?.strip_prefix('(')?.strip_suffix(')')?;
@@ -145,6 +177,9 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
     let mut i = 0;
     let mut pending_open = String::new();
     let mut recent: Vec<String> = Vec::new();
+    // "the angles at *G* and *H*" — the second letter has only "and" behind
+    // it. The angle word sets this; a later noun, or a period, clears it.
+    let mut angle_vertex = false;
     while i < chars.len() {
         if chars[i] == '{' {
             i += 1;
@@ -212,10 +247,16 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
                 let wrapped = angle_object(piece);
                 let as_triangle = triangle_object(piece);
                 let as_parallelogram = parallelogram_object(piece);
+                let as_circle = circle_object(piece);
+                let as_arc = arc_object(piece);
+                let as_pentagon = pentagon_object(piece);
                 let spoken = wrapped
                     .as_deref()
                     .or(as_triangle.as_deref())
                     .or(as_parallelogram.as_deref())
+                    .or(as_circle.as_deref())
+                    .or(as_arc.as_deref())
+                    .or(as_pentagon.as_deref())
                     .unwrap_or(piece);
                 // "*DEF*, and *BCA*" — the comma is part of the italic run, but it
                 // is not part of the name. Record the bare name before classifying
@@ -234,30 +275,59 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
                 } else {
                     recent.clone()
                 };
+                let nletters = name.chars().filter(|c| c.is_ascii_alphabetic()).count();
+                // "the angles at *G* and *H* double the (angle) at *F*".
+                // A single letter is the angle at that point, not the point.
+                // "and *H*" carries the list; "at the point *A*" does not.
+                let vertex = nletters == 1
+                    && (introduced_as_vertex_angle(&before)
+                        || (angle_vertex && carry_only(&before)));
                 let angle = as_triangle.is_none()
                     && as_parallelogram.is_none()
+                    && as_circle.is_none()
+                    && as_arc.is_none()
+                    && as_pentagon.is_none()
                     && (wrapped.is_some()
-                        || (name.chars().filter(|c| c.is_ascii_alphabetic()).count() == 3
+                        || vertex
+                        || (nletters == 3
                             && ((n == 0 || carried)
                                 && letters_are_angles(if carried { &[] } else { &before }, &following)
                                 && !introduced_as_figure(&before)
                                 && !paired_with_figure(&before, &following)
                                 || carried)));
+                if vertex {
+                    angle_vertex = true;
+                }
+                let kind = if as_circle.is_some() {
+                    FigKind::Circle
+                } else if as_arc.is_some() {
+                    FigKind::Arc
+                } else if angle {
+                    FigKind::Angle
+                } else {
+                    FigKind::Line
+                };
                 push_words(
                     &mut out,
                     spoken,
                     true,
                     map,
                     timing,
-                    angle,
+                    kind,
                     &mut pending_open,
                 );
                 if n + 1 < pieces.len() {
                     recent.clear();
+                    angle_vertex = false;
                 }
             }
             recent.clear();
             glue_punct(&mut out, &chars, &mut i, &mut pending_open);
+            if out.last().is_some_and(|t| {
+                !t.cite && (t.text.ends_with('.') || t.text.ends_with(';'))
+            }) {
+                angle_vertex = false;
+            }
             continue;
         }
         if chars[i].is_whitespace() {
@@ -275,7 +345,8 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
             if chars[start..i].iter().any(|c| c.is_ascii_alphabetic()) {
                 let word: String = chars[start..i].iter().collect();
                 recent.push(word.clone());
-                push_words(&mut out, &word, false, map, timing, false, &mut pending_open);
+                note_angle_list(&word, &mut angle_vertex);
+                push_words(&mut out, &word, false, map, timing, FigKind::Line, &mut pending_open);
             } else {
                 pending_open.push(chars[start]);
                 i = start + 1;
@@ -291,6 +362,7 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
             glue_text(&mut out, &word);
             if word.contains('.') || word.contains(';') {
                 recent.clear();
+                angle_vertex = false;
             }
         } else {
             // "(angle)" is the word "angle" with a parenthesis glued on.
@@ -299,8 +371,9 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
             let stem_src = word.trim_matches(|c: char| is_punct(c) && !opens_word(c));
             if !stem_src.is_empty() {
                 recent.push(stem_src.to_string());
+                note_angle_list(stem_src, &mut angle_vertex);
             }
-            push_words(&mut out, &word, false, map, timing, false, &mut pending_open);
+            push_words(&mut out, &word, false, map, timing, FigKind::Line, &mut pending_open);
         }
     }
     mark_spaces(&mut out);
@@ -336,6 +409,58 @@ fn words_after(chars: &[char], mut i: usize) -> Vec<String> {
 /// comparison follows the name, so both letter-runs are angles. A longer
 /// name is a figure (*ACDB* the parallelogram, *AB* a side) even when the
 /// sentence says "equal".
+/// "the angles at *G*" and "the (angle) at *F*" name the angle at that
+/// letter. "the angle at (point) *B*" is still that angle. "at the point
+/// *A*" is the point: "point" is the introducer, and no angle word precedes it.
+fn introduced_as_vertex_angle(recent: &[String]) -> bool {
+    for word in recent.iter().rev() {
+        let w = stem(word);
+        if w.is_empty() || is_list_connector(&w) || is_angle_adjective(&w) {
+            continue;
+        }
+        if w == "point" || w == "points" {
+            continue;
+        }
+        return w == "angle" || w == "angles";
+    }
+    false
+}
+
+/// Words that may sit between the angle and the next letter of the same list
+/// ("angles at *G* and *H*") without naming a new figure.
+fn is_list_connector(w: &str) -> bool {
+    matches!(
+        w,
+        "and" | "or" | "at" | "the" | "a" | "an" | "each" | "of" | "both" | "also"
+    )
+}
+
+/// "*G* and *H*" — nothing but a connector between this letter and the last.
+fn carry_only(words: &[String]) -> bool {
+    words.iter().all(|w| {
+        let s = stem(w);
+        s.is_empty() || is_list_connector(&s)
+    })
+}
+
+/// The angle word opens a vertex list. A later noun closes it, so "the
+/// angles at *G* and *H* double the (angle) at *F*" does not carry into a
+/// following point.
+fn note_angle_list(word: &str, angle_vertex: &mut bool) {
+    let w = stem(word);
+    if w.is_empty() {
+        return;
+    }
+    if w == "angle" || w == "angles" {
+        *angle_vertex = true;
+        return;
+    }
+    if is_list_connector(&w) || is_angle_adjective(&w) {
+        return;
+    }
+    *angle_vertex = false;
+}
+
 fn letters_are_angles(recent: &[String], following: &[String]) -> bool {
     let mut angle = false;
     let mut compared = false;
@@ -502,6 +627,11 @@ fn figure_word(w: &str) -> bool {
             | "complements"
             | "base"
             | "circle"
+            | "circles"
+            | "circumference"
+            | "circumferences"
+            | "pentagon"
+            | "pentagons"
             | "straight-line"
             | "straight-lines"
             | "point"
@@ -604,13 +734,22 @@ fn glue_punct(out: &mut Vec<Token>, chars: &[char], i: &mut usize, pending_open:
     }
 }
 
+/// Which figure a spoken letter-run lights.
+#[derive(Clone, Copy)]
+enum FigKind {
+    Line,
+    Angle,
+    Circle,
+    Arc,
+}
+
 fn push_words(
     out: &mut Vec<Token>,
     chunk: &str,
     italic: bool,
     map: &impl PartsMap,
     timing: &Timing,
-    angle: bool,
+    kind: FigKind,
     pending_open: &mut String,
 ) {
     if chunk.is_empty() {
@@ -624,14 +763,14 @@ fn push_words(
         let first = format!("{}{}", pending_open, words[0]);
         pending_open.clear();
         let owned = std::mem::take(&mut words);
-        push_one(out, &first, italic, map, timing, angle);
+        push_one(out, &first, italic, map, timing, kind);
         for word in owned.into_iter().skip(1) {
-            push_one(out, word, italic, map, timing, angle);
+            push_one(out, word, italic, map, timing, kind);
         }
         return;
     }
     for word in words {
-        push_one(out, word, italic, map, timing, angle);
+        push_one(out, word, italic, map, timing, kind);
     }
 }
 
@@ -641,14 +780,15 @@ fn push_one(
     italic: bool,
     map: &impl PartsMap,
     timing: &Timing,
-    angle: bool,
+    kind: FigKind,
 ) {
     let bare: String = word.chars().filter(|c| c.is_ascii_alphabetic()).collect();
     let parts = if italic {
-        if angle {
-            map.angle_parts(&bare)
-        } else {
-            map.parts(&bare)
+        match kind {
+            FigKind::Angle => map.angle_parts(&bare),
+            FigKind::Circle => map.circle_parts(&bare),
+            FigKind::Arc => map.arc_parts(&bare),
+            FigKind::Line => map.parts(&bare),
         }
     } else {
         Vec::new()
@@ -1378,5 +1518,173 @@ mod tests {
         );
         assert_eq!(display_letters("parallelogram(EH)"), "EH");
         assert_eq!(display_letters("triangle(KGC)"), "KGC");
+    }
+
+    #[test]
+    fn i44_names_light_the_plate() {
+        // BHG and GFE are angles, not the triangles the three letters span.
+        // AG and ME are the parallelograms about the diagonal; LB and BF the
+        // complements. C is the given triangle. HB is the joined piece of the
+        // diagonal, not a walk around the figure.
+        let phrases = crate::content::get(1, 44).unwrap().phrases;
+        let script = compile(phrases, &crate::figure::book1_prop44(), Timing::default());
+        let runs = |word: &str| -> Vec<Vec<String>> {
+            script
+                .lines
+                .iter()
+                .flat_map(|l| l.tokens.iter())
+                .filter(|t| letter_key(&t.text) == word)
+                .map(|t| t.parts.clone())
+                .collect()
+        };
+        let has = |parts: &[String], id: &str| parts.iter().any(|p| p == id);
+        let bhg = runs("BHG");
+        assert!(
+            bhg.len() >= 1
+                && bhg.iter().all(|p| has(p, "bh") && has(p, "gh") && !has(p, "gb")),
+            "BHG is the angle, not the triangle: {bhg:?}"
+        );
+        let gfe = runs("GFE");
+        assert!(
+            gfe.len() >= 1
+                && gfe.iter().all(|p| has(p, "fg") && has(p, "fe") && !has(p, "eg")),
+            "GFE is the angle, not the triangle: {gfe:?}"
+        );
+        let ag = runs("AG");
+        assert!(
+            ag.len() >= 1
+                && ag.iter().all(|p| has(p, "ba") && has(p, "gb") && has(p, "gh") && has(p, "ha") && !has(p, "bh")),
+            "AG is the parallelogram: {ag:?}"
+        );
+        let lb = runs("LB");
+        assert!(
+            lb.len() >= 2
+                && lb.iter().all(|p| has(p, "al") && has(p, "ba") && has(p, "bm") && has(p, "ml")),
+            "LB is the complement: {lb:?}"
+        );
+        let bf = runs("BF");
+        assert!(
+            bf.len() >= 2
+                && bf.iter().all(|p| has(p, "eb") && has(p, "fe") && has(p, "fg") && has(p, "gb")),
+            "BF is the complement: {bf:?}"
+        );
+        let c = runs("C");
+        assert!(
+            c.len() >= 3 && c.iter().all(|p| has(p, "seg-c")),
+            "C is the given triangle: {c:?}"
+        );
+        let hb = runs("HB");
+        assert!(
+            hb.len() >= 1 && hb.iter().all(|p| has(p, "bh") && !has(p, "kb")),
+            "HB is the joined piece: {hb:?}"
+        );
+        let fg = runs("FG");
+        assert!(
+            fg.len() >= 1 && fg.iter().all(|p| has(p, "fg") && !has(p, "fe")),
+            "FG is the drawn line, not a parallelogram: {fg:?}"
+        );
+        assert_eq!(display_letters("parallelogram(LB)"), "LB");
+        assert_eq!(display_letters("angle(BHG)"), "BHG");
+    }
+
+    #[test]
+    fn i45_names_light_the_plate() {
+        // FH and GM are the parallelograms, named by opposite corners. ABD
+        // and DBC are the triangles the diagonal cuts. ABCD is the given
+        // rectilinear figure, not its diagonal. The three-letter names in
+        // the proof are angles. E is the given angle.
+        let phrases = crate::content::get(1, 45).unwrap().phrases;
+        let script = compile(phrases, &crate::figure::book1_prop45(), Timing::default());
+        let runs = |word: &str| -> Vec<Vec<String>> {
+            script
+                .lines
+                .iter()
+                .flat_map(|l| l.tokens.iter())
+                .filter(|t| letter_key(&t.text) == word)
+                .map(|t| t.parts.clone())
+                .collect()
+        };
+        let has = |parts: &[String], id: &str| parts.iter().any(|p| p == id);
+        let stroke = |parts: &[String], id: &str| parts.iter().any(|p| p == id);
+        let no_stroke = |parts: &[String], id: &str| !parts.iter().any(|p| p == id);
+        let fh = runs("FH");
+        assert!(
+            fh.len() >= 2
+                && fh.iter().all(|p| {
+                    stroke(p, "kf")
+                        && stroke(p, "kh")
+                        && stroke(p, "hg")
+                        && stroke(p, "fg")
+                        && no_stroke(p, "gl")
+                        && no_stroke(p, "ml")
+                }),
+            "FH is parallelogram FH, not the outer path: {fh:?}"
+        );
+        let gm = runs("GM");
+        assert!(
+            gm.len() >= 2
+                && gm.iter().all(|p| has(p, "hg") && has(p, "hm") && has(p, "ml") && has(p, "gl") && !has(p, "fg") && !has(p, "kf")),
+            "GM is parallelogram GM, not the outer path: {gm:?}"
+        );
+        let abd = runs("ABD");
+        assert!(
+            abd.len() >= 2
+                && abd.iter().all(|p| has(p, "ad") && has(p, "db") && has(p, "ba") && !has(p, "dc")),
+            "ABD is the triangle, not an angle: {abd:?}"
+        );
+        let dbc = runs("DBC");
+        assert!(
+            dbc.len() >= 2
+                && dbc.iter().all(|p| has(p, "db") && has(p, "cb") && has(p, "dc") && !has(p, "ad")),
+            "DBC is the triangle: {dbc:?}"
+        );
+        let abcd = runs("ABCD");
+        assert!(
+            abcd.len() >= 2
+                && abcd.iter().all(|p| has(p, "ad") && has(p, "dc") && has(p, "cb") && has(p, "ba") && !has(p, "db")),
+            "ABCD is the rectilinear figure, not its diagonal: {abcd:?}"
+        );
+        let kflm = runs("KFLM");
+        assert!(
+            kflm.len() >= 2
+                && kflm.iter().all(|p| has(p, "kf") && has(p, "fg") && has(p, "gl") && has(p, "ml") && has(p, "kh") && has(p, "hm")),
+            "KFLM is the outer parallelogram: {kflm:?}"
+        );
+        let hkf = runs("HKF");
+        assert!(
+            hkf.len() >= 1
+                && hkf.iter().all(|p| has(p, "kh") && has(p, "kf") && !has(p, "fg")),
+            "HKF is the angle, not the triangle: {hkf:?}"
+        );
+        let ghm = runs("GHM");
+        assert!(
+            ghm.len() >= 1
+                && ghm.iter().all(|p| has(p, "hg") && has(p, "hm") && !has(p, "ml")),
+            "GHM is the angle, not the triangle: {ghm:?}"
+        );
+        let fkm = runs("FKM");
+        assert!(
+            fkm.len() >= 1
+                && fkm.iter().all(|p| has(p, "kf") && (has(p, "km") || (has(p, "kh") && has(p, "hm"))) && !has(p, "ml")),
+            "FKM is the angle the parallelogram stands in: {fkm:?}"
+        );
+        let e = runs("E");
+        assert!(
+            e.len() >= 2 && e.iter().all(|p| has(p, "ang-e")),
+            "E is the given angle: {e:?}"
+        );
+        let fg = runs("FG");
+        assert!(
+            fg.len() >= 1 && fg.iter().all(|p| has(p, "fg") && !has(p, "gl")),
+            "FG is the drawn line, not the whole top: {fg:?}"
+        );
+        let db = runs("DB");
+        assert!(
+            db.len() >= 1 && db.iter().all(|p| has(p, "db") && !has(p, "ad")),
+            "DB is the joined diagonal: {db:?}"
+        );
+        assert_eq!(display_letters("parallelogram(FH)"), "FH");
+        assert_eq!(display_letters("triangle(ABD)"), "ABD");
+        assert_eq!(display_letters("angle(HKF)"), "HKF");
     }
 }

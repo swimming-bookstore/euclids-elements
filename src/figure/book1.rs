@@ -1048,67 +1048,73 @@ pub fn book1_prop43() -> Diagram {
 /// I.44 — Fitzpatrick English plate (Elements PDF p. 43, the lower right-hand
 /// figure; I.43 is the plate above it).
 ///
-/// The plate is not the textbook application. It draws one parallelogram of
-/// three rows and three uprights, plus the slanted stroke KH. Left upright FH
-/// (F, G, H), middle AE (E, B, A) stopping at the mid row, right upright KM
-/// (K, M, L). Rows are FK, GM, HL. No stroke HB.
+/// The page path, not the letter boxes. One parallelogram, divided in thirds,
+/// plus the diagonal KH and the given triangle and angle above it. Rows FK,
+/// GM, HL. Uprights FH, EA, KL. KH runs from the top of the right upright to
+/// the foot of the left, and it is the diagonal of HLKF: the proof joins HB
+/// and produces it to K, so B lies on KH. The plate's three lines through B
+/// (the upright, the mid row, the diagonal) meet within the ink.
 ///
-/// Vertices measured on the page-43 English plate (200 dpi), intersections of
-/// the ink. One scale AB = 100. The uprights lean 9.4° off the vertical, the
-/// same way. HL/AB = 2.965, height of the outer parallelogram/AB = 2.960.
-/// KH falls 1.167 of x per unit of y. Given triangle C and given angle D sit
-/// above the parallelogram, taken from the page path (not the letter boxes).
-/// C is the triangle above FE: base parallel to FE, apex up and to the right.
-/// D is the bent angle to the right of that apex — vertex, then the upper arm,
-/// then the lower arm. The plate sets D just left of the vertex, clear of the
-/// stroke. F, E, and K sit just above the FK line, on a shorter radius, so
-/// they clear the line and do not read as letters of triangle C. The other
-/// letters sit one letter-radius out.
+/// One scale AB = 100. HL = height = 2.959 AB. The uprights lean 9.46° off
+/// the vertical, the same way (run/rise = 1/6). A and E sit one third of the
+/// way along HL and FK. Given triangle C is the triangle above FE: base
+/// parallel to FE, apex up and to the right. D is the bent angle to the right
+/// of that apex — vertex, then the upper arm, then the lower arm. The plate
+/// sets D just left of the vertex, clear of the stroke. F, E, and K sit just
+/// above FK, on a shorter radius, so they clear the line and do not read as
+/// letters of triangle C. The other letters sit one letter-radius out, on the
+/// measured tip→glyph heading.
+///
+/// AG and ME are the parallelograms about the diagonal, LB and BF the
+/// complements. Those names are opposite corners. The plate draws no stroke
+/// AG, ME, LB, or BF.
 pub fn book1_prop44() -> Diagram {
     let mut d = Diagram::new();
-    // A at the origin. AB = 100 along the middle upright.
-    d.put("A", V2::new(0.0, 0.0), Place::Deg(-96.2));
-    d.put("B", V2::new(16.341, 98.656), Place::Deg(-54.8));
-    // F and E sit just above FK. Shared heading, shorter radius, so the
-    // glyph clears the line without reading as a letter of triangle C.
-    d.put_r("E", V2::new(49.024, 295.967), Place::Deg(77.4), 0.48);
-    d.put("H", V2::new(-98.984, 0.0), Place::Deg(-88.9));
-    d.put("G", V2::new(-82.542, 98.656), Place::Deg(178.2));
-    d.put_r("F", V2::new(-49.658, 295.967), Place::Deg(80.5), 0.48);
-    d.put("L", V2::new(197.520, 0.0), Place::Deg(-100.0));
-    d.put("M", V2::new(213.858, 98.656), Place::Deg(0.0));
-    d.put_r("K", V2::new(246.535, 295.967), Place::Deg(73.2), 0.48);
-    d.join("H", "L");
-    d.join("G", "M");
-    d.join("F", "K");
+    // A at the origin. The cell of the upright is scaled so AB = 100.
+    // H–A–L thirds the base; the same thirds rise along each upright.
+    d.put("A", V2::new(0.0, 0.0), Place::Deg(-94.0));
+    d.put("B", V2::new(16.440, 98.639), Place::Deg(-53.2));
+    d.put_r("E", V2::new(49.320, 295.918), Place::Deg(78.0), 0.48);
+    d.put("H", V2::new(-98.639, 0.0), Place::Deg(-89.1));
+    d.put("G", V2::new(-82.199, 98.639), Place::Deg(-176.1));
+    d.put_r("F", V2::new(-49.320, 295.918), Place::Deg(80.4), 0.48);
+    d.put("L", V2::new(197.279, 0.0), Place::Deg(-100.3));
+    d.put("M", V2::new(213.719, 98.639), Place::Deg(-1.9));
+    d.put_r("K", V2::new(246.598, 295.918), Place::Deg(76.4), 0.48);
+    // Rows, split where a spoken piece ends. HL at A, GM at B, FK at E.
+    d.chain(&["H", "A", "L"]);
+    d.chain(&["G", "B", "M"]);
+    d.chain(&["F", "E", "K"]);
+    // Uprights, split at the mid row. EA is AB straight-on to BE.
     d.chain(&["F", "G", "H"]);
     d.chain(&["E", "B", "A"]);
     d.chain(&["K", "M", "L"]);
-    // The slanted stroke on the plate runs from K down to H. It crosses the
-    // middle upright at the mid row, just left of B.
-    d.join("K", "H");
-    // BG is not ink on the plate. The proof calls BEFG a parallelogram, so the
-    // side is drawn.
-    d.join("B", "G");
-    // Given triangle C, from FE. The plate draws the base first (parallel to
-    // FE, longer than FE), then the apex. Corners are pinned; C is the glyph.
-    d.pin("P", V2::new(-123.147, 344.809));
-    d.pin("Q", V2::new(55.415, 344.809));
-    d.pin("R", V2::new(110.829, 541.844));
-    d.join("P", "Q");
-    d.join("Q", "R");
-    d.join("R", "P");
-    d.glyph("C", V2::new(12.343, 406.469));
+    // Diagonal KH, split at B. HB is the joined line; BK is HB produced.
+    d.chain(&["K", "B", "H"]);
+    // Given triangle C. Corners are pinned; C is the plate glyph, and the
+    // outline is what *C* lights.
+    d.pin("P", V2::new(-123.064, 344.579));
+    d.pin("Q", V2::new(55.401, 344.579));
+    d.pin("R", V2::new(110.772, 541.482));
+    d.named_outline("C", &["P", "Q", "R"]);
+    d.pin("C", V2::new(23.128, 417.527));
+    d.glyph("C", V2::new(23.128, 417.527));
     // Given angle D. The plate's mark is a bend, not a V opening downward.
     // Vertex from K, then the upper arm and the lower arm, then the glyph.
     d.given_angle(
         "D",
         "K",
-        (155.040, 83.16),
-        (107.707, 120.96),
-        (100.233, -137.49),
-        V2::new(206.0, 449.5),
+        (154.927, 83.154),
+        (107.640, 120.958),
+        (100.172, -137.486),
+        V2::new(227.245, 460.577),
     );
+    // Spoken names are opposite corners. The boundary is the parallelogram.
+    // AG and ME about the diagonal; LB and BF the complements.
+    d.region("AG", &["A", "B", "G", "H"]);
+    d.region("ME", &["B", "E", "K", "M"]);
+    d.region("LB", &["L", "A", "B", "M"]);
+    d.region("BF", &["B", "E", "F", "G"]);
     d.dots(&["A", "B", "E", "F", "G", "H", "K", "L", "M"]);
     d
 }
@@ -1126,6 +1132,11 @@ pub fn book1_prop44() -> Diagram {
 /// A–D and F–M sit one letter-radius out, on the measured tip→glyph
 /// heading. E is the plate glyph, inside the angle, not a heading from the
 /// vertex (the vertex is the bend, well left of the capital).
+///
+/// FH and GM are the two parallelograms the proof names, by opposite
+/// corners. The plate draws no stroke FH or GM — FH is FK–KH–HG–GF, and
+/// GM is GH–HM–ML–LG. A walk from F to H would take the outer path through
+/// L, which is the wrong parallelogram.
 pub fn book1_prop45() -> Diagram {
     let mut d = Diagram::new();
     // K at the origin. HM = 100, so KM = 300 along the base. H splits KH:HM
@@ -1142,6 +1153,10 @@ pub fn book1_prop45() -> Diagram {
     d.join("K", "F");
     d.join("H", "G");
     d.join("M", "L");
+    // Spoken names are opposite corners. The boundary is the parallelogram.
+    // The plate draws no stroke FH or GM.
+    d.region("FH", &["F", "K", "H", "G"]);
+    d.region("GM", &["G", "H", "M", "L"]);
     // Given rectilinear figure ADCB. The plate draws A–D–C–B, then DB.
     // A is 250/3 right of K and 1425/3 up; the other corners are the same
     // thirds of HM.

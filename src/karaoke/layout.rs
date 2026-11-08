@@ -1032,4 +1032,72 @@ mod tests {
         assert!(close.starts_with("Thus, for any parallelogramic figure"));
         assert!(close.contains("the very thing it was required to show."));
     }
+
+    #[test]
+    fn i44_fitzpatrick_paragraphs() {
+        // Setting, construction and proof, conclusion — three indents. The
+        // proof runs over the page break and stays one paragraph. The dagger
+        // footnote is the translator's, not a sentence of the proof.
+        let i44 = layout_of(1, 44);
+        assert_eq!(i44.len(), 3, "I.44 has three Fitzpatrick paragraphs");
+        assert!(cites(&i44[0]).is_empty());
+        assert_eq!(
+            cites(&i44[1]),
+            vec!["[Prop. 1.42]", "[Prop. 1.31]", "[Prop. 1.29]", "[Post. 5]", "[Prop. 1.31]", "[Prop. 1.43]", "[Prop. 1.15]"]
+        );
+        let setting = para_text(&i44[0]);
+        assert!(setting.starts_with("Let AB be the given straight-line, C the given triangle, and D the given rectilinear angle."));
+        assert!(setting.contains("in an angle equal to (angle) D."));
+        let proof = para_text(&i44[1]);
+        assert!(proof.contains("Let the parallelogram BEFG, equal to the triangle C, have been constructed in the angle EBG, which is equal to D."));
+        assert!(proof.contains("And let it have been placed so that BE is straight-on to AB."));
+        assert!(proof.contains("Thus, (the sum of) BHG and GFE is less than two right-angles."));
+        assert!(proof.contains("And AG and ME (are) parallelograms, and LB and BF the so-called complements, about HK."));
+        assert!(proof.contains("Thus, LB is equal to BF."));
+        assert!(proof.contains("but GBE is equal to D, ABM is thus also equal to angle D."));
+        let close = para_text(&i44[2]);
+        assert!(close.starts_with("Thus, the parallelogram LB, equal to the given triangle C,"));
+        assert!(close.contains("in the angle ABM, which is equal to D."));
+        assert!(close.contains("the very thing it was required to do."));
+    }
+
+    #[test]
+    fn i45_fitzpatrick_paragraphs() {
+        // Setting, construction and proof, conclusion — three indents. The
+        // proof runs over the page break and stays one paragraph. The dagger
+        // footnote is the translator's, not a sentence of the proof.
+        let i45 = layout_of(1, 45);
+        assert_eq!(i45.len(), 3, "I.45 has three Fitzpatrick paragraphs");
+        assert!(cites(&i45[0]).is_empty());
+        assert_eq!(
+            cites(&i45[1]),
+            vec![
+                "[Prop. 1.42]",
+                "[Prop. 1.44]",
+                "[Prop. 1.29]",
+                "[Prop. 1.14]",
+                "[Prop. 1.29]",
+                "[Prop. 1.29]",
+                "[Prop. 1.14]",
+                "[Prop. 1.34]",
+                "[Prop. 1.34]",
+                "[Prop. 1.30]",
+                "[Prop. 1.33]",
+            ]
+        );
+        let setting = para_text(&i45[0]);
+        assert!(setting.starts_with("Let ABCD be the given rectilinear figure, and E the given rectilinear angle."));
+        assert!(setting.contains("in the given angle E."));
+        let proof = para_text(&i45[1]);
+        assert!(proof.contains("Let DB have been joined, and let the parallelogram FH, equal to the triangle ABD, have been constructed in the angle HKF, which is equal to E."));
+        assert!(proof.contains("And let the parallelogram GM, equal to the triangle DBC, have been applied to the straight-line GH in the angle GHM, which is equal to E."));
+        assert!(proof.contains("Thus, KH is straight-on to HM."));
+        assert!(proof.contains("Thus, FG is straight-on to GL."));
+        assert!(proof.contains("Thus, KFLM is a parallelogram."));
+        assert!(proof.contains("the whole rectilinear figure ABCD is thus equal to the whole parallelogram KFLM."));
+        let close = para_text(&i45[2]);
+        assert!(close.starts_with("Thus, the parallelogram KFLM, equal to the given rectilinear figure ABCD,"));
+        assert!(close.contains("in the angle FKM, which is equal to the given (angle) E."));
+        assert!(close.contains("the very thing it was required to do."));
+    }
 }

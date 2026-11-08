@@ -328,8 +328,8 @@ impl Diagram {
     }
 
     /// As `given_angle`, but the plate's mark may have more than two strokes
-    /// from the vertex (I.44 draws three). Every arm shares the one id, so
-    /// the spoken letter lights the whole mark.
+    /// from the vertex. Every arm shares the one id, so the spoken letter
+    /// lights the whole mark.
     pub fn given_angle_arms(
         &mut self,
         name: &'static str,
@@ -413,6 +413,48 @@ impl Diagram {
         self.regions.push(Region {
             letters: letters.to_ascii_uppercase(),
             boundary: boundary.to_vec(),
+        });
+        self
+    }
+
+    /// A figure spoken by one letter, whose ink is the polygon.
+    ///
+    /// I.44's *C* is the given triangle, not a point of the construction. The
+    /// sides share one id, so the letter lights the outline. The corners stay
+    /// unlettered.
+    pub fn named_outline(&mut self, letters: &'static str, boundary: &[&'static str]) -> &mut Self {
+        let id = format!("seg-{}", letters.to_ascii_lowercase());
+        self.named.push(Circ {
+            id: id.clone(),
+            letters: letters.to_ascii_uppercase(),
+        });
+        if boundary.len() >= 2 {
+            for w in boundary.windows(2) {
+                self.stroke(w[0], w[1], id.clone());
+            }
+            let last = boundary[boundary.len() - 1];
+            let first = boundary[0];
+            if last != first {
+                self.stroke(last, first, id);
+            }
+        }
+        self
+    }
+
+    /// The minor circumference from `a` to `b` on the circle about `center`.
+    ///
+    /// Drawn only while lit, so it does not grey out the circle. `*arc(AB)*`
+    /// lights this arc, not the chord.
+    pub fn highlight_arc(&mut self, a: &'static str, b: &'static str, center: &str) -> &mut Self {
+        let id = format!("hl-{}{}", a.to_ascii_lowercase(), b.to_ascii_lowercase());
+        let c = self.at(center);
+        let pa = self.at(a);
+        let pb = self.at(b);
+        let via = minor_via(c, pa, pb);
+        self.fig.arc(&id, pa, pb, via);
+        self.named.push(Circ {
+            id,
+            letters: format!("{a}{b}").to_ascii_uppercase(),
         });
         self
     }
@@ -516,11 +558,14 @@ impl Diagram {
             return Vec::new();
         }
         match letters.len() {
+            // "the angle at *G*" is the angle, not the point (IV.11).
+            1 if angle => self.angle_at(letters[0]),
             1 => self.single(letters[0], &key),
             2 => self.pair(letters[0], letters[1]),
             3 if angle => self.angle(letters[0], letters[1], letters[2], &key),
             3 => self.triple(letters[0], letters[1], letters[2], &key),
             4 if !angle => self.quad(letters[0], letters[1], letters[2], letters[3]),
+            n if n >= 5 && !angle => self.polygon(&letters),
             _ => Vec::new(),
         }
     }
@@ -531,6 +576,26 @@ impl Diagram {
             .keys()
             .copied()
             .find(|n| n.len() == 1 && n.starts_with(u))
+    }
+
+    /// The angle at a single letter: every stroke that meets there.
+    ///
+    /// ∠G of triangle FGH is the two sides. A given mark (*D*, *E*) keeps its
+    /// own ink. A point with no stroke is still just the point.
+    fn angle_at(&self, v: &'static str) -> Vec<String> {
+        if self.named_id(v).is_some() {
+            return self.single(v, v);
+        }
+        let mut out = vec![v.to_string()];
+        if let Some(edges) = self.adj.get(v) {
+            for e in edges {
+                out.push(e.to.to_string());
+                out.push(e.id.clone());
+            }
+        }
+        out.sort();
+        out.dedup();
+        out
     }
 
     fn single(&self, a: &'static str, key: &str) -> Vec<String> {
@@ -624,6 +689,68 @@ impl Diagram {
         out
     }
 
+    /// A five-or-more letter figure (*ABCDE* the pentagon) is the polygon of
+    /// those vertices in spoken order. The closing side is the last letter
+    /// back to the first. A circumference of the same letters is an `arc`,
+    /// not this walk.
+    fn polygon(&self, letters: &[&'static str]) -> Vec<String> {
+        let n = letters.len();
+        let mut out = Vec::new();
+        for i in 0..n {
+            out.extend(self.side(letters[i], letters[(i + 1) % n]));
+        }
+        out.sort();
+        out.dedup();
+        out
+    }
+
+    /// `*circle(ABCDE)*` lights the named circle, not the pentagon.
+    pub fn circle_highlight(&self, word: &str) -> Vec<String> {
+        let key = letter_key(word);
+        if let Some(id) = self.named_circle(&key) {
+            let mut out = vec![id];
+            for ch in key.chars() {
+                if let Some(name) = self.letter(ch) {
+                    out.push(name.to_string());
+                }
+            }
+            return out;
+        }
+        self.highlight(word)
+    }
+
+    /// `*arc(ABCD)*` lights the circumference in letter order.
+    ///
+    /// A two-letter arc that was drawn on the circle (`hl-ab`) lights that
+    /// arc, not the chord. A longer name chains those arcs. Anything else
+    /// is the drawn path, not closed.
+    pub fn arc_highlight(&self, word: &str) -> Vec<String> {
+        let key = letter_key(word);
+        let letters: Vec<&'static str> = key.chars().filter_map(|c| self.letter(c)).collect();
+        if letters.len() != key.len() || letters.len() < 2 {
+            return Vec::new();
+        }
+        let mut out = Vec::new();
+        for w in letters.windows(2) {
+            if let Some(id) = self.named_arc(w[0], w[1]) {
+                out.push(w[0].to_string());
+                out.push(w[1].to_string());
+                out.push(id);
+            } else {
+                out.extend(self.side(w[0], w[1]));
+            }
+        }
+        out.sort();
+        out.dedup();
+        out
+    }
+
+    fn named_arc(&self, a: &str, b: &str) -> Option<String> {
+        let want = sorted_letters(&format!("{a}{b}"));
+        self.named.iter().find_map(|c| {
+            (c.id.starts_with("hl-") && sorted_letters(&c.letters) == want).then(|| c.id.clone())
+        })
+    }
     /// A four-letter figure name (*ACDB*, trapezium *ABGD*) is the polygon of
     /// those vertices in order. A corner that only lies on a stroke (G, the
     /// crossing EB × DC) still names that stroke, so ABGD turns at G instead
@@ -814,9 +941,8 @@ impl Diagram {
     ///
     /// G in I.35 is the crossing EB × DC, not an end, so GB has no edge of
     /// its own — but G lies on stroke `eb`, and that stroke is what the
-    /// trapezium lights. A merely collinear neighbour (A and L on the I.44
-    /// base, with no stroke between them) is not a hit: `b` must sit on the
-    /// segment that was actually drawn.
+    /// trapezium lights. A merely collinear neighbour is not a hit: `b` must
+    /// sit on the segment that was actually drawn.
     fn stroke_through(&self, a: &str, b: &str) -> Option<String> {
         let pb = self.at(b);
         self.adj.get(a)?.iter().find_map(|e| {
@@ -864,6 +990,26 @@ fn sorted_letters(s: &str) -> String {
     let mut v: Vec<char> = s.chars().collect();
     v.sort_unstable();
     v.into_iter().collect()
+}
+
+fn letter_key(word: &str) -> String {
+    word.chars()
+        .filter(|c| c.is_ascii_alphabetic())
+        .map(|c| c.to_ascii_uppercase())
+        .collect()
+}
+
+/// Midpoint of the minor arc from `a` to `b` about `c`.
+fn minor_via(c: V2, a: V2, b: V2) -> V2 {
+    let ua = a.sub(c).unit();
+    let ub = b.sub(c).unit();
+    let sum = ua.add(ub);
+    let dir = if sum.len() < 1e-6 {
+        V2::new(-ua.y, ua.x)
+    } else {
+        sum.unit()
+    };
+    c.add(dir.mul(c.dist(a)))
 }
 
 #[cfg(test)]
@@ -2729,15 +2875,16 @@ mod tests {
         assert!(d.at("G").on_seg(d.at("F"), d.at("H"), 1e-3), "G on FH");
         assert!(d.at("B").on_seg(d.at("E"), d.at("A"), 1e-3), "B on EA");
         assert!(d.at("M").on_seg(d.at("K"), d.at("L"), 1e-3), "M on KL");
-        // KH is the slanted stroke, from the top of the right upright to the
-        // foot of the left. It is not the diagonal of HLKF.
-        assert!(d.edge_id("K", "H").is_some(), "slanted stroke KH");
-        // The plate's middle upright stops at the mid row: no stroke down to HL,
-        // and no HB.
-        assert!(d.edge_id("A", "L").is_none() && d.edge_id("H", "B").is_none());
+        // KH is the diagonal of HLKF. The plate draws it from K to H, and B,
+        // the proof's meeting of HB with the mid row, lies on it.
+        assert!(d.at("B").on_seg(d.at("K"), d.at("H"), 1e-3), "B on KH");
+        assert!(d.edge_id("K", "B").is_some() && d.edge_id("B", "H").is_some(), "HB joined, produced to K");
+        // The middle upright is EA, AB straight-on to BE, from the top row to HL.
+        assert!(d.edge_id("E", "B").is_some() && d.edge_id("B", "A").is_some());
+        assert!(d.edge_id("H", "A").is_some() && d.edge_id("A", "L").is_some(), "HL split at A");
         let hl = d.at("H").dist(d.at("L")) / ab;
-        assert!((hl - 2.965).abs() < 0.01, "HL {hl}");
-        assert!(((d.at("F").y - d.at("A").y) / ab - 2.960).abs() < 0.01, "height");
+        assert!((hl - 2.959).abs() < 0.01, "HL {hl}");
+        assert!(((d.at("F").y - d.at("A").y) / ab - 2.959).abs() < 0.01, "height");
         let fh = d.at("F").sub(d.at("H"));
         let ea = d.at("E").sub(d.at("A"));
         let kl = d.at("K").sub(d.at("L"));
@@ -2747,16 +2894,46 @@ mod tests {
         assert!(sin(fh, ea) < 0.004, "FH parallel to EA");
         assert!(sin(fh, kl) < 0.004, "FH parallel to KL");
         let hlkf = d.highlight("HLKF");
-        assert!(has(&hlkf, "hl") && has(&hlkf, "fk"), "rows: {hlkf:?}");
+        assert!(has(&hlkf, "hl") || (has(&hlkf, "ha") && has(&hlkf, "al")), "bottom row: {hlkf:?}");
+        assert!(has(&hlkf, "fk") || (has(&hlkf, "fe") && has(&hlkf, "ek")), "top row: {hlkf:?}");
         assert!(has(&hlkf, "fg") && has(&hlkf, "gh"), "FH: {hlkf:?}");
         assert!(has(&hlkf, "km") && has(&hlkf, "ml"), "KL: {hlkf:?}");
+        assert!(!has(&hlkf, "bh") && !has(&hlkf, "kb"), "HLKF is not its diagonal: {hlkf:?}");
         let befg = d.highlight("BEFG");
         assert!(
-            has(&befg, "eb") && has(&befg, "fg") && has(&befg, "bg"),
+            has(&befg, "eb") && has(&befg, "fe") && has(&befg, "fg") && has(&befg, "gb"),
             "BEFG: {befg:?}"
         );
-        let tri = d.highlight("PQR");
-        assert!(has(&tri, "pq") && has(&tri, "qr") && has(&tri, "rp"), "triangle C: {tri:?}");
+        assert!(!has(&befg, "ba") && !has(&befg, "ek"), "BEFG is the inner parallelogram: {befg:?}");
+        let hk = d.highlight("HK");
+        assert!(has(&hk, "kb") && has(&hk, "bh"), "diagonal HK: {hk:?}");
+        let hb = d.highlight("HB");
+        assert!(has(&hb, "bh") && !has(&hb, "kb"), "HB is the joined piece, not the production: {hb:?}");
+        let ag = d.highlight("AG");
+        assert!(
+            has(&ag, "ba") && has(&ag, "gb") && has(&ag, "gh") && has(&ag, "ha"),
+            "parallelogram AG: {ag:?}"
+        );
+        assert!(!has(&ag, "bh"), "AG is not a walk along the diagonal: {ag:?}");
+        let me = d.highlight("ME");
+        assert!(
+            has(&me, "eb") && has(&me, "ek") && has(&me, "km") && has(&me, "bm"),
+            "parallelogram ME: {me:?}"
+        );
+        let lb = d.highlight("LB");
+        assert!(
+            has(&lb, "al") && has(&lb, "ba") && has(&lb, "bm") && has(&lb, "ml"),
+            "complement LB: {lb:?}"
+        );
+        assert!(!has(&lb, "ha") && !has(&lb, "eb"), "LB is the complement, not the outer half: {lb:?}");
+        let bf = d.highlight("BF");
+        assert!(
+            has(&bf, "eb") && has(&bf, "fe") && has(&bf, "fg") && has(&bf, "gb"),
+            "complement BF: {bf:?}"
+        );
+        assert!(!has(&bf, "ek") && !has(&bf, "gh"), "BF is the complement, not the outer half: {bf:?}");
+        let tri = d.highlight("C");
+        assert!(has(&tri, "seg-c"), "triangle C: {tri:?}");
         // Base parallel to FE, apex above it.
         assert!((d.at("P").y - d.at("Q").y).abs() < 1e-6, "base level");
         assert!(d.at("R").y > d.at("P").y, "apex above the base");
@@ -2767,6 +2944,12 @@ mod tests {
         assert!(upper.y > v.y && lower.y < v.y, "D bends down from the upper arm");
         let ang = d.highlight("D");
         assert!(has(&ang, "ang-d"), "given angle D: {ang:?}");
+        let bhg = d.highlight_angle("BHG");
+        assert!(has(&bhg, "bh") && has(&bhg, "gh") && !has(&bhg, "gb"), "∠BHG is the two rays: {bhg:?}");
+        let gfe = d.highlight_angle("GFE");
+        assert!(has(&gfe, "fg") && has(&gfe, "fe") && !has(&gfe, "eg"), "∠GFE is the two rays: {gfe:?}");
+        let abm = d.highlight_angle("ABM");
+        assert!(has(&abm, "ba") && has(&abm, "bm") && !has(&abm, "ml"), "∠ABM is the two rays: {abm:?}");
         let html = d.svg(&[] as &[String]);
         let (fdx, fdy) = letter_offset(&html, "F");
         let (edx, edy) = letter_offset(&html, "E");
@@ -2812,6 +2995,40 @@ mod tests {
             "KFLM: {kflm:?}"
         );
         assert!(!kflm.iter().any(|id| id == "fh" || id == "gm"), "no diagonal: {kflm:?}");
+        // FH and GM are the parallelograms the proof names, by opposite
+        // corners. Neither name is a diagonal, and neither walks the long
+        // way around KFLM.
+        let fh = d.highlight("FH");
+        assert!(
+            has(&fh, "kf") && has(&fh, "kh") && has(&fh, "hg") && has(&fh, "fg"),
+            "parallelogram FH: {fh:?}"
+        );
+        assert!(!has(&fh, "gl") && !has(&fh, "ml") && !has(&fh, "hm"), "FH is not the outer path: {fh:?}");
+        let gm = d.highlight("GM");
+        assert!(
+            has(&gm, "hg") && has(&gm, "hm") && has(&gm, "ml") && has(&gm, "gl"),
+            "parallelogram GM: {gm:?}"
+        );
+        assert!(!has(&gm, "fg") && !has(&gm, "kf") && !has(&gm, "kh"), "GM is not the outer path: {gm:?}");
+        let abd = d.highlight("ABD");
+        assert!(has(&abd, "ad") && has(&abd, "db") && has(&abd, "ba"), "triangle ABD: {abd:?}");
+        assert!(!has(&abd, "dc") && !has(&abd, "bc"), "ABD is not the quadrilateral: {abd:?}");
+        let dbc = d.highlight("DBC");
+        assert!(has(&dbc, "db") && has(&dbc, "cb") && has(&dbc, "dc"), "triangle DBC: {dbc:?}");
+        let abcd = d.highlight("ABCD");
+        assert!(
+            has(&abcd, "ad") && has(&abcd, "dc") && has(&abcd, "cb") && has(&abcd, "ba"),
+            "rectilinear ABCD: {abcd:?}"
+        );
+        assert!(!has(&abcd, "db"), "ABCD is not its diagonal: {abcd:?}");
+        let e = d.highlight("E");
+        assert!(has(&e, "ang-e"), "given angle E: {e:?}");
+        let hkf = d.highlight_angle("HKF");
+        assert!(has(&hkf, "kh") && has(&hkf, "kf") && !has(&hkf, "fg"), "∠HKF is the two rays: {hkf:?}");
+        let ghm = d.highlight_angle("GHM");
+        assert!(has(&ghm, "hg") && has(&ghm, "hm") && !has(&ghm, "ml"), "∠GHM is the two rays: {ghm:?}");
+        let fkm = d.highlight_angle("FKM");
+        assert!(has(&fkm, "kf") && has(&fkm, "kh") && has(&fkm, "hm") && !has(&fkm, "ml"), "∠FKM is the two rays: {fkm:?}");
     }
 
     #[test]

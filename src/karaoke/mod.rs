@@ -25,4 +25,12 @@ impl PartsMap for Diagram {
     fn angle_parts(&self, word: &str) -> Vec<String> {
         self.highlight_angle(word)
     }
+
+    fn circle_parts(&self, word: &str) -> Vec<String> {
+        self.circle_highlight(word)
+    }
+
+    fn arc_parts(&self, word: &str) -> Vec<String> {
+        self.arc_highlight(word)
+    }
 }
