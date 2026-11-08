@@ -113,9 +113,11 @@ pub fn KaraokeLyrics(script: Script, player: Player) -> impl IntoView {
                 let style_script = script.clone();
                 let chunks = lyric_chunks(&line.tokens);
                 let n_chunks = chunks.len();
+                let cited = super::layout::line_cited(&line.tokens);
                 view! {
                     <p
                         class="line"
+                        class:cited=cited
                         class:prev=move || {
                             if !player.playing.get() && player.cursor.get() == player.start_at {
                                 return false;

@@ -171,10 +171,15 @@ h1 {
   display: block;
   position: relative;
   min-width: 0;
-  padding-right: 7.2rem;
   overflow-wrap: break-word;
   hyphens: manual;
   white-space: normal;
+}
+
+/* Room for a margin cite. An uncited sentence uses the full lyric
+   column — the reserved pad was clipping "right-angles." off the plate. */
+.karaoke .line.cited .body {
+  padding-right: 7.2rem;
 }
 
 /* A word that wraps in demo mode keeps a hyphen on the broken piece. */
