@@ -1,7 +1,9 @@
 use crate::content::{get, propositions_in, Proposition, BOOKS};
 use crate::karaoke::{compile, KaraokeLyrics, KaraokePlay, KaraokeRead, Player, Timing};
 use leptos::ev;
+use leptos::html::Div;
 use leptos::prelude::*;
+use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
 
 #[component]
@@ -103,6 +105,26 @@ fn PropositionPage(prop: Proposition) -> impl IntoView {
     let script_fig = script.clone();
     let script_read = script.clone();
     let script_lyr = script.clone();
+    let fig_slot = NodeRef::<Div>::new();
+    let slot_el = RwSignal::new(None::<web_sys::HtmlDivElement>);
+    let plate_svg = (prop.figure)().svg(&[] as &[String]);
+    fig_slot.on_load(move |slot| slot_el.set(Some(slot)));
+    Effect::new(move |_| {
+        let cursor = player.cursor.get();
+        let lighting = record.get()
+            && (player.playing.get() || cursor != player.start_at);
+        let on: Vec<String> = if lighting {
+            script_fig.parts_at(cursor).to_vec()
+        } else {
+            Vec::new()
+        };
+        // The plate is already in the markup. Later words only move
+        // .on / .dim. Replacing the SVG on a highlight handoff flashes
+        // the page between them (I.45, after triangle ABD).
+        if let Some(slot) = slot_el.get() {
+            apply_light(&slot, &on, lighting);
+        }
+    });
 
     view! {
         <article
@@ -119,17 +141,7 @@ fn PropositionPage(prop: Proposition) -> impl IntoView {
                 </h2>
             </div>
             <KaraokePlay player=player record=record />
-            <div class="figure-wrap" inner_html=move || {
-                let fig = (prop.figure)();
-                let cursor = player.cursor.get();
-                let lighting = record.get()
-                    && (player.playing.get() || cursor != player.start_at);
-                if lighting {
-                    fig.svg(script_fig.parts_at(cursor))
-                } else {
-                    fig.svg(&[] as &[String])
-                }
-            }></div>
+            <div class="figure-wrap" node_ref=fig_slot inner_html=plate_svg></div>
             <p class="enun"><strong>{prop.enunciation}</strong></p>
             {move || {
                 if record.get() {
@@ -140,6 +152,28 @@ fn PropositionPage(prop: Proposition) -> impl IntoView {
             }}
             <p class="copy record-copy">"© 수영 책방 Swimming Bookstore"</p>
         </article>
+    }
+}
+
+fn apply_light(slot: &web_sys::HtmlElement, on: &[String], lighting: bool) {
+    let Some(root) = slot.query_selector(".figure-frame").ok().flatten() else {
+        return;
+    };
+    let Ok(nodes) = root.query_selector_all("[data-id]") else {
+        return;
+    };
+    let n = nodes.length();
+    for i in 0..n {
+        let Some(node) = nodes.item(i) else {
+            continue;
+        };
+        let Ok(el) = node.dyn_into::<web_sys::Element>() else {
+            continue;
+        };
+        let id = el.get_attribute("data-id").unwrap_or_default();
+        let hit = lighting && on.iter().any(|p| p == &id);
+        let _ = el.class_list().toggle_with_force("on", hit);
+        let _ = el.class_list().toggle_with_force("dim", lighting && !hit);
     }
 }
 

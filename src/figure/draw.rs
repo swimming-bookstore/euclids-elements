@@ -178,19 +178,22 @@ impl Figure {
                     ));
                 }
                 Mark::Arc { id, a, b, via } => {
-                    let d = if id.starts_with("circ-") {
-                        arc_upper_d(*a, *b, *via, y)
+                    if id.starts_with("hl-") && !lit(id) {
+                        // A circumference highlight. Unlit, it would grey the circle.
                     } else {
-                        arc_d(*a, *b, *via, y)
-                    };
-                    if let Some(d) = d {
-                        // Decorative bows stay stroke-only; never fill, never dim.
-                        out.push_str(&format!(
-                            r##"<path class="{}" data-id="{}" d="{}" fill="none"/>"##,
-                            cls(id, "arc"),
-                            id,
-                            d
-                        ));
+                        let d = if id.starts_with("circ-") {
+                            arc_upper_d(*a, *b, *via, y)
+                        } else {
+                            arc_d(*a, *b, *via, y)
+                        };
+                        if let Some(d) = d {
+                            out.push_str(&format!(
+                                r##"<path class="{}" data-id="{}" d="{}" fill="none"/>"##,
+                                cls(id, "arc"),
+                                id,
+                                d
+                            ));
+                        }
                     }
                 }
                 _ => {}
