@@ -87,6 +87,12 @@ pub fn demo_spaced(tokens: &[super::script::Token], i: usize) -> bool {
     tokens[i].spaced
 }
 
+/// A lyric line reserves the right margin only when it actually hangs a
+/// citation there. An uncited sentence uses the full column.
+pub fn line_cited(tokens: &[super::script::Token]) -> bool {
+    tokens.iter().any(|t| t.cite)
+}
+
 pub fn read_layout(script: &Script) -> Vec<Vec<Atom>> {
     read_layout_lines(&script.lines)
 }
@@ -222,6 +228,26 @@ mod tests {
         let cited_last = vec![false, false, false, false, true];
         assert_eq!(prev_row(&rows, &cited_last), 2);
         assert_eq!(prev_row(&rows, &[false, false, false, false, false]), 2);
+    }
+
+    #[test]
+    fn line_cited_reserves_the_margin_only_when_a_cite_hangs() {
+        // I.45 "…(whose sum is) equal to two right-angles." has no cite.
+        // Reserving the margin pad there clips "right-angles." off the plate.
+        let phrases = get(1, 45).expect("I.45").phrases;
+        let script = compile(phrases, &(get(1, 45).unwrap().figure)(), Timing::default());
+        let cut = script
+            .lines
+            .iter()
+            .find(|l| l.tokens.iter().any(|t| t.text.contains("straight-lines")))
+            .expect("the uncited two-right-angles sentence");
+        assert!(!line_cited(&cut.tokens));
+        let cited = script
+            .lines
+            .iter()
+            .find(|l| l.tokens.iter().any(|t| t.cite))
+            .expect("a cited sentence");
+        assert!(line_cited(&cited.tokens));
     }
 
     #[test]
