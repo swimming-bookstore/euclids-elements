@@ -11,17 +11,21 @@ angle or parallels gets no wash: a wash there would light the wrong region.
 A proposition about a line has no interior to wash. I.42 is a construction:
 the given triangle and the parallelogram equal to it are the two regions, and
 the two equal angles take the rose pie. Yellow sits on the gold wash, so it
-does not read as a corner of the parallelogram. I.43 washes the two equal
+does not read as a corner of the parallelogram. That pie is the default for
+a given angle and the angle the construction stands in: I.42 sets the size
+on the card, and a later plate uses the same pixel radius, not the same
+plate units. A shared plate radius shrinks when the figure is larger. I.43 washes the two equal
 complements, BK and KD — the areas the enunciation names — and leaves the
 parallelograms about the diagonal as the plate. I.44 is the application:
 triangle C and the parallelogram LB equal to it, applied to AB, are the two
 regions, and the angle the parallelogram stands in takes the same rose pie as
-the given angle. I.45 constructs one parallelogram equal to the given
+the given angle, at the I.42 card size. I.45 constructs one parallelogram equal to the given
 rectilinear figure, in the given angle. The two figures are equal, so the
-card washes them in one color — two hues would read as two areas. The
-given angle and the angle the parallelogram stands in take one rose pie.
-That pie is the I.42 radius, the default for a given angle and the angle
-the construction stands in.
+card washes them in one color — two hues would read as two areas. KFLM is
+two parallelograms side by side; one crossed hexagon paints them as two
+hues, so the card washes each half in that one color. The given angle and
+the angle the parallelogram stands in take one rose pie, again at the I.42
+card size.
 I.2 and I.3 light the
 equal lines the enunciation names, and leave the construction ink at the
 same weight as I.1. Dimming that ink to push the subject made the plate
@@ -30,11 +34,11 @@ cream to read as a line, so those lines take a brick that sits with the
 navy type. I.5 keeps the whole plate — F, G, FC, GB and the rest — and
 adds a highlight only. The subject is the angles, not the triangle, so the
 mark is a pie in each corner the enunciation names: ∠ABC and ∠ACB at the
-base, ∠CBD and ∠BCE under it. The two equal pairs are two marks — yellow
-and larger at the base, rose and smaller under it — so a pair reads as one
-set and the other pair as the other. Both hues sit with the plate: the
-yellow is the angle highlight, the rose is the brick of the line cards
-lifted so it still reads as a wash. A pie fills the angle; it does not
+base, ∠CBD and ∠BCE under it. The two equal pairs are two marks, both at
+the I.42 card size. The base pair is the I.42 rose. The lower pair is the
+other set — yellow, same radius — so a pair reads as one set and the other
+pair as the other. I.6 and I.9 have one angle equality, so that pair is the
+same rose at the same card size. A pie fills the angle; it does not
 replace a stroke or a letter. I.6 is the converse: two equal angles, and
 the sides subtending them equal. The card keeps the plate — D and DC are
 the reductio, not the subject — and marks what the enunciation names.
@@ -138,8 +142,10 @@ WASHES: dict[int, list[tuple[str, ...]]] = {
     44: [("P", "Q", "R"), ("A", "B", "M", "L")],
     # Rectilinear figure ABCD and the parallelogram KFLM equal to it, in
     # the given angle. They do not overlap. The angles are pies (ANGLES),
-    # not a third wash. Same area, so one wash (SAME_WASH), not two hues.
-    45: [("A", "B", "C", "D"), ("K", "H", "M", "L", "G", "F")],
+    # not a third wash. KFLM is FH and GM side by side. One hexagon K–H–M–L–G–F
+    # crosses itself, so the fill paints the two halves in two hues. Two
+    # regions, one wash (SAME_WASH): same area, not two colors.
+    45: [("A", "B", "C", "D"), ("F", "K", "H", "G"), ("G", "H", "M", "L")],
 }
 
 # Equal areas share a wash. Two hues would say the figures differ.
@@ -203,31 +209,36 @@ ANGLES: dict[int, list[list[tuple[str, str, str]]]] = {
     45: [[("Eleft", "E", "Eright"), ("F", "K", "M")]],
 }
 
-# Plate radius of the rose pie on a given angle and the angle the
-# construction stands in. I.42 sets it: 14, short of the letter inside ∠D.
-# I.44 and I.45 take this, not a radius grown to the card.
+# Card radius of the rose pie on a given angle and the angle the
+# construction stands in. I.42 sets it: plate radius 14, which is this many
+# pixels once that plate is fitted to the card. I.44 and I.45 take this pixel
+# size. Their plates are larger, so the same plate radius would shrink.
 GIVEN_ANGLE_PIE = 14.0
+GIVEN_ANGLE_PIE_PX = 54.0
 
 # Per equality group, in ANGLES order: fill, then radius as a fraction of
 # the shorter arm. Same within a pair; different between pairs, so the two
 # sets stay distinct at thumbnail size. The larger pie is drawn first.
-# A missing entry takes the I.42 pie.
-ANGLE_MARK: dict[int, list[tuple[tuple[int, int, int], float]]] = {
-    5: [(PIE, 0.42), (PIE_ALT, 0.22)],
-    # Same absolute reach as the I.5 base pies, so the pair reads at
-    # thumbnail size. Short of D on AB, and short of the opposite side.
-    6: [(PIE, 0.32)],
+# A missing entry takes the I.42 pie. reach None is that pie at the I.42
+# card size (GIVEN_ANGLE_PIE_PX), not a plate radius that would shrink.
+ANGLE_MARK: dict[int, list[tuple[tuple[int, int, int], float | None]]] = {
+    # I.5 has two equalities. Both sets take the I.42 card size. The base
+    # pair is the rose. The lower pair is yellow, so the two equalities do
+    # not read as one. Same radius: a smaller second pie reads as a lesser angle.
+    5: [(PIE_ALT, None), (PIE, None)],
+    # ∠ABC = ∠ACB. One set, the I.42 rose at the I.42 card size.
+    6: [(PIE_ALT, None)],
     # Short of the rose sides, so the pie is the angle and not another stroke.
     8: [(PIE, 0.20)],
-    # Short of DE, so the two halves read as angles and not as a wash of
-    # the triangle. ∠BAC is narrow on the plate, so the reach is longer
-    # than the I.8 pie or the halves disappear at thumbnail size.
-    9: [(PIE, 0.55)],
+    # ∠DAF = ∠EAF. One set, the I.42 rose at the I.42 card size. ∠BAC is
+    # narrow, so the cap is the shorter arm, not the pixel target.
+    9: [(PIE_ALT, None)],
     # Rose, not yellow: the pie sits on the gold parallelogram, and yellow
     # reads as more of that wash. One plate radius for the pair — a fraction
     # of each arm would draw the longer angle larger. Short of the letter
     # inside ∠D. This radius is the default (GIVEN_ANGLE_PIE) for a given
-    # angle and the angle the construction stands in.
+    # angle and the angle the construction stands in. I.44 and I.45 omit an
+    # entry and take this mark at the I.42 card size (GIVEN_ANGLE_PIE_PX).
     42: [(PIE_ALT, GIVEN_ANGLE_PIE)],
 }
 
@@ -765,7 +776,7 @@ def _bind(stmt: str, ev: Eval, env: dict) -> None:
 
 
 def functions() -> dict[int, str]:
-    text = RUST.read_text()
+    text = (ROOT / "src" / "figure" / "book1.rs").read_text()
     out = {}
     for chunk in re.split(r"\npub fn ", text)[1:]:
         m = re.match(r"book1_prop(\d+)", chunk)
@@ -959,19 +970,34 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
             return min(reach, span * 0.92)
         return reach * span
 
+    def given_angle_radius(arm: str, vertex: str, other: str) -> float:
+        # I.42's pie, in pixels on this card, converted back to plate units.
+        # Cap at the shorter arm so a pie cannot run past the stroke.
+        vv = scene.at(vertex)
+        span = min(vv.dist(scene.at(arm)), vv.dist(scene.at(other)))
+        return min(GIVEN_ANGLE_PIE_PX / scale, span * 0.92)
+
     # Pies under the ink, so the plate's strokes and letters stay as they
     # are. Each equality group is one color and one radius; the next group
     # is the other set. Larger first, so a smaller pie is not covered.
+    # No entry: the I.42 rose pie, at the I.42 card size.
     groups = ANGLES.get(n, [])
-    marks = ANGLE_MARK.get(n, [(PIE_ALT, GIVEN_ANGLE_PIE)] * len(groups))
+    marks = ANGLE_MARK.get(n)
+    if marks is None:
+        marks = [(PIE_ALT, None)] * len(groups)
     if len(marks) != len(groups):
         raise SystemExit(f"I.{n}: angle mark count {len(marks)} != groups {len(groups)}")
-    order = sorted(range(len(groups)), key=lambda i: marks[i][1], reverse=True)
+    order = sorted(range(len(groups)), key=lambda i: marks[i][1] or 0.0, reverse=True)
     for i in order:
         color, reach = marks[i]
         cr.set_source_rgba(*rgb(color), 0.86)
         for arm, vertex, other in groups[i]:
-            pts = angle_wedge(scene, arm, vertex, other, angle_radius(arm, vertex, other, reach))
+            radius = (
+                given_angle_radius(arm, vertex, other)
+                if reach is None
+                else angle_radius(arm, vertex, other, reach)
+            )
+            pts = angle_wedge(scene, arm, vertex, other, radius)
             cr.move_to(*pt_of(pts[0]))
             for p in pts[1:]:
                 cr.line_to(*pt_of(p))
