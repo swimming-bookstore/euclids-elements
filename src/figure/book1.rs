@@ -1199,6 +1199,7 @@ pub fn book1_prop46() -> Diagram {
     d.level("E", "D", 100.0, Place::Deg(88.0));
     d.put("C", V2::new(0.0, 214.23), Place::Deg(107.3));
     d.chain(&["C", "D", "A", "B", "E", "D"]);
+    d.dots(&["A", "B", "C", "D", "E"]);
     d
 }
 
@@ -1214,6 +1215,13 @@ pub fn book1_prop46() -> Diagram {
 /// squares GB and HC are right-angled on their own sides. A sits above the
 /// apex in the gap between GB and HC; B–H and K–L sit one letter-radius out
 /// on the measured tip→glyph heading.
+///
+/// GB, HC, BL, and CL are named by opposite corners. The plate draws no
+/// stroke across those diagonals: GB is F–G–A–B, HC is A–H–K–C, and BL
+/// and CL are the two halves of square BDEC on either side of AL. AL
+/// crosses BC at an unlettered point, so each half has a side on BC and
+/// a side on AL. A walk from B to L would otherwise take B–A–L, which is
+/// the triangle, not the parallelogram.
 pub fn book1_prop47() -> Diagram {
     let mut d = Diagram::new();
     d.put("B", V2::new(0.0, 0.0), Place::Deg(-141.5));
@@ -1226,22 +1234,34 @@ pub fn book1_prop47() -> Diagram {
     d.put("G", V2::new(-24.584, 61.922), Place::Deg(133.9));
     d.put("H", V2::new(62.462, 126.062), Place::Deg(101.7));
     d.put("K", V2::new(144.609, 82.101), Place::Deg(6.5));
-    // Triangle ABC and square BDEC (with L on DE).
+    // AL crosses BC. The plate has no letter at the cross. Splitting it
+    // lets parallelogram BL be B–D–L–P and CL be C–E–L–P — the figures
+    // the proof names by opposite corners, not the short path through A.
+    d.meet_pin("P", "A", "L", "B", "C");
+    // Triangle ABC and square BDEC (with L on DE, P on BC).
     d.join("A", "B");
     d.join("A", "C");
-    d.join("B", "C");
+    d.chain(&["B", "P", "C"]);
     d.join("B", "D");
     d.chain(&["D", "L", "E"]);
     d.join("C", "E");
-    // Squares GB (FBAG) and HC (ACKH).
+    // Squares GB (F–G–A–B) and HC (A–H–K–C).
     d.chain(&["F", "G", "A", "H", "K", "C"]);
     d.join("F", "B");
-    // Parallel AL and construction lines AD, FC, AE, BK.
-    d.join("A", "L");
+    // Parallel AL, split at the cross, and construction lines AD, FC, AE, BK.
+    d.chain(&["A", "P", "L"]);
     d.join("A", "D");
     d.join("F", "C");
     d.join("A", "E");
     d.join("B", "K");
+    // Spoken by opposite corners. The plate draws no stroke GB, HC, BL, or CL.
+    d.region("GB", &["G", "A", "B", "F"]);
+    d.region("HC", &["H", "A", "C", "K"]);
+    d.region("BL", &["B", "D", "L", "P"]);
+    d.region("CL", &["C", "E", "L", "P"]);
+    // The proof calls GC one straight-line (CA straight-on to AG). The plate
+    // bends at A, and the other walk of that length is G–F–C.
+    d.along("GC", &["G", "A", "C"]);
     d.dots(&["A", "B", "C", "D", "E", "F", "G", "H", "K", "L"]);
     d
 }

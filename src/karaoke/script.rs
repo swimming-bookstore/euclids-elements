@@ -1687,4 +1687,192 @@ mod tests {
         assert_eq!(display_letters("triangle(ABD)"), "ABD");
         assert_eq!(display_letters("angle(HKF)"), "HKF");
     }
+
+    #[test]
+    fn i46_names_light_the_plate() {
+        // ADEB is the square, not the produced upright. AC is the whole
+        // upright the construction draws. BAD, ADE, ABE, and BED are the
+        // angles, not a walk around the square.
+        let phrases = crate::content::get(1, 46).unwrap().phrases;
+        let script = compile(phrases, &crate::figure::book1_prop46(), Timing::default());
+        let runs = |word: &str| -> Vec<Vec<String>> {
+            script
+                .lines
+                .iter()
+                .flat_map(|l| l.tokens.iter())
+                .filter(|t| letter_key(&t.text) == word)
+                .map(|t| t.parts.clone())
+                .collect()
+        };
+        let has = |parts: &[String], id: &str| parts.iter().any(|p| p == id);
+        let adeb = runs("ADEB");
+        assert!(
+            adeb.len() >= 3
+                && adeb.iter().all(|p| has(p, "ab") && has(p, "da") && has(p, "ed") && has(p, "be") && !has(p, "cd")),
+            "ADEB is the square, not the produced line: {adeb:?}"
+        );
+        let ac = runs("AC");
+        assert!(
+            ac.len() >= 1 && ac.iter().all(|p| has(p, "cd") && has(p, "da") && !has(p, "ab")),
+            "AC is the whole upright: {ac:?}"
+        );
+        let bad = runs("BAD");
+        assert!(
+            bad.len() >= 1 && bad.iter().all(|p| has(p, "ab") && has(p, "da") && !has(p, "ed") && !has(p, "be")),
+            "BAD is the angle: {bad:?}"
+        );
+        let ade = runs("ADE");
+        assert!(
+            ade.len() >= 1 && ade.iter().all(|p| has(p, "da") && has(p, "ed") && !has(p, "ab") && !has(p, "be")),
+            "ADE is the angle, not the square: {ade:?}"
+        );
+        let abe = runs("ABE");
+        assert!(
+            abe.len() >= 1 && abe.iter().all(|p| has(p, "ab") && has(p, "be") && !has(p, "da") && !has(p, "ed")),
+            "ABE is the angle: {abe:?}"
+        );
+        let bed = runs("BED");
+        assert!(
+            bed.len() >= 1 && bed.iter().all(|p| has(p, "be") && has(p, "ed") && !has(p, "ab") && !has(p, "da")),
+            "BED is the angle: {bed:?}"
+        );
+        assert_eq!(display_letters("angle(BAD)"), "BAD");
+    }
+
+    #[test]
+    fn i47_names_light_the_plate() {
+        // GB and HC are the squares on the legs, named by opposite corners.
+        // BL and CL are the parallelograms the proof cuts from square BDEC.
+        // A walk through A is the triangle, not those figures. The three-letter
+        // names in the proof are angles, except the triangles ABD and FBC.
+        let phrases = crate::content::get(1, 47).unwrap().phrases;
+        let script = compile(phrases, &crate::figure::book1_prop47(), Timing::default());
+        let runs = |word: &str| -> Vec<Vec<String>> {
+            script
+                .lines
+                .iter()
+                .flat_map(|l| l.tokens.iter())
+                .filter(|t| letter_key(&t.text) == word)
+                .map(|t| t.parts.clone())
+                .collect()
+        };
+        let has = |parts: &[String], id: &str| parts.iter().any(|p| p == id);
+        let gb = runs("GB");
+        assert!(
+            gb.len() >= 3
+                && gb.iter().all(|p| has(p, "fg") && has(p, "ga") && has(p, "ab") && has(p, "fb") && !has(p, "ah")),
+            "GB is the square, not a walk: {gb:?}"
+        );
+        let hc = runs("HC");
+        assert!(
+            hc.len() >= 3
+                && hc.iter().all(|p| has(p, "ah") && has(p, "ac") && has(p, "kc") && has(p, "hk") && !has(p, "ab")),
+            "HC is the square, not a walk: {hc:?}"
+        );
+        let bl = runs("BL");
+        assert!(
+            bl.len() >= 2
+                && bl.iter().all(|p| has(p, "bd") && has(p, "dl") && has(p, "pl") && has(p, "bp") && !has(p, "ab") && !has(p, "ap")),
+            "BL is the parallelogram, not the path through A: {bl:?}"
+        );
+        let cl = runs("CL");
+        assert!(
+            cl.len() >= 1
+                && cl.iter().all(|p| has(p, "ce") && has(p, "le") && has(p, "pl") && has(p, "pc") && !has(p, "ac") && !has(p, "ap")),
+            "CL is the parallelogram, not the path through A: {cl:?}"
+        );
+        let bdec = runs("BDEC");
+        assert!(
+            bdec.len() >= 3
+                && bdec.iter().all(|p| has(p, "bd") && has(p, "dl") && has(p, "le") && has(p, "ce") && has(p, "bp") && has(p, "pc") && !has(p, "ad")),
+            "BDEC is the square on BC: {bdec:?}"
+        );
+        let bac = runs("BAC");
+        assert!(
+            bac.len() >= 1 && bac.iter().all(|p| has(p, "ab") && has(p, "ac") && !has(p, "bp") && !has(p, "pc")),
+            "BAC is the angle, not the triangle: {bac:?}"
+        );
+        let bag = runs("BAG");
+        assert!(
+            bag.len() >= 1 && bag.iter().all(|p| has(p, "ab") && has(p, "ga") && !has(p, "fb")),
+            "BAG is the angle: {bag:?}"
+        );
+        let dbc = runs("DBC");
+        assert!(
+            dbc.len() >= 1 && dbc.iter().all(|p| has(p, "bd") && (has(p, "bp") || has(p, "pc")) && !has(p, "ad")),
+            "DBC is the angle: {dbc:?}"
+        );
+        let dba = runs("DBA");
+        assert!(
+            dba.len() >= 1 && dba.iter().all(|p| has(p, "bd") && has(p, "ab") && !has(p, "ad")),
+            "DBA is the angle, not triangle ABD: {dba:?}"
+        );
+        let fbc_ang = runs("FBC");
+        assert!(
+            fbc_ang.iter().any(|p| has(p, "fb") && (has(p, "bp") || has(p, "pc")) && !has(p, "fc")),
+            "FBC is an angle as well as a triangle: {fbc_ang:?}"
+        );
+        assert!(
+            fbc_ang.iter().any(|p| has(p, "fb") && has(p, "fc") && (has(p, "bp") || has(p, "pc"))),
+            "FBC is the triangle as well as the angle: {fbc_ang:?}"
+        );
+        let abd = runs("ABD");
+        assert!(
+            abd.len() >= 1 && abd.iter().all(|p| has(p, "ab") && has(p, "bd") && has(p, "ad") && !has(p, "bp")),
+            "ABD is the triangle, not the angle: {abd:?}"
+        );
+        let gc = runs("GC");
+        assert!(
+            gc.len() >= 1 && gc.iter().all(|p| has(p, "ga") && has(p, "ac") && !has(p, "fb") && !has(p, "hk")),
+            "GC is GA straight-on to AC: {gc:?}"
+        );
+        let al = runs("AL");
+        assert!(
+            al.len() >= 2 && al.iter().all(|p| has(p, "ap") && has(p, "pl") && !has(p, "ab")),
+            "AL is the parallel, both pieces: {al:?}"
+        );
+        assert_eq!(display_letters("parallelogram(BL)"), "BL");
+        assert_eq!(display_letters("triangle(ABD)"), "ABD");
+        assert_eq!(display_letters("angle(BAC)"), "BAC");
+    }
+
+    #[test]
+    fn i48_names_light_the_plate() {
+        // BAC and DAC are the angles the proof compares. ABC is the triangle.
+        // A three-letter name must not light the third side.
+        let phrases = crate::content::get(1, 48).unwrap().phrases;
+        let script = compile(phrases, &crate::figure::book1_prop48(), Timing::default());
+        let runs = |word: &str| -> Vec<Vec<String>> {
+            script
+                .lines
+                .iter()
+                .flat_map(|l| l.tokens.iter())
+                .filter(|t| letter_key(&t.text) == word)
+                .map(|t| t.parts.clone())
+                .collect()
+        };
+        let has = |parts: &[String], id: &str| parts.iter().any(|p| p == id);
+        let bac = runs("BAC");
+        assert!(
+            bac.len() >= 2 && bac.iter().all(|p| has(p, "ab") && has(p, "ac") && !has(p, "bc")),
+            "BAC is the angle, not the triangle: {bac:?}"
+        );
+        let dac = runs("DAC");
+        assert!(
+            dac.len() >= 2 && dac.iter().all(|p| has(p, "da") && has(p, "ac") && !has(p, "dc")),
+            "DAC is the angle, not triangle DAC: {dac:?}"
+        );
+        let abc = runs("ABC");
+        assert!(
+            abc.len() >= 1 && abc.iter().all(|p| has(p, "ab") && has(p, "ac") && has(p, "bc")),
+            "ABC is the triangle: {abc:?}"
+        );
+        let dc = runs("DC");
+        assert!(
+            dc.len() >= 2 && dc.iter().all(|p| has(p, "dc") && !has(p, "da") && !has(p, "ac")),
+            "DC is the joined side: {dc:?}"
+        );
+        assert_eq!(display_letters("angle(BAC)"), "BAC");
+        assert_eq!(display_letters("triangle(ABC)"), "ABC");
+    }
 }
