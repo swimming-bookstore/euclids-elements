@@ -114,13 +114,22 @@ and the two leg squares in the gold, so the equality reads as one area
 equal to the other two together. One color would say the three squares
 are the same area. The joins and the parallel are the proof, not the
 subject, and the plate's angle at A is not a right angle, so a square
-mark there would not sit on the arms. I.48 concludes that the angle
-contained by the two remaining sides is a right-angle. The squares are
-not drawn. The card keeps the plate — AD and DC are the construction —
-and marks ∠BAC with one rose square, a hair of the shorter arm, so the
-mark is the right-angle and not the triangle. ∠DAC is the constructed
-right-angle, not the one the enunciation names.
-Labels stay navy, the color every other card uses.
+mark there would not sit on the arms. I.48 is the converse, and it is
+about triangle ABC. The square on one side equals the (sum of the)
+squares on the other two, so the angle those two contain is a
+right-angle. The plate draws neither square — AD and DC are the
+construction — and the card keeps every stroke and letter of that
+plate. The sides the squares stand on, BA, AC, and BC, take the brick.
+AD and DC stay the plate ink: coloring them would be the proof. The
+three squares are one very light wash, outward, not a second hue and
+not an edge. They are not on the plate, so a strong fill would replace
+the diagram. One wash: the hues are not the claim, the sides are.
+∠BAC, the angle the enunciation concludes is right, takes one rose
+square, a hair of the shorter arm, so the mark sits in the corner
+and does not fill the triangle. ∠DAC is the right-angle drawn for the
+proof, not the conclusion. The light squares do not enter the fit:
+counting them would shrink the plate and grow that mark. Labels stay
+navy, the color every other card uses.
 """
 
 from __future__ import annotations
@@ -207,6 +216,11 @@ WASHES: dict[int, list[tuple[str, ...]]] = {
     # the sum of the other two, so the hues are the two sides of that
     # equality, not three areas and not one.
     47: [("B", "D", "E", "C"), ("F", "B", "A", "G"), ("A", "C", "K", "H")],
+    # The squares on BC, BA, and AC. The plate draws none of them: AD and
+    # DC are the construction. prepare() pins the outer corners, outward,
+    # and leaves the plate. One very light wash (SQUARE_FILL): the hues
+    # are not the claim. The sides are the highlight.
+    48: [("B", "C", "Bc1", "Bc2"), ("B", "A", "Ba1", "Ba2"), ("A", "C", "Ac1", "Ac2")],
 }
 
 # Equal areas share a wash. Two hues would say the figures differ.
@@ -238,6 +252,9 @@ LINES: dict[int, list[tuple[str, str]]] = {
     # BC and BD, the two straight-lines that are straight-on. BE is the
     # reductio, not the subject. AB is the line they stand on.
     14: [("B", "C"), ("B", "D")],
+    # The sides the squares stand on, BA, AC, and BC. AD and DC are the
+    # construction, and they stay the plate ink.
+    48: [("B", "A"), ("A", "C"), ("B", "C")],
 }
 
 # Further line equalities, each a hue that is not the angle yellow.
@@ -294,8 +311,8 @@ ANGLES: dict[int, list[list[tuple[str, str, str]]]] = {
     # ∠E = ∠FKM, the given angle and the angle the constructed
     # parallelogram stands in. One set. Arm ends of E are not lettered.
     45: [[("Eleft", "E", "Eright"), ("F", "K", "M")]],
-    # ∠BAC, the angle the enunciation concludes is right. One mark, a
-    # square (SQUARE_MARK), not a pie. AD and DC are the construction.
+    # ∠BAC, the angle the enunciation concludes is right. One mark, a square
+    # (SQUARE_MARK), not a pie. ∠DAC is the right-angle of the construction.
     48: [[("B", "A", "C")]],
 }
 
@@ -357,7 +374,9 @@ ANGLE_MARK: dict[int, list[tuple[tuple[int, int, int], float | None]]] = {
     42: [(PIE_ALT, GIVEN_ANGLE_PIE)],
     # ∠BAC, the right-angle the enunciation names. One rose square, a hair
     # of the shorter arm, so the mark sits in the corner and does not fill
-    # the triangle. The side is that pie radius (SQUARE_MARK).
+    # the triangle. The side is that pie radius (SQUARE_MARK). The I.42
+    # card size is a fixed pixel mark; the plate is smaller once the light
+    # squares are drawn, so that size reads larger than the old thumbnail.
     48: [(PIE_ALT, 0.28)],
 }
 
@@ -375,8 +394,32 @@ ANGLE_HAIR: dict[tuple[int, str, str, str], float] = {
 # A right-angle is a square, not a pie. The side is the radius the pie
 # would have taken, so the mark stays the same size and only the shape
 # changes. Two adjacent right-angles are two squares. I.11, I.12, and
-# the right-angle I.48 concludes.
+# the right-angle I.48 concludes. I.48's side squares are a light wash,
+# not this.
 SQUARE_MARK = {11, 12, 48}
+
+# Outer edges of the light squares, so the wash fits on the card. Not
+# stroked: a colored edge would be a square the plate does not draw.
+SQUARE_QUIET: dict[int, tuple[tuple[str, str], ...]] = {
+    48: (
+        ("C", "Bc1"),
+        ("Bc1", "Bc2"),
+        ("Bc2", "B"),
+        ("A", "Ba1"),
+        ("Ba1", "Ba2"),
+        ("Ba2", "B"),
+        ("C", "Ac1"),
+        ("Ac1", "Ac2"),
+        ("Ac2", "A"),
+    ),
+}
+
+# Fills for squares the enunciation names and the plate does not draw.
+# One very light wash. Two hues would say the squares differ, and a
+# strong fill would replace the plate. The sides are the highlight.
+SQUARE_FILL: dict[int, tuple[tuple[int, int, int], float]] = {
+    48: ((226, 198, 148), 0.32),
+}
 
 PLACE_DEG = {
     "Right": 0.0,
@@ -610,6 +653,9 @@ class Scene:
         self.arc_list: list[tuple[V2, V2, V2]] = []
         self.dot_pts: list[V2] = []
         self.clip_box: tuple[V2, V2] | None = None
+        # Points the fit ignores. A light square the plate does not draw
+        # must not shrink the figure.
+        self.fit_skip: set[str] = set()
         # Arm ends of a given angle (I.42's Dleft, Dright). Not lettered.
         self.arms: dict[str, V2] = {}
 
@@ -799,6 +845,8 @@ class Scene:
             ys.append(p.y)
 
         for a, b in self.segs:
+            if a in self.fit_skip or b in self.fit_skip:
+                continue
             add(self.at(a))
             add(self.at(b))
         for name, r in self.circs:
@@ -1025,8 +1073,43 @@ def angle_square(scene: Scene, arm: str, vertex: str, other: str, side: float) -
     ]
 
 
+def square_outward(p: V2, q: V2, away: V2) -> list[V2]:
+    """Square on directed pq, on the side away from `away`. y is up.
+
+    The two outer corners follow q, then p, so a wash p–q–outer–outer
+    walks the boundary without crossing.
+    """
+    left = V2(-(q.y - p.y), q.x - p.x)
+    right = V2(q.y - p.y, -(q.x - p.x))
+    mid = V2((p.x + q.x) / 2, (p.y + q.y) / 2)
+    left_of = mid.add(left.mul(0.5)).dist(away)
+    right_of = mid.add(right.mul(0.5)).dist(away)
+    side = left if left_of > right_of else right
+    return [p, q, q.add(side), p.add(side)]
+
+
 def prepare(n: int, scene: Scene) -> None:
-    """Check the angle marks. The plate itself is not edited."""
+    """Check the angle marks. I.48 pins the squares the plate does not draw."""
+    if n == 48:
+        # The enunciation is the squares on the sides of ABC, and the
+        # right-angle they imply. The plate draws neither square. AD and DC
+        # are the construction, so the card keeps them and draws the squares
+        # outward. The side the square stands on is already a plate stroke.
+        for key, pn, qn, away in (
+            ("Bc", "B", "C", "A"),
+            ("Ba", "B", "A", "C"),
+            ("Ac", "A", "C", "B"),
+        ):
+            pts = square_outward(scene.at(pn), scene.at(qn), scene.at(away))
+            scene.pin(f"{key}1", pts[2])
+            scene.pin(f"{key}2", pts[3])
+            # The plate is ABC. Counting the outer corners would shrink it,
+            # and a fixed-size right-angle mark would grow with that shrink.
+            scene.fit_skip.add(f"{key}1")
+            scene.fit_skip.add(f"{key}2")
+        # The edges are not stroked. They exist so the wash has corners.
+        for u, v in SQUARE_QUIET.get(n, ()):
+            scene.join(u, v)
     for group in ANGLES.get(n, []):
         for arm, vertex, other in group:
             for name in (arm, vertex, other):
@@ -1124,8 +1207,12 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
         cr.close_path()
 
     regions = washes.get(n, [])
+    fill = SQUARE_FILL.get(n)
     for i, names in enumerate(regions):
-        if len(regions) == 1 or n in SAME_WASH:
+        if fill is not None:
+            # One very light wash. The plate does not draw these squares.
+            cr.set_source_rgba(*rgb(fill[0]), fill[1])
+        elif len(regions) == 1 or n in SAME_WASH:
             cr.set_source_rgba(*rgb(WASH), 0.85)
         elif i == 0:
             cr.set_source_rgba(*rgb(WASH), 0.85)
@@ -1221,6 +1308,8 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
     lit_ink = {(a, b) for a, b in lit_segs + alt_segs + extra_segs} | {
         (b, a) for a, b in lit_segs + alt_segs + extra_segs
     }
+    square_edges = list(SQUARE_QUIET.get(n, ()))
+    square_ink = {(a, b) for a, b in square_edges} | {(b, a) for a, b in square_edges}
     # Construction stays the same ink as I.1. Only the named lines are lit.
     # A named side may be chained through a construction point (D on AB).
     # The highlight is the whole chord, drawn over the pieces, so the plate's
@@ -1247,7 +1336,7 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
     cr.set_line_cap(cairo.LINE_CAP_ROUND)
     cr.set_line_join(cairo.LINE_JOIN_ROUND)
     for a, b in scene.segs:
-        if (a, b) in lit_ink:
+        if (a, b) in lit_ink or (a, b) in square_ink:
             continue
         cr.move_to(*pt(a))
         cr.line_to(*pt(b))
