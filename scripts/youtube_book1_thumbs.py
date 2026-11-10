@@ -125,9 +125,11 @@ three squares are one very light wash, outward, not a second hue and
 not an edge. They are not on the plate, so a strong fill would replace
 the diagram. One wash: the hues are not the claim, the sides are.
 ∠BAC, the angle the enunciation concludes is right, takes one rose
-square at the I.42 card size. ∠DAC is the right-angle drawn for the
-proof, not the conclusion. Labels stay navy, the color every other
-card uses.
+square, a hair of the shorter arm, so the mark sits in the corner
+and does not fill the triangle. ∠DAC is the right-angle drawn for the
+proof, not the conclusion. The light squares do not enter the fit:
+counting them would shrink the plate and grow that mark. Labels stay
+navy, the color every other card uses.
 """
 
 from __future__ import annotations
@@ -370,10 +372,12 @@ ANGLE_MARK: dict[int, list[tuple[tuple[int, int, int], float | None]]] = {
     # angle and the angle the construction stands in. I.44 and I.45 omit an
     # entry and take this mark at the I.42 card size (GIVEN_ANGLE_PIE_PX).
     42: [(PIE_ALT, GIVEN_ANGLE_PIE)],
-    # ∠BAC, the right-angle the enunciation names. One rose square, the I.42
-    # card size, so the mark does not shrink beside the squares. A hair of
-    # the arm reads as a tick. The side is that pie radius (SQUARE_MARK).
-    48: [(PIE_ALT, None)],
+    # ∠BAC, the right-angle the enunciation names. One rose square, a hair
+    # of the shorter arm, so the mark sits in the corner and does not fill
+    # the triangle. The side is that pie radius (SQUARE_MARK). The I.42
+    # card size is a fixed pixel mark; the plate is smaller once the light
+    # squares are drawn, so that size reads larger than the old thumbnail.
+    48: [(PIE_ALT, 0.28)],
 }
 
 # A hair on one pie, after the group radius. Same color, not a second set.
@@ -649,6 +653,9 @@ class Scene:
         self.arc_list: list[tuple[V2, V2, V2]] = []
         self.dot_pts: list[V2] = []
         self.clip_box: tuple[V2, V2] | None = None
+        # Points the fit ignores. A light square the plate does not draw
+        # must not shrink the figure.
+        self.fit_skip: set[str] = set()
         # Arm ends of a given angle (I.42's Dleft, Dright). Not lettered.
         self.arms: dict[str, V2] = {}
 
@@ -838,6 +845,8 @@ class Scene:
             ys.append(p.y)
 
         for a, b in self.segs:
+            if a in self.fit_skip or b in self.fit_skip:
+                continue
             add(self.at(a))
             add(self.at(b))
         for name, r in self.circs:
@@ -1094,7 +1103,11 @@ def prepare(n: int, scene: Scene) -> None:
             pts = square_outward(scene.at(pn), scene.at(qn), scene.at(away))
             scene.pin(f"{key}1", pts[2])
             scene.pin(f"{key}2", pts[3])
-        # Outer corners count in the fit. The edges are not stroked.
+            # The plate is ABC. Counting the outer corners would shrink it,
+            # and a fixed-size right-angle mark would grow with that shrink.
+            scene.fit_skip.add(f"{key}1")
+            scene.fit_skip.add(f"{key}2")
+        # The edges are not stroked. They exist so the wash has corners.
         for u, v in SQUARE_QUIET.get(n, ()):
             scene.join(u, v)
     for group in ANGLES.get(n, []):
