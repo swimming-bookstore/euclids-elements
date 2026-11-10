@@ -68,43 +68,45 @@ the bisector CD are the construction, not the subject — and marks the
 cut. AD and BD, the two halves, take the brick. A wash of ABC would
 light the triangle, which the proposition does not claim. I.11 draws a
 straight-line at right-angles to a given straight-line from a given
-point on it. The card keeps the plate — D, E, equilateral FDE and the
-sides DF and EF are the construction, not the subject — and marks the
-drawn line and the adjacent angles that make it a right-angle. FC takes
-the brick. ∠DCF and ∠ECF take one rose square, side the pie radius, a
-hair of the shorter arm, so the squares sit in the corners and do not
-fill the straight line. A pie would read as any angle. A wash of FDE
-would light the triangle, which the proposition does not claim. I.12 draws
+point on it. The enunciation names both lines. The card keeps the plate
+— D, E, equilateral FDE and the sides DF and EF are the construction,
+not the subject — and marks those two lines and the adjacent angles
+that make the drawn line a right-angle. AB and FC take the brick.
+∠DCF and ∠ECF take one rose square, side the pie radius, a hair of the
+shorter arm, so the squares sit in the corners and do not fill the
+straight line. A pie would read as any angle. A wash of FDE would light
+the triangle, which the proposition does not claim. I.12 draws
 a perpendicular to a given infinite straight-line from a point not on
-it. The card keeps the plate — D, circle EFG, G, E and the joins CG and
-CE are the construction, not the subject — and marks the drawn line and
-the adjacent angles that make it a perpendicular. CH takes the brick.
-∠CHG and ∠EHC take one rose square, side the pie radius, the same hair.
-A pie would read as any angle. A wash has no interior
-the enunciation names. I.13 is
+it. The enunciation names both lines. The card keeps the plate — D,
+circle EFG, G, E and the joins CG and CE are the construction, not the
+subject — and marks those two lines and the adjacent angles that make
+the drawn line a perpendicular. AB and CH take the brick. ∠CHG and
+∠EHC take one rose square, the I.11 card size, so the mark does not
+shrink on this larger plate. A pie would read as any angle. A wash has
+no interior the enunciation names. I.13 is
 the adjacent angles a straight-line stood on another makes: two
 right-angles, or angles whose sum is two right-angles. The card keeps
 the plate — BE is the right-angle drawn for the proof, not the subject —
 and marks the angles the enunciation names. ∠CBA and ∠ABD take one
 yellow pie, the I.42 card radius, so the mark matches that pie and
-does not shrink on this taller plate. ∠ABC takes a hair more than
-that radius — the acute corner would otherwise read as the lesser
-mark. A wash of the half-plane would light a region the
+does not shrink on this taller plate. ∠ABC takes half again that
+radius — a hair still reads as one size, and the acute corner would
+otherwise read as the lesser mark. A wash of the half-plane would light a region the
 proposition does not claim. I.14 is the converse: adjacent angles equal
 to two right-angles, so the two straight-lines are straight-on. The card
 keeps the plate — AB is the line they stand on, BE is the reductio, not
 the subject — and marks the two lines and the adjacent angles. BC and BD
 take the brick. ∠ABC and ∠ABD take one yellow pie, the I.42 card
-radius, as on I.13. ∠ABC takes a hair more than that radius — the
-acute corner would otherwise read as the lesser mark.
+radius, as on I.13. ∠ABD takes half again that radius, so the larger
+mark sits on the right, as on I.13.
 A wash has no interior.
 I.15 is the vertically opposite angles. The card keeps the plate — AB
 and CD are the two cutting lines, not a pair of equal lines — and marks
-the two equalities. ∠AEC and ∠DEB take the rose, a hair of the shorter
-arm. ∠AED and ∠CEB take the yellow, a hair more than that radius, so
-the second set is not the lesser mark, a pair reads as one set and the
-other pair as the other, and the pies do not cover the crossing. A wash of a sector would light a region the proposition does
-not claim. I.46 describes a square on a given straight-line. The card
+the two equalities. ∠AEC and ∠DEB take the rose. ∠AED and ∠CEB take
+the yellow. Both sets take the I.42 card radius, the default pie, so
+a pair reads as one set and the other pair as the other, and the only
+difference is the color. A wash of a sector would light a region the
+proposition does not claim. I.46 describes a square on a given straight-line. The card
 washes the square ADEB. The produced upright past D is the construction
 of the perpendicular, not a second figure, and the right angles are the
 square itself, not a separate mark. I.47 is the squares: the square on
@@ -243,12 +245,16 @@ LINES: dict[int, list[tuple[str, str]]] = {
     # AD = BD, the two halves of the given AB. D lies on AB, so each
     # half is the piece, and the whole chord is not a third stroke.
     10: [("A", "D"), ("B", "D")],
-    # FC, the straight-line drawn at right-angles to AB from C. DF and EF
-    # are the equilateral construction, not the subject.
-    11: [("F", "C")],
-    # CH, the perpendicular drawn to the infinite line AB from C. CG and CE
-    # are the joins of the construction, not the subject.
-    12: [("C", "H")],
+    # AB, the given straight-line, and FC, the line drawn at right-angles
+    # to it from C. The enunciation names both. D and E lie on AB, so the
+    # given line is the whole chord. DF and EF are the equilateral
+    # construction, not the subject.
+    11: [("A", "B"), ("F", "C")],
+    # AB, the given infinite straight-line, and CH, the perpendicular
+    # drawn to it from C. The enunciation names both. G, H and E lie on
+    # AB, so the given line is the whole chord. CG and CE are the joins
+    # of the construction, not the subject.
+    12: [("A", "B"), ("C", "H")],
     # BC and BD, the two straight-lines that are straight-on. BE is the
     # reductio, not the subject. AB is the line they stand on.
     14: [("B", "C"), ("B", "D")],
@@ -287,10 +293,10 @@ ANGLES: dict[int, list[list[tuple[str, str, str]]]] = {
     # ∠DAF = ∠EAF, the two halves of the given angle. One set.
     9: [[("D", "A", "F"), ("E", "A", "F")]],
     # ∠DCF = ∠ECF, the adjacent right-angles. One set, a square (SQUARE_MARK),
-    # not a pie. The drawn line is a brick (LINES), not a second mark.
+    # not a pie. Both lines the enunciation names are the brick (LINES).
     11: [[("D", "C", "F"), ("E", "C", "F")]],
     # ∠CHG = ∠EHC, the adjacent right-angles. One set, a square (SQUARE_MARK),
-    # not a pie. The drawn line is a brick (LINES).
+    # not a pie. Both lines the enunciation names are the brick (LINES).
     12: [[("C", "H", "G"), ("E", "H", "C")]],
     # ∠CBA and ∠ABD, the adjacent angles a stood line makes. One set: the
     # enunciation names the pair, not an equality of the two.
@@ -343,28 +349,31 @@ ANGLE_MARK: dict[int, list[tuple[tuple[int, int, int], float | None]]] = {
     # ∠DCF = ∠ECF, the adjacent angles that make the drawn line a
     # right-angle. One set, a hair of the shorter arm, so the squares sit
     # in the corners and do not fill the straight line. The side is that
-    # pie radius (SQUARE_MARK). The drawn line is the brick (LINES).
+    # pie radius (SQUARE_MARK). Both lines are the brick (LINES).
     11: [(PIE_ALT, 0.28)],
     # ∠CHG = ∠EHC, the adjacent angles that make the drawn line a
-    # perpendicular. One set, same hair, a square whose side is that pie
-    # radius (SQUARE_MARK). The drawn line is the brick.
-    12: [(PIE_ALT, 0.28)],
+    # perpendicular. One set, the I.11 card size: same pixel radius as
+    # that square, not a fraction of the arm. A shared plate radius
+    # shrinks on this larger plate. Both lines are the brick (LINES).
+    12: [(PIE_ALT, None)],
     # ∠CBA and ∠ABD, the angles the stood line makes. One set, the I.42
     # card size: same pixel radius as that pie, not a fraction of the arm.
-    # A shared plate radius shrinks on this taller plate. ∠ABC takes a
-    # hair more (ANGLE_HAIR) so the acute corner is not the lesser mark.
+    # A shared plate radius shrinks on this taller plate. ∠ABC takes half
+    # again (ANGLE_HAIR) so the two radii read apart, and so the acute
+    # corner is not the lesser mark.
     13: [(PIE, None)],
     # ∠ABC and ∠ABD, the adjacent angles equal to two right-angles. One
-    # set, the I.42 card size, as on I.13. ∠ABC takes a hair more
-    # (ANGLE_HAIR) so the acute corner is not the lesser mark. The two
-    # lines that are straight-on are the brick (LINES). BE is the reductio.
+    # set, the I.42 card size, as on I.13. ∠ABD takes half again
+    # (ANGLE_HAIR) so the larger mark sits on the right, as on I.13. The
+    # two lines that are straight-on are the brick (LINES). BE is the reductio.
     14: [(PIE, None)],
-    # I.15 has two equalities. Both sets take a hair of the shorter arm, so
-    # the pies sit in the corners and do not cover the crossing. One pair is
+    # I.15 has two equalities. Both sets take the default pie, the I.42
+    # card radius, so neither pair reads as the lesser mark. One pair is
     # the rose. The other is yellow, so the two equalities do not read as
-    # one. The yellow pair takes a hair more (ANGLE_HAIR) so the second set
-    # is not the lesser mark. Same radius within a pair.
-    15: [(PIE_ALT, 0.14), (PIE, 0.14)],
+    # one. Same radius within a pair and between pairs; only the color
+    # differs. A hair of the shorter arm is not this radius: on this plate
+    # that hair is the shorter mark, and the final render length is 54px.
+    15: [(PIE_ALT, None), (PIE, None)],
     # Rose, not yellow: the pie sits on the gold parallelogram, and yellow
     # reads as more of that wash. One plate radius for the pair — a fraction
     # of each arm would draw the longer angle larger. Short of the letter
@@ -380,22 +389,23 @@ ANGLE_MARK: dict[int, list[tuple[tuple[int, int, int], float | None]]] = {
     48: [(PIE_ALT, 0.28)],
 }
 
-# A hair on one pie, after the group radius. Same color, not a second set.
-# The acute of the pair — ∠ABC on I.13 and on I.14 — would otherwise read
-# as the lesser mark beside the obtuse pie. On I.15 the yellow pair is the
-# second set; both angles of that pair take the hair, so they stay equal.
+# A step on one pie, after the group radius. Same color, not a second set.
+# I.13 enlarges the acute ∠ABC, the pie on the right. I.14 enlarges ∠ABD,
+# the pie on the right, so the two cards match. Half again, not a hair: a
+# hair still reads as one radius at thumbnail size. I.15 keeps both pairs
+# at the default pie, the I.42 card radius; color already separates the
+# sets. A hair of the shorter arm is the shorter mark on that plate.
 ANGLE_HAIR: dict[tuple[int, str, str, str], float] = {
-    (13, "C", "B", "A"): 1.15,
-    (14, "A", "B", "C"): 1.15,
-    (15, "A", "E", "D"): 1.15,
-    (15, "C", "E", "B"): 1.15,
+    (13, "C", "B", "A"): 1.5,
+    (14, "A", "B", "D"): 1.5,
 }
 
 # A right-angle is a square, not a pie. The side is the radius the pie
 # would have taken, so the mark stays the same size and only the shape
-# changes. Two adjacent right-angles are two squares. I.11, I.12, and
-# the right-angle I.48 concludes. I.48's side squares are a light wash,
-# not this.
+# changes. Two adjacent right-angles are two squares. I.11 takes a hair
+# of the shorter arm; that square is the card size. I.12 uses the same
+# pixel side, so the larger plate does not shrink it. I.48 concludes a
+# right-angle the same way. I.48's side squares are a light wash, not this.
 SQUARE_MARK = {11, 12, 48}
 
 # Outer edges of the light squares, so the wash fits on the card. Not
