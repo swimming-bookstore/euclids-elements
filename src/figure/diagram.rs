@@ -24,6 +24,17 @@ struct Region {
     boundary: Vec<&'static str>,
 }
 
+/// A spoken straight-line the plate draws bent.
+///
+/// I.47's *GC* is G–A–C: the proof calls it one line (CA straight-on to AG),
+/// and the plate bends a few degrees at A. The short graph path is G–F–C,
+/// which is the wrong ink. The letters are the ends; the points are the
+/// drawn chain.
+struct Poly {
+    letters: String,
+    points: Vec<&'static str>,
+}
+
 /// One stroke of a given angle (I.42's D). Named so tests can measure it;
 /// not a lettered point of the figure.
 struct Arm {
@@ -40,6 +51,7 @@ pub struct Diagram {
     named: Vec<Circ>,
     arms: Vec<Arm>,
     regions: Vec<Region>,
+    polys: Vec<Poly>,
 }
 
 impl Diagram {
@@ -52,6 +64,7 @@ impl Diagram {
             named: Vec::new(),
             arms: Vec::new(),
             regions: Vec::new(),
+            polys: Vec::new(),
         }
     }
 
@@ -417,6 +430,18 @@ impl Diagram {
         self
     }
 
+    /// A spoken straight-line drawn as a bent chain (`GC` as G–A–C).
+    ///
+    /// The ends are the spoken letters. Highlighting the name lights that
+    /// chain, not another walk of the same length.
+    pub fn along(&mut self, letters: &'static str, points: &[&'static str]) -> &mut Self {
+        self.polys.push(Poly {
+            letters: letters.to_ascii_uppercase(),
+            points: points.to_vec(),
+        });
+        self
+    }
+
     /// A figure spoken by one letter, whose ink is the polygon.
     ///
     /// I.44's *C* is the given triangle, not a point of the construction. The
@@ -623,9 +648,11 @@ impl Diagram {
     ///
     /// The drawn straight-line wins: a direct stroke, then a collinear chain
     /// (A–E–B for AB). A registered opposite-corner name (*EH*, *BK*) is the
-    /// boundary, not a path across the diagonal. A corner that only lies on a
-    /// longer stroke (K on AC) still names that stroke — a walk around the
-    /// figure would light the wrong piece. Anything else is the graph path.
+    /// boundary, not a path across the diagonal. A bent spoken line (*GC* as
+    /// G–A–C) is that chain, not another walk of the same length. A corner
+    /// that only lies on a longer stroke (K on AC) still names that stroke —
+    /// a walk around the figure would light the wrong piece. Anything else
+    /// is the graph path.
     fn link(&self, a: &'static str, b: &'static str) -> Vec<String> {
         if let Some(ids) = self.straight(a, b) {
             return ids;
@@ -636,10 +663,41 @@ impl Diagram {
         if let Some(ids) = self.region_sides(a, b) {
             return ids;
         }
+        if let Some(ids) = self.along_sides(a, b) {
+            return ids;
+        }
         if let Some(id) = self.stroke_through(a, b).or_else(|| self.stroke_through(b, a)) {
             return vec![id];
         }
         self.bfs(a, b)
+    }
+
+    /// Strokes of a bent spoken line (`GC` as G–A–C), not another walk.
+    fn along_sides(&self, a: &'static str, b: &'static str) -> Option<Vec<String>> {
+        let want = sorted_letters(&format!("{a}{b}"));
+        let poly = self.polys.iter().find(|p| sorted_letters(&p.letters) == want)?;
+        let pts = &poly.points;
+        if pts.len() < 2 {
+            return None;
+        }
+        let ends = (*pts.first().unwrap() == a && *pts.last().unwrap() == b)
+            || (*pts.first().unwrap() == b && *pts.last().unwrap() == a);
+        if !ends {
+            return None;
+        }
+        let mut out = Vec::new();
+        for w in pts.windows(2) {
+            if let Some(ids) = self.straight(w[0], w[1]) {
+                out.extend(ids);
+            } else if let Some(id) = self.edge_id(w[0], w[1]) {
+                out.push(id);
+            } else {
+                return None;
+            }
+        }
+        out.sort();
+        out.dedup();
+        Some(out)
     }
 
     /// Boundary strokes of the parallelogram named by opposite corners `a`, `b`.
@@ -3065,13 +3123,45 @@ mod tests {
         assert!((d.at("A").dist(d.at("G")) / bc - 0.471).abs() < 0.01, "AG/BC");
         assert!((d.at("A").dist(d.at("H")) / bc - 0.939).abs() < 0.01, "AH/BC");
         assert!((d.at("C").dist(d.at("K")) / bc - 0.934).abs() < 0.01, "CK/BC");
-        for (a, b) in [("A", "D"), ("F", "C"), ("A", "E"), ("B", "K"), ("A", "L")] {
+        for (a, b) in [("A", "D"), ("F", "C"), ("A", "E"), ("B", "K"), ("A", "P"), ("P", "L"), ("B", "P"), ("P", "C")] {
             assert!(d.edge_id(a, b).is_some(), "stroke {a}{b}");
         }
+        assert!(d.edge_id("A", "L").is_none(), "AL is split at the crossing");
+        assert!(d.edge_id("B", "C").is_none(), "BC is split at the crossing");
+        assert!(d.at("P").on_seg(d.at("A"), d.at("L"), 1e-3), "P on AL");
+        assert!(d.at("P").on_seg(d.at("B"), d.at("C"), 1e-3), "P on BC");
         let bdec = d.highlight("BDEC");
         assert!(
-            has(&bdec, "bd") && has(&bdec, "dl") && has(&bdec, "le") && has(&bdec, "ce") && has(&bdec, "bc"),
+            has(&bdec, "bd") && has(&bdec, "dl") && has(&bdec, "le") && has(&bdec, "ce") && has(&bdec, "bp") && has(&bdec, "pc"),
             "square BDEC: {bdec:?}"
+        );
+        assert!(!has(&bdec, "ad") && !has(&bdec, "fc"), "BDEC is not the joins: {bdec:?}");
+        let gb = d.highlight("GB");
+        assert!(
+            has(&gb, "fg") && has(&gb, "ga") && has(&gb, "ab") && has(&gb, "fb"),
+            "square GB: {gb:?}"
+        );
+        assert!(!has(&gb, "ah") && !has(&gb, "fc"), "GB is not a walk off the square: {gb:?}");
+        let hc = d.highlight("HC");
+        assert!(
+            has(&hc, "ah") && has(&hc, "ac") && has(&hc, "kc") && has(&hc, "hk"),
+            "square HC: {hc:?}"
+        );
+        assert!(!has(&hc, "ab") && !has(&hc, "ce"), "HC is not a walk off the square: {hc:?}");
+        let bl = d.highlight("BL");
+        assert!(
+            has(&bl, "bd") && has(&bl, "dl") && has(&bl, "pl") && has(&bl, "bp") && !has(&bl, "ab") && !has(&bl, "ap"),
+            "parallelogram BL, not the path through A: {bl:?}"
+        );
+        let cl = d.highlight("CL");
+        assert!(
+            has(&cl, "ce") && has(&cl, "le") && has(&cl, "pl") && has(&cl, "pc") && !has(&cl, "ac") && !has(&cl, "ap"),
+            "parallelogram CL, not the path through A: {cl:?}"
+        );
+        let gc = d.highlight("GC");
+        assert!(
+            has(&gc, "ga") && has(&gc, "ac") && !has(&gc, "fb") && !has(&gc, "hk"),
+            "GC is the straight-on GA–AC, not a walk: {gc:?}"
         );
     }
 
