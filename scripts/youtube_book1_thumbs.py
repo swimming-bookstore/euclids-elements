@@ -85,18 +85,22 @@ the drawn line a perpendicular. AB and CH take the brick. ∠CHG and
 shrink on this larger plate. A pie would read as any angle. A wash has
 no interior the enunciation names. I.13 is
 the adjacent angles a straight-line stood on another makes: two
-right-angles, or angles whose sum is two right-angles. The card keeps
-the plate — BE is the right-angle drawn for the proof, not the subject —
-and marks the angles the enunciation names. ∠CBA and ∠ABD take one
-yellow pie, the I.42 card radius, so the mark matches that pie and
-does not shrink on this taller plate. ∠ABC takes half again that
-radius — a hair still reads as one size, and the acute corner would
-otherwise read as the lesser mark. A wash of the half-plane would light a region the
+right-angles, or angles whose sum is two right-angles. The enunciation
+names both lines. The card keeps the plate — BE is the right-angle
+drawn for the proof, not the subject — and marks those two lines and
+the angles they make. AB and CD take the brick. B lies on CD, so the
+stood-on line is the whole chord. ∠CBA and ∠ABD take one rose pie,
+the default, at the I.42 card radius, so the mark matches that pie and
+does not shrink on this taller plate. Yellow is the second set, and
+this card has one. ∠ABC takes half again that radius — a hair still
+reads as one size, and the acute corner would otherwise read as the
+lesser mark. A wash of the half-plane would light a region the
 proposition does not claim. I.14 is the converse: adjacent angles equal
 to two right-angles, so the two straight-lines are straight-on. The card
-keeps the plate — AB is the line they stand on, BE is the reductio, not
-the subject — and marks the two lines and the adjacent angles. BC and BD
-take the brick. ∠ABC and ∠ABD take one yellow pie, the I.42 card
+keeps the plate — BE is the reductio, not the subject — and marks the
+three lines the enunciation names and the adjacent angles. BC and BD,
+the two that are straight-on, and AB, the line they stand on, take the
+brick. ∠ABC and ∠ABD take one rose pie, the I.42 card
 radius, as on I.13. ∠ABD takes half again that radius, so the larger
 mark sits on the right, as on I.13.
 A wash has no interior.
@@ -255,9 +259,15 @@ LINES: dict[int, list[tuple[str, str]]] = {
     # AB, so the given line is the whole chord. CG and CE are the joins
     # of the construction, not the subject.
     12: [("A", "B"), ("C", "H")],
-    # BC and BD, the two straight-lines that are straight-on. BE is the
-    # reductio, not the subject. AB is the line they stand on.
-    14: [("B", "C"), ("B", "D")],
+    # AB, the straight-line that stands, and CD, the straight-line it
+    # stands on. The enunciation names both. B lies on CD, so the stood-on
+    # line is the whole chord. BE is the right-angle drawn for the proof,
+    # not the subject.
+    13: [("A", "B"), ("C", "D")],
+    # BC and BD, the two straight-lines that are straight-on, and AB, the
+    # line they stand on. The enunciation names all three. BE is the
+    # reductio, not the subject.
+    14: [("B", "C"), ("B", "D"), ("A", "B")],
     # The sides the squares stand on, BA, AC, and BC. AD and DC are the
     # construction, and they stay the plate ink.
     48: [("B", "A"), ("A", "C"), ("B", "C")],
@@ -299,7 +309,8 @@ ANGLES: dict[int, list[list[tuple[str, str, str]]]] = {
     # not a pie. Both lines the enunciation names are the brick (LINES).
     12: [[("C", "H", "G"), ("E", "H", "C")]],
     # ∠CBA and ∠ABD, the adjacent angles a stood line makes. One set: the
-    # enunciation names the pair, not an equality of the two.
+    # enunciation names the pair, not an equality of the two. Both lines
+    # the enunciation names are the brick (LINES).
     13: [[("C", "B", "A"), ("A", "B", "D")]],
     # ∠ABC and ∠ABD, the adjacent angles equal to two right-angles. One set.
     14: [[("A", "B", "C"), ("A", "B", "D")]],
@@ -356,17 +367,19 @@ ANGLE_MARK: dict[int, list[tuple[tuple[int, int, int], float | None]]] = {
     # that square, not a fraction of the arm. A shared plate radius
     # shrinks on this larger plate. Both lines are the brick (LINES).
     12: [(PIE_ALT, None)],
-    # ∠CBA and ∠ABD, the angles the stood line makes. One set, the I.42
-    # card size: same pixel radius as that pie, not a fraction of the arm.
-    # A shared plate radius shrinks on this taller plate. ∠ABC takes half
+    # ∠CBA and ∠ABD, the angles the stood line makes. One set, the default
+    # rose at the I.42 card size: same pixel radius as that pie, not a
+    # fraction of the arm. A shared plate radius shrinks on this taller
+    # plate. Yellow is the second set; this card has one. ∠ABC takes half
     # again (ANGLE_HAIR) so the two radii read apart, and so the acute
-    # corner is not the lesser mark.
-    13: [(PIE, None)],
+    # corner is not the lesser mark. Both lines are the brick (LINES).
+    13: [(PIE_ALT, None)],
     # ∠ABC and ∠ABD, the adjacent angles equal to two right-angles. One
-    # set, the I.42 card size, as on I.13. ∠ABD takes half again
-    # (ANGLE_HAIR) so the larger mark sits on the right, as on I.13. The
-    # two lines that are straight-on are the brick (LINES). BE is the reductio.
-    14: [(PIE, None)],
+    # set, the default rose at the I.42 card size, as on I.13. ∠ABD takes
+    # half again (ANGLE_HAIR) so the larger mark sits on the right, as on
+    # I.13. The two lines that are straight-on are the brick (LINES). BE
+    # is the reductio.
+    14: [(PIE_ALT, None)],
     # I.15 has two equalities. Both sets take the default pie, the I.42
     # card radius, so neither pair reads as the lesser mark. One pair is
     # the rose. The other is yellow, so the two equalities do not read as
