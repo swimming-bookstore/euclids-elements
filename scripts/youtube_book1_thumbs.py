@@ -708,6 +708,9 @@ class Scene:
     def plumb(self, name: str, of: str, y: float, place: Place) -> None:
         self.put(name, V2(self.at(of).x, y), place)
 
+    def corner(self, name: str, x_of: str, y_of: str, place: Place) -> None:
+        self.put(name, V2(self.at(x_of).x, self.at(y_of).y), place)
+
     def meet(self, name: str, a: str, b: str, c: str, d: str, place: Place) -> None:
         pa, pb, pc, pd = self.at(a), self.at(b), self.at(c), self.at(d)
         den = (pa.x - pb.x) * (pc.y - pd.y) - (pa.y - pb.y) * (pc.x - pd.x)
@@ -721,8 +724,9 @@ class Scene:
         self._label(name, p, place, r_em)
 
     def glyph(self, name: str, at: V2) -> None:
-        # Plate glyph: the capital's center is the measured point, not an
-        # offset from a vertex. Pin so a wash can name it.
+        # A plate capital whose center is not a heading from a vertex.
+        # The center is the measured glyph, so the letter is not offset
+        # a second time.
         self.pin(name, at)
         self.labels[name] = (at, 90.0, 0.0)
 
@@ -1321,9 +1325,12 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
     # joins that point to the arc, which drew a stroke from "Proposition"
     # into the circle (I.1, I.2, I.3, I.12, I.22).
     cr.new_path()
-    lit_segs = LINES.get(n, [])
-    alt_segs = LINE_ALT.get(n, [])
-    extra = LINE_EXTRA.get(n, [])
+    line_book = {2: LINES2}.get(book, LINES)
+    alt_book = {2: LINE_ALT2}.get(book, LINE_ALT)
+    extra_book = {2: LINE_EXTRA2}.get(book, LINE_EXTRA)
+    lit_segs = line_book.get(n, [])
+    alt_segs = alt_book.get(n, [])
+    extra = extra_book.get(n, [])
     extra_segs = [seg for _, segs in extra for seg in segs]
     for a, b in lit_segs + alt_segs + extra_segs:
         if a not in scene.pts or b not in scene.pts:
@@ -1444,6 +1451,26 @@ WASHES4 = {
     12: [("G", "H", "K", "L", "M")],
 }
 
+# II.1: the rectangle contained by the two straight-lines equals the sum of
+# the rectangles contained by the uncut line and each piece. One wash — two
+# hues would say the whole and the pieces differ. A is a line, not a second
+# area, so it takes no wash. A and BC are the two straight-lines the
+# enunciation names, so they take the brick (LINES2).
+WASHES2 = {
+    1: [("B", "C", "H", "G")],
+}
+
+# Named straight-lines, book by book. Book I is LINES. A produced ray is
+# not the subject: only the named piece.
+LINES2: dict[int, list[tuple[str, str]]] = {
+    # A, the uncut straight-line, and BC, the line cut into pieces. The
+    # enunciation names both. The rectangle they contain is the wash. D
+    # and E lie on BC, so the cut line is the whole chord, not the pieces.
+    1: [("A0", "A1"), ("B", "C")],
+}
+LINE_ALT2: dict[int, list[tuple[str, str]]] = {}
+LINE_EXTRA2: dict[int, list[tuple[tuple[int, int, int], tuple[tuple[str, str], ...]]]] = {}
+
 
 def main() -> None:
     args = sys.argv[1:]
@@ -1458,7 +1485,7 @@ def main() -> None:
         wanted = [int(a) for a in args if a.isdigit()] or (list(range(1, 37)) + [41, 42, 43, 44, 45, 46, 47, 48])
     else:
         fns = functions_in(ROOT / "src" / "figure" / f"book{book}.rs", f"book{book}_prop")
-        washes = WASHES4 if book == 4 else {}
+        washes = {2: WASHES2, 4: WASHES4}.get(book, {})
         wanted = [int(a) for a in args if a.isdigit()] or sorted(fns)
     missing = []
     for n in wanted:

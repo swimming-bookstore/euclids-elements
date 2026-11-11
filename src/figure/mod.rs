@@ -1,6 +1,7 @@
 //! Euclidean plane figures: name points, join them, draw circles.
 
 mod book1;
+mod book2;
 mod diagram;
 mod draw;
 mod geom;
@@ -21,4 +22,5 @@ pub use book1::{
     book1_prop43, book1_prop44, book1_prop45, book1_prop46,
     book1_prop47, book1_prop48,
 };
+pub use book2::book2_prop1;
 pub use diagram::Diagram;
