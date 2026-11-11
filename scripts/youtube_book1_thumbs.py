@@ -138,11 +138,14 @@ counting them would shrink the plate and grow that mark. Labels stay
 navy, the color every other card uses.
 
 Book II is a different volume, not a recolored Book I card. Book I is
-cream, navy type, a gold wash, and brick on the named lines. Book II keeps
-the same two header lines, with no band behind them. Cool paper, teal
-letters, a sage wash for the contained rectangle, and copper on the named
-straight-lines. The plate underneath is unchanged: same points, same
-words, same highlights.
+cream, navy type, a gold wash, brick on the named lines, and rose on the
+angle marks. Book II keeps the same two header lines, with no band behind
+them, and the same pairing in blue: paper as light as the cream, navy
+letters, a pale blue wash for the contained rectangle, and a blue brick on
+the named straight-lines. The wash is as light as the Book I gold wash, so
+the figure stays readable. The blue is blue, not a teal between blue and
+green, and not the Book I copper. The plate underneath is unchanged: same
+points, same words, same highlights.
 """
 
 from __future__ import annotations
@@ -176,14 +179,23 @@ PIE_ALT = (216, 122, 100)
 # Third line equality, when yellow is already the angle and rose is the
 # second pair. Dark enough to read on cream; warm, so it sits with the plate.
 BRONZE = (122, 72, 28)
-# Book II volume. Cool paper, header lines with no band — not the cream plate.
-# Sage is the contained area; copper is the named straight-line. Neither
-# is the Book I gold or the Book I brick.
-PAPER2_0 = (232, 240, 242)
-PAPER2_1 = (208, 222, 226)
-TEAL = (16, 62, 74)
-SAGE = (96, 158, 144)
-COPPER = (188, 102, 42)
+# Book II volume. Blue paper, header lines with no band — not the cream plate.
+# Book I pairs a brick line with a rose mark, and washes the area in a pale
+# gold. Book II keeps that pairing in blue: a blue brick on the named
+# straight-line, a blue rose for an angle mark, and a pale blue wash on the
+# contained rectangle. The wash matches the Book I gold wash in weight, so
+# the strokes inside the rectangle stay readable. A saturated fill would
+# hide them. Neither is the Book I gold, the Book I brick, or a copper
+# accent. The blue is blue, not a teal or sage between blue and green.
+PAPER2_0 = (244, 248, 253)
+PAPER2_1 = (232, 239, 248)
+BLUE = (29, 53, 80)
+# Rose, hue-shifted. (216, 122, 100) at the same saturation and lightness.
+ROSE2 = (100, 150, 216)
+# Brick, hue-shifted. (154, 62, 46) at the same saturation and lightness.
+BRICK2 = (46, 92, 154)
+# Wash, hue-shifted. (232, 214, 176) at the same saturation and lightness.
+WASH2 = (176, 200, 232)
 LETTER_R = 0.82  # plate::LETTER_R, em of the letter type
 
 # Subject regions, vertex order around the boundary. Two regions: warm, then gold,
@@ -1042,12 +1054,12 @@ def rgb(c):
 
 
 def ink_of(book: int) -> tuple[int, int, int]:
-    # Book II strokes sit on cool paper, so the ink is teal, not the Book I black.
-    return TEAL if book == 2 else INK
+    # Book II strokes sit on blue paper, so the ink is blue, not the Book I black.
+    return BLUE if book == 2 else INK
 
 
 def paint_ground(cr, book: int) -> None:
-    """Book I is the cream plate. Book II is cool paper, with no header band."""
+    """Book I is the cream plate. Book II is blue paper, with no header band."""
     if book != 2:
         pat = cairo.LinearGradient(0, 0, W, H)
         pat.add_color_stop_rgb(0, *rgb(CREAM))
@@ -1196,7 +1208,7 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
     cr = cairo.Context(surf)
     paint_ground(cr, book)
 
-    # Same two header lines on every card. Book II type is teal on the cool
+    # Same two header lines on every card. Book II type is blue on the blue
     # paper; there is no band behind it. Book I stays navy on cream.
     title = "Euclid's Elements"
     subtitle = f"Book {book} Proposition {n}"
@@ -1204,7 +1216,7 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
     font(cr, size, bold=True)
     title_w = cr.text_extents(title).x_advance
     sub_w = cr.text_extents(subtitle).x_advance
-    cr.set_source_rgb(*rgb(TEAL if book == 2 else NAVY))
+    cr.set_source_rgb(*rgb(BLUE if book == 2 else NAVY))
     cr.move_to((W - title_w) / 2, 132)
     cr.show_text(title)
     cr.move_to((W - sub_w) / 2, 188)
@@ -1274,9 +1286,11 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
             # One very light wash. The plate does not draw these squares.
             cr.set_source_rgba(*rgb(fill[0]), fill[1])
         elif book == 2:
-            # One sage wash. A second hue would say the rectangle and its
-            # pieces differ, and gold would be the Book I plate again.
-            cr.set_source_rgba(*rgb(SAGE), 0.62)
+            # One pale blue wash, the same weight as the Book I gold. A
+            # saturated fill hides the strokes inside the rectangle. A second
+            # hue would say the rectangle and its pieces differ, and gold
+            # would be the Book I plate again.
+            cr.set_source_rgba(*rgb(WASH2), 0.85)
         elif len(regions) == 1 or n in SAME_WASH:
             cr.set_source_rgba(*rgb(WASH), 0.85)
         elif i == 0:
@@ -1423,8 +1437,8 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
             cr.line_to(*pt(b))
             cr.stroke()
 
-    # Book II names its lines in copper. Brick is the Book I mark.
-    stroke_lines(lit_segs, COPPER if book == 2 else BRICK)
+    # Book II names its lines in the blue brick. Brick is the Book I mark.
+    stroke_lines(lit_segs, BRICK2 if book == 2 else BRICK)
     stroke_lines(alt_segs, PIE)
     for color, segs in extra:
         stroke_lines(segs, color)
@@ -1456,7 +1470,7 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
         x += math.cos(ang) * r_em * letter
         y += -math.sin(ang) * r_em * letter
         font(cr, letter, italic=True)
-        cr.set_source_rgb(*rgb(TEAL if book == 2 else NAVY))
+        cr.set_source_rgb(*rgb(BLUE if book == 2 else NAVY))
         ext = cr.text_extents(name)
         cr.move_to(x - (ext.x_bearing + ext.width / 2), y - (ext.y_bearing + ext.height / 2))
         cr.show_text(name)
@@ -1495,7 +1509,7 @@ WASHES4 = {
 # the rectangles contained by the uncut line and each piece. One wash — two
 # hues would say the whole and the pieces differ. A is a line, not a second
 # area, so it takes no wash. A and BC are the two straight-lines the
-# enunciation names, so they take the copper (LINES2), not the Book I brick.
+# enunciation names, so they take the blue brick (LINES2), not the Book I brick.
 WASHES2 = {
     1: [("B", "C", "H", "G")],
 }
