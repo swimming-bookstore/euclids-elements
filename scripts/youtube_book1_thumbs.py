@@ -1325,9 +1325,12 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
     # joins that point to the arc, which drew a stroke from "Proposition"
     # into the circle (I.1, I.2, I.3, I.12, I.22).
     cr.new_path()
-    lit_segs = LINES.get(n, [])
-    alt_segs = LINE_ALT.get(n, [])
-    extra = LINE_EXTRA.get(n, [])
+    line_book = {2: LINES2}.get(book, LINES)
+    alt_book = {2: LINE_ALT2}.get(book, LINE_ALT)
+    extra_book = {2: LINE_EXTRA2}.get(book, LINE_EXTRA)
+    lit_segs = line_book.get(n, [])
+    alt_segs = alt_book.get(n, [])
+    extra = extra_book.get(n, [])
     extra_segs = [seg for _, segs in extra for seg in segs]
     for a, b in lit_segs + alt_segs + extra_segs:
         if a not in scene.pts or b not in scene.pts:
@@ -1450,11 +1453,23 @@ WASHES4 = {
 
 # II.1: the rectangle contained by the two straight-lines equals the sum of
 # the rectangles contained by the uncut line and each piece. One wash — two
-# hues would say the whole and the pieces differ. A is the given line, not a
-# second area, so it takes no wash.
+# hues would say the whole and the pieces differ. A is a line, not a second
+# area, so it takes no wash. A and BC are the two straight-lines the
+# enunciation names, so they take the brick (LINES2).
 WASHES2 = {
     1: [("B", "C", "H", "G")],
 }
+
+# Named straight-lines, book by book. Book I is LINES. A produced ray is
+# not the subject: only the named piece.
+LINES2: dict[int, list[tuple[str, str]]] = {
+    # A, the uncut straight-line, and BC, the line cut into pieces. The
+    # enunciation names both. The rectangle they contain is the wash. D
+    # and E lie on BC, so the cut line is the whole chord, not the pieces.
+    1: [("A0", "A1"), ("B", "C")],
+}
+LINE_ALT2: dict[int, list[tuple[str, str]]] = {}
+LINE_EXTRA2: dict[int, list[tuple[tuple[int, int, int], tuple[tuple[str, str], ...]]]] = {}
 
 
 def main() -> None:
