@@ -1,4 +1,5 @@
 pub mod book1;
+pub mod book2;
 
 pub const BOOKS: [u8; 13] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 
@@ -7,6 +8,8 @@ pub const BOOKS: [u8; 13] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 /// is the kind, so a triangle of the same letters is not lit.
 /// `*triangle(DBC)*` is the same idea for a triangle that "equal to" would
 /// otherwise light as an angle (I.39, I.40).
+/// `*parallelogram(EH)*` and `*rectangle(BH)*` name the figure by opposite
+/// corners. The straight-line between the letters is not the ink.
 /// `para` groups sentences into Fitzpatrick’s paragraphs for reading.
 #[derive(Clone, Copy, Debug)]
 pub struct Phrase {
@@ -30,6 +33,7 @@ pub struct Proposition {
 pub fn propositions_in(book: u8) -> &'static [Proposition] {
     match book {
         1 => book1::PROPOSITIONS,
+        2 => book2::PROPOSITIONS,
         _ => &[],
     }
 }

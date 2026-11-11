@@ -1084,6 +1084,7 @@ mod tests {
         book1_prop41, book1_prop42, book1_prop43, book1_prop44,
         book1_prop45, book1_prop46, book1_prop47, book1_prop48,
     };
+    use crate::figure::book2_prop1;
 
     fn has(v: &[String], id: &str) -> bool {
         v.iter().any(|s| s == id)
@@ -3180,6 +3181,56 @@ mod tests {
         for (a, b) in [("D", "A"), ("A", "B"), ("A", "C"), ("D", "C"), ("B", "C")] {
             assert!(d.edge_id(a, b).is_some(), "stroke {a}{b}");
         }
+    }
+
+    #[test]
+    fn prop2_1_matches_english_plate() {
+        let d = book2_prop1();
+        let bc = d.at("B").dist(d.at("C"));
+        assert!((bc - 100.0).abs() < 0.05, "BC scale {bc}");
+        assert!((d.at("B").y - d.at("C").y).abs() < 1e-6, "BC level");
+        assert!((d.at("G").y - d.at("H").y).abs() < 1e-6, "GH level");
+        assert!((d.at("B").x - d.at("G").x).abs() < 1e-6, "BG plumb");
+        assert!((d.at("D").x - d.at("K").x).abs() < 1e-6, "DK plumb");
+        assert!((d.at("E").x - d.at("L").x).abs() < 1e-6, "EL plumb");
+        assert!((d.at("C").x - d.at("H").x).abs() < 1e-6, "CH plumb");
+        assert!(d.at("D").on_seg(d.at("B"), d.at("C"), 1e-3), "D on BC");
+        assert!(d.at("E").on_seg(d.at("B"), d.at("C"), 1e-3), "E on BC");
+        assert!(d.at("K").on_seg(d.at("G"), d.at("H"), 1e-3), "K on GH");
+        assert!(d.at("G").on_seg(d.at("F"), d.at("B"), 1e-3), "G on FB");
+        assert!((d.at("B").dist(d.at("G")) / bc - 0.499).abs() < 0.002, "BG/BC");
+        assert!((d.at("B").dist(d.at("D")) / bc - 0.443).abs() < 0.002, "BD/BC");
+        assert!((d.at("B").dist(d.at("E")) / bc - 0.723).abs() < 0.002, "BE/BC");
+        assert!((angle_at(&d, "G", "B", "C").to_degrees() - 90.0).abs() < 0.05, "right angle at B");
+        let a = d.highlight("A");
+        assert!(has(&a, "seg-a") && has(&a, "A"), "A is the given line: {a:?}");
+        assert!(!has(&a, "bg") && !has(&a, "bc"), "A is not the rectangle: {a:?}");
+        let bh = d.highlight("BH");
+        assert!(
+            has(&bh, "bd") && has(&bh, "de") && has(&bh, "ec") && has(&bh, "ch")
+                && has(&bh, "lh") && has(&bh, "kl") && has(&bh, "gk") && has(&bh, "gb")
+                && !has(&bh, "dk") && !has(&bh, "el"),
+            "rectangle BH is the boundary, not a piece: {bh:?}"
+        );
+        let bk = d.highlight("BK");
+        assert!(
+            has(&bk, "bd") && has(&bk, "dk") && has(&bk, "gk") && has(&bk, "gb") && !has(&bk, "de"),
+            "rectangle BK: {bk:?}"
+        );
+        let dl = d.highlight("DL");
+        assert!(
+            has(&dl, "de") && has(&dl, "el") && has(&dl, "kl") && has(&dl, "dk") && !has(&dl, "ec"),
+            "rectangle DL: {dl:?}"
+        );
+        let eh = d.highlight("EH");
+        assert!(
+            has(&eh, "ec") && has(&eh, "ch") && has(&eh, "lh") && has(&eh, "el") && !has(&eh, "bd"),
+            "rectangle EH: {eh:?}"
+        );
+        let bc_line = d.highlight("BC");
+        assert!(has(&bc_line, "bd") && has(&bc_line, "de") && has(&bc_line, "ec"), "BC is the whole line: {bc_line:?}");
+        let bd = d.highlight("BD");
+        assert!(has(&bd, "bd") && !has(&bd, "de"), "BD is the piece: {bd:?}");
     }
 
     fn letter_offset(html: &str, id: &str) -> (f64, f64) {

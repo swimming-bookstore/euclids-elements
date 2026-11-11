@@ -708,6 +708,9 @@ class Scene:
     def plumb(self, name: str, of: str, y: float, place: Place) -> None:
         self.put(name, V2(self.at(of).x, y), place)
 
+    def corner(self, name: str, x_of: str, y_of: str, place: Place) -> None:
+        self.put(name, V2(self.at(x_of).x, self.at(y_of).y), place)
+
     def meet(self, name: str, a: str, b: str, c: str, d: str, place: Place) -> None:
         pa, pb, pc, pd = self.at(a), self.at(b), self.at(c), self.at(d)
         den = (pa.x - pb.x) * (pc.y - pd.y) - (pa.y - pb.y) * (pc.x - pd.x)
@@ -721,8 +724,9 @@ class Scene:
         self._label(name, p, place, r_em)
 
     def glyph(self, name: str, at: V2) -> None:
-        # Plate glyph: the capital's center is the measured point, not an
-        # offset from a vertex. Pin so a wash can name it.
+        # A plate capital whose center is not a heading from a vertex.
+        # II.1's A sits over the middle of the given line. The center is the
+        # measured glyph, so the letter is not offset a second time.
         self.pin(name, at)
         self.labels[name] = (at, 90.0, 0.0)
 
@@ -1444,6 +1448,14 @@ WASHES4 = {
     12: [("G", "H", "K", "L", "M")],
 }
 
+# II.1: the rectangle contained by the two straight-lines equals the sum of
+# the rectangles contained by the uncut line and each piece. One wash — two
+# hues would say the whole and the pieces differ. A is the given line, not a
+# second area, so it takes no wash.
+WASHES2 = {
+    1: [("B", "C", "H", "G")],
+}
+
 
 def main() -> None:
     args = sys.argv[1:]
@@ -1458,7 +1470,7 @@ def main() -> None:
         wanted = [int(a) for a in args if a.isdigit()] or (list(range(1, 37)) + [41, 42, 43, 44, 45, 46, 47, 48])
     else:
         fns = functions_in(ROOT / "src" / "figure" / f"book{book}.rs", f"book{book}_prop")
-        washes = WASHES4 if book == 4 else {}
+        washes = {2: WASHES2, 4: WASHES4}.get(book, {})
         wanted = [int(a) for a in args if a.isdigit()] or sorted(fns)
     missing = []
     for n in wanted:

@@ -111,6 +111,9 @@ pub fn display_letters(text: &str) -> String {
     if let Some(name) = parallelogram_object(text) {
         return name;
     }
+    if let Some(name) = rectangle_object(text) {
+        return name;
+    }
     if let Some(name) = circle_object(text) {
         return name;
     }
@@ -140,6 +143,13 @@ fn triangle_object(piece: &str) -> Option<String> {
 /// between the letters is not the figure (I.43).
 fn parallelogram_object(piece: &str) -> Option<String> {
     wrapped_letters(piece, "parallelogram")
+}
+
+/// `*rectangle(BH)*` is a rectangle named by opposite corners.
+/// The letters are spoken; the wrapper is the kind. The straight-line
+/// between the letters is not the figure (II.1).
+fn rectangle_object(piece: &str) -> Option<String> {
+    wrapped_letters(piece, "rectangle")
 }
 
 /// `*circle(ABCDE)*` is the circle, not the pentagon of the same letters (IV.11).
@@ -247,6 +257,7 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
                 let wrapped = angle_object(piece);
                 let as_triangle = triangle_object(piece);
                 let as_parallelogram = parallelogram_object(piece);
+                let as_rectangle = rectangle_object(piece);
                 let as_circle = circle_object(piece);
                 let as_arc = arc_object(piece);
                 let as_pentagon = pentagon_object(piece);
@@ -254,6 +265,7 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
                     .as_deref()
                     .or(as_triangle.as_deref())
                     .or(as_parallelogram.as_deref())
+                    .or(as_rectangle.as_deref())
                     .or(as_circle.as_deref())
                     .or(as_arc.as_deref())
                     .or(as_pentagon.as_deref())
@@ -284,6 +296,7 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
                         || (angle_vertex && carry_only(&before)));
                 let angle = as_triangle.is_none()
                     && as_parallelogram.is_none()
+                    && as_rectangle.is_none()
                     && as_circle.is_none()
                     && as_arc.is_none()
                     && as_pentagon.is_none()
@@ -1518,6 +1531,63 @@ mod tests {
         );
         assert_eq!(display_letters("parallelogram(EH)"), "EH");
         assert_eq!(display_letters("triangle(KGC)"), "KGC");
+    }
+
+    #[test]
+    fn ii1_rectangles_are_the_boundaries() {
+        // Fitzpatrick names the rectangles by opposite corners. "equal to"
+        // must not turn BH into the straight-line, and each piece is its own
+        // rectangle, not a walk through the next one.
+        let phrases = crate::content::get(2, 1).unwrap().phrases;
+        let script = compile(phrases, &crate::figure::book2_prop1(), Timing::default());
+        let runs = |word: &str| -> Vec<Vec<String>> {
+            script
+                .lines
+                .iter()
+                .flat_map(|l| l.tokens.iter())
+                .filter(|t| letter_key(&t.text) == word)
+                .map(|t| t.parts.clone())
+                .collect()
+        };
+        let has = |parts: &[String], id: &str| parts.iter().any(|p| p == id);
+        let a = runs("A");
+        assert!(
+            a.len() >= 4 && a.iter().all(|p| has(p, "seg-a") && has(p, "A") && !has(p, "bc")),
+            "A is the given line: {a:?}"
+        );
+        let bc = runs("BC");
+        assert!(
+            bc.len() >= 2 && bc.iter().all(|p| has(p, "bd") && has(p, "de") && has(p, "ec")),
+            "BC is the whole cut line: {bc:?}"
+        );
+        let bh = runs("BH");
+        assert!(
+            bh.len() >= 2
+                && bh.iter().all(|p| {
+                    has(p, "bd") && has(p, "de") && has(p, "ec") && has(p, "ch") && has(p, "gb")
+                        && has(p, "gk") && !has(p, "dk")
+                }),
+            "BH is the whole rectangle, not a piece: {bh:?}"
+        );
+        let bk = runs("BK");
+        assert!(
+            bk.len() >= 2
+                && bk.iter().all(|p| has(p, "bd") && has(p, "dk") && has(p, "gk") && has(p, "gb") && !has(p, "de")),
+            "BK is that rectangle: {bk:?}"
+        );
+        let dl = runs("DL");
+        assert!(
+            dl.len() >= 2
+                && dl.iter().all(|p| has(p, "de") && has(p, "el") && has(p, "kl") && has(p, "dk") && !has(p, "ec")),
+            "DL is that rectangle: {dl:?}"
+        );
+        let eh = runs("EH");
+        assert!(
+            eh.len() >= 2
+                && eh.iter().all(|p| has(p, "ec") && has(p, "ch") && has(p, "lh") && has(p, "el") && !has(p, "bd")),
+            "EH is that rectangle: {eh:?}"
+        );
+        assert_eq!(display_letters("rectangle(BH)"), "BH");
     }
 
     #[test]
