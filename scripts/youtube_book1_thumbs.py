@@ -136,6 +136,13 @@ and does not fill the triangle. ∠DAC is the right-angle drawn for the
 proof, not the conclusion. The light squares do not enter the fit:
 counting them would shrink the plate and grow that mark. Labels stay
 navy, the color every other card uses.
+
+Book II is a different volume, not a recolored Book I card. Book I is
+cream, navy type, a gold wash, and brick on the named lines. Book II keeps
+the same two header lines, with no band behind them. Cool paper, teal
+letters, a sage wash for the contained rectangle, and copper on the named
+straight-lines. The plate underneath is unchanged: same points, same
+words, same highlights.
 """
 
 from __future__ import annotations
@@ -169,6 +176,14 @@ PIE_ALT = (216, 122, 100)
 # Third line equality, when yellow is already the angle and rose is the
 # second pair. Dark enough to read on cream; warm, so it sits with the plate.
 BRONZE = (122, 72, 28)
+# Book II volume. Cool paper, header lines with no band — not the cream plate.
+# Sage is the contained area; copper is the named straight-line. Neither
+# is the Book I gold or the Book I brick.
+PAPER2_0 = (232, 240, 242)
+PAPER2_1 = (208, 222, 226)
+TEAL = (16, 62, 74)
+SAGE = (96, 158, 144)
+COPPER = (188, 102, 42)
 LETTER_R = 0.82  # plate::LETTER_R, em of the letter type
 
 # Subject regions, vertex order around the boundary. Two regions: warm, then gold,
@@ -1026,6 +1041,27 @@ def rgb(c):
     return tuple(v / 255 for v in c)
 
 
+def ink_of(book: int) -> tuple[int, int, int]:
+    # Book II strokes sit on cool paper, so the ink is teal, not the Book I black.
+    return TEAL if book == 2 else INK
+
+
+def paint_ground(cr, book: int) -> None:
+    """Book I is the cream plate. Book II is cool paper, with no header band."""
+    if book != 2:
+        pat = cairo.LinearGradient(0, 0, W, H)
+        pat.add_color_stop_rgb(0, *rgb(CREAM))
+        pat.add_color_stop_rgb(1, 0.965, 0.925, 0.875)
+        cr.set_source(pat)
+        cr.paint()
+        return
+    pat = cairo.LinearGradient(0, 0, 0, H)
+    pat.add_color_stop_rgb(0, *rgb(PAPER2_0))
+    pat.add_color_stop_rgb(1, *rgb(PAPER2_1))
+    cr.set_source(pat)
+    cr.paint()
+
+
 def font(cr, size, bold=False, italic=False):
     cr.select_font_face(
         "Liberation Serif",
@@ -1158,19 +1194,17 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
 
     surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, W, H)
     cr = cairo.Context(surf)
-    pat = cairo.LinearGradient(0, 0, W, H)
-    pat.add_color_stop_rgb(0, *rgb(CREAM))
-    pat.add_color_stop_rgb(1, 0.965, 0.925, 0.875)
-    cr.set_source(pat)
-    cr.paint()
+    paint_ground(cr, book)
 
+    # Same two header lines on every card. Book II type is teal on the cool
+    # paper; there is no band behind it. Book I stays navy on cream.
     title = "Euclid's Elements"
     subtitle = f"Book {book} Proposition {n}"
     size = 48
     font(cr, size, bold=True)
     title_w = cr.text_extents(title).x_advance
     sub_w = cr.text_extents(subtitle).x_advance
-    cr.set_source_rgb(*rgb(NAVY))
+    cr.set_source_rgb(*rgb(TEAL if book == 2 else NAVY))
     cr.move_to((W - title_w) / 2, 132)
     cr.show_text(title)
     cr.move_to((W - sub_w) / 2, 188)
@@ -1239,6 +1273,10 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
         if fill is not None:
             # One very light wash. The plate does not draw these squares.
             cr.set_source_rgba(*rgb(fill[0]), fill[1])
+        elif book == 2:
+            # One sage wash. A second hue would say the rectangle and its
+            # pieces differ, and gold would be the Book I plate again.
+            cr.set_source_rgba(*rgb(SAGE), 0.62)
         elif len(regions) == 1 or n in SAME_WASH:
             cr.set_source_rgba(*rgb(WASH), 0.85)
         elif i == 0:
@@ -1344,7 +1382,8 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
     # A named side may be chained through a construction point (D on AB).
     # The highlight is the whole chord, drawn over the pieces, so the plate's
     # dot stays and the brick is not a second stroke beside a gap.
-    cr.set_source_rgb(*rgb(INK))
+    ink = ink_of(book)
+    cr.set_source_rgb(*rgb(ink))
     cr.set_line_width(3.2)
     cr.set_line_cap(cairo.LINE_CAP_ROUND)
     for name, r in scene.circs:
@@ -1361,7 +1400,7 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
         cr.stroke()
     cr.restore()
 
-    cr.set_source_rgb(*rgb(INK))
+    cr.set_source_rgb(*rgb(ink))
     cr.set_line_width(3.2)
     cr.set_line_cap(cairo.LINE_CAP_ROUND)
     cr.set_line_join(cairo.LINE_JOIN_ROUND)
@@ -1384,7 +1423,8 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
             cr.line_to(*pt(b))
             cr.stroke()
 
-    stroke_lines(lit_segs, BRICK)
+    # Book II names its lines in copper. Brick is the Book I mark.
+    stroke_lines(lit_segs, COPPER if book == 2 else BRICK)
     stroke_lines(alt_segs, PIE)
     for color, segs in extra:
         stroke_lines(segs, color)
@@ -1393,7 +1433,7 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
     # drawn over the plate, so the unlit strokes go back on top and the
     # crossing stays. Other cards have no crossing to restore.
     if n == 8:
-        cr.set_source_rgb(*rgb(INK))
+        cr.set_source_rgb(*rgb(ink))
         cr.set_line_width(3.2)
         cr.set_line_cap(cairo.LINE_CAP_ROUND)
         for a, b in scene.segs:
@@ -1406,7 +1446,7 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
     cr.new_path()
     for p in scene.dot_pts:
         x, y = pt_of(p)
-        cr.set_source_rgb(*rgb(INK))
+        cr.set_source_rgb(*rgb(ink))
         cr.arc(x, y, 4.2, 0, math.tau)
         cr.fill()
 
@@ -1416,7 +1456,7 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
         x += math.cos(ang) * r_em * letter
         y += -math.sin(ang) * r_em * letter
         font(cr, letter, italic=True)
-        cr.set_source_rgb(*rgb(NAVY))
+        cr.set_source_rgb(*rgb(TEAL if book == 2 else NAVY))
         ext = cr.text_extents(name)
         cr.move_to(x - (ext.x_bearing + ext.width / 2), y - (ext.y_bearing + ext.height / 2))
         cr.show_text(name)
@@ -1455,7 +1495,7 @@ WASHES4 = {
 # the rectangles contained by the uncut line and each piece. One wash — two
 # hues would say the whole and the pieces differ. A is a line, not a second
 # area, so it takes no wash. A and BC are the two straight-lines the
-# enunciation names, so they take the brick (LINES2).
+# enunciation names, so they take the copper (LINES2), not the Book I brick.
 WASHES2 = {
     1: [("B", "C", "H", "G")],
 }
