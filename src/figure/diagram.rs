@@ -3205,6 +3205,17 @@ mod tests {
         let a = d.highlight("A");
         assert!(has(&a, "seg-a") && has(&a, "A"), "A is the given line: {a:?}");
         assert!(!has(&a, "bg") && !has(&a, "bc"), "A is not the rectangle: {a:?}");
+        // English plate: the capital is the left end, not the middle of the stroke.
+        assert!(
+            (d.at("A").x - d.at("A0").x).abs() < 1e-6 && d.at("A").x + 20.0 < d.at("A1").x,
+            "A is the left end of the given line"
+        );
+        let html = d.svg(&[] as &[String]);
+        let (adx, ady) = letter_offset(&html, "A");
+        assert!(
+            adx < -0.4 && ady < -0.4,
+            "A above-left of the left end, not on the stroke, --dx={adx} --dy={ady}"
+        );
         let bh = d.highlight("BH");
         assert!(
             has(&bh, "bd") && has(&bh, "de") && has(&bh, "ec") && has(&bh, "ch")

@@ -725,8 +725,8 @@ class Scene:
 
     def glyph(self, name: str, at: V2) -> None:
         # A plate capital whose center is not a heading from a vertex.
-        # II.1's A sits over the middle of the given line. The center is the
-        # measured glyph, so the letter is not offset a second time.
+        # The center is the measured glyph, so the letter is not offset
+        # a second time.
         self.pin(name, at)
         self.labels[name] = (at, 90.0, 0.0)
 
