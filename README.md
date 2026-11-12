@@ -1,6 +1,6 @@
 # Euclid’s Elements
 
-Leptos (WASM) shell for all 13 books. Book I Propositions 1–48 and Book II Proposition 1 are filled in.
+Leptos (WASM) shell for all 13 books. Book I Propositions 1–48 and Book II Propositions 1 and 2 are filled in.
 
 ```bash
 trunk serve
@@ -18,7 +18,7 @@ Word-by-word player in `src/karaoke/`:
 - **Record** (`?record=1` or Play): karaoke. `KaraokeLyrics`
 
 1. `compile(phrases, &diagram, Timing::default())` — `*AB*` italic, `{[Post. 3]}` cite
-2. `Player::start(&script, autoplay)` — cursor + play/pause
+2. `Player::start(&script, autoplay)` — cursor, play/pause, and a seek bar in play mode
 3. `script.parts_at(cursor)` — figure ids from the construction graph
 
 A new proposition:

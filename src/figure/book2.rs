@@ -48,3 +48,35 @@ pub fn book2_prop1() -> Diagram {
     d.dots(&["B", "C", "D", "E", "F", "G", "H", "K", "L"]);
     d
 }
+
+/// II.2 — Fitzpatrick English plate (Elements PDF p. 51, the right-hand figure).
+///
+/// Square ADEB described on AB. AB is the top side, cut at random at C.
+/// CF is drawn through C, parallel to AD and BE, meeting DE at F.
+/// AE, AF, and CE are named by opposite corners. The plate draws no
+/// diagonal, so those names are the boundary, not a walk across the cut.
+///
+/// One scale AB = 100. The plate square is 125.88 pt on a side, so AD = AB.
+/// C is 0.2736 of the way from A to B — the ink column, not a round fraction.
+/// Letters sit outside the square, on the measured tip→glyph heading.
+pub fn book2_prop2() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("A", V2::new(0.0, 0.0), Place::Deg(92.7));
+    d.level("C", "A", 27.36, Place::Deg(78.5));
+    d.level("B", "A", 100.0, Place::Deg(94.1));
+    d.plumb("D", "A", -100.0, Place::Deg(-90.5));
+    d.corner("F", "C", "D", Place::Deg(-80.8));
+    d.corner("E", "B", "D", Place::Deg(-96.2));
+    // AB and DE split at the cut, so AC, CB, DF, and FE are the pieces.
+    d.chain(&["A", "C", "B"]);
+    d.chain(&["D", "F", "E"]);
+    d.join("A", "D");
+    d.join("C", "F");
+    d.join("B", "E");
+    // Spoken by opposite corners. The plate draws no stroke across them.
+    d.region("AE", &["A", "B", "E", "D"]);
+    d.region("AF", &["A", "C", "F", "D"]);
+    d.region("CE", &["C", "B", "E", "F"]);
+    d.dots(&["A", "B", "C", "D", "E", "F"]);
+    d
+}
