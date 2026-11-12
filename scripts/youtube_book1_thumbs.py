@@ -110,7 +110,41 @@ the two equalities. ∠AEC and ∠DEB take the rose. ∠AED and ∠CEB take
 the yellow. Both sets take the I.42 card radius, the default pie, so
 a pair reads as one set and the other pair as the other, and the only
 difference is the color. A wash of a sector would light a region the
-proposition does not claim. I.46 describes a square on a given straight-line. The card
+proposition does not claim. I.16 is the exterior angle of a triangle,
+greater than each of the interior and opposite angles. The card keeps
+the plate — E, F, G and the joins are the proof, not the subject — and
+marks the comparison the enunciation names. BC, the side produced, and
+CD, the production, take the brick. ∠ACD, the exterior angle, takes the
+rose. ∠CBA and ∠BAC, the interior and opposite angles, take the yellow.
+Both sets take the I.42 card radius, so the final render length is 54px.
+A hair of the shorter arm is the shorter mark on this plate. A wash of
+ABC would light the triangle, which the proposition does not claim.
+I.17 is any two angles of a triangle, taken together, less than two
+right-angles. The card keeps the plate — D is the production for the
+proof, not the subject — and marks the three angles the enunciation
+takes in pairs. ∠BAC, ∠ABC, and ∠ACB take one rose pie, the I.42 card
+radius, so the final render length is 54px. A plate radius short of the
+letters is the shorter mark on this plate. A wash of ABC would light
+the triangle, which the proposition does not claim. I.18 is the greater
+side subtending the greater angle. The card keeps the plate — D and BD
+are the construction, not the subject — and marks the comparison. AC,
+the greater side, takes the brick. AB, the lesser, takes the yellow.
+∠ABC, the greater angle, takes the rose. ∠BCA, the lesser, takes the
+yellow. Both pies take the I.42 card radius, so the final render length
+is 54px. A hair of the shorter arm is not this radius: on this plate
+that hair runs past the stroke. A wash of ABC would light the triangle,
+which the proposition does not claim. I.19 is the converse: the greater angle
+is subtended by the greater side. The card keeps the plate and marks
+the comparison. ∠ABC, the greater angle, takes the rose. ∠BCA, the
+lesser, takes the yellow. AC, the greater side, takes the brick. AB,
+the lesser, takes the yellow. Both pies take the I.42 card radius, so
+the final render length is 54px. A wash of ABC would light the triangle,
+which the proposition does not claim. I.20 is any two sides, taken together, greater than the
+remaining side. The card keeps the plate — D and DC are the
+construction, not the subject — and marks the three sides the
+enunciation takes in pairs. AB, BC, and AC take the brick. A wash of
+ABC would light the triangle, which the proposition does not claim.
+I.46 describes a square on a given straight-line. The card
 washes the square ADEB. The produced upright past D is the construction
 of the perpendicular, not a second figure, and the right angles are the
 square itself, not a separate mark. I.47 is the squares: the square on
@@ -204,11 +238,6 @@ LETTER_R = 0.82  # plate::LETTER_R, em of the letter type
 WASHES: dict[int, list[tuple[str, ...]]] = {
     1: [("A", "B", "C")],
     4: [("A", "B", "C"), ("D", "E", "F")],
-    16: [("A", "B", "C")],
-    17: [("A", "B", "C")],
-    18: [("A", "B", "C")],
-    19: [("A", "B", "C")],
-    20: [("A", "B", "C")],
     21: [("A", "B", "C")],
     22: [("K", "F", "G")],
     24: [("A", "B", "C"), ("D", "E", "F")],
@@ -299,6 +328,19 @@ LINES: dict[int, list[tuple[str, str]]] = {
     # The sides the squares stand on, BA, AC, and BC. AD and DC are the
     # construction, and they stay the plate ink.
     48: [("B", "A"), ("A", "C"), ("B", "C")],
+    # BC, the side produced, and CD, the production. The enunciation names
+    # the side and the exterior angle it makes. E, F, G and the joins are
+    # the proof, not the subject. C lies on BD, so each piece is the chord.
+    16: [("B", "C"), ("C", "D")],
+    # AC, the greater side. AB, the lesser, is the other line (LINE_ALT).
+    # D and BD are the construction, not the subject.
+    18: [("A", "C")],
+    # AC, the greater side, subtending the greater angle. AB, the lesser,
+    # is the other line (LINE_ALT).
+    19: [("A", "C")],
+    # AB, BC, and AC, the three sides the enunciation takes in pairs. D
+    # and DC are the construction, not the subject.
+    20: [("A", "B"), ("B", "C"), ("A", "C")],
 }
 
 # Further line equalities, each a hue that is not the angle yellow.
@@ -314,6 +356,9 @@ LINE_EXTRA: dict[int, list[tuple[tuple[int, int, int], tuple[tuple[str, str], ..
 # angle highlight, so the two pairs read as two sets, not two triangles.
 LINE_ALT: dict[int, list[tuple[str, str]]] = {
     7: [("C", "B"), ("D", "B")],
+    # AB, the lesser side. AC, the greater, is the brick (LINES).
+    18: [("A", "B")],
+    19: [("A", "B")],
 }
 
 # Equal angles share a mark: (arm, vertex, arm), grouped by equality.
@@ -359,6 +404,29 @@ ANGLES: dict[int, list[list[tuple[str, str, str]]]] = {
     # ∠BAC, the angle the enunciation concludes is right. One mark, a square
     # (SQUARE_MARK), not a pie. ∠DAC is the right-angle of the construction.
     48: [[("B", "A", "C")]],
+    # ∠ACD, the exterior angle, then ∠CBA and ∠BAC, the interior and
+    # opposite angles. The next group is the other set. E, F, G are the
+    # proof, so their angles are not here.
+    16: [
+        [("A", "C", "D")],
+        [("C", "B", "A"), ("B", "A", "C")],
+    ],
+    # ∠BAC, ∠ABC, and ∠ACB, the angles the enunciation takes in pairs.
+    # One set: the claim is any two, not an equality of the three. D is
+    # the production for the proof, so ∠ACD is not here.
+    17: [[("B", "A", "C"), ("A", "B", "C"), ("A", "C", "B")]],
+    # ∠ABC, the greater angle, then ∠BCA, the lesser. The next group is
+    # the other set. ∠ADB is the construction, not the subject.
+    18: [
+        [("A", "B", "C")],
+        [("B", "C", "A")],
+    ],
+    # ∠ABC, the greater angle, then ∠BCA, the lesser. The next group is
+    # the other set.
+    19: [
+        [("A", "B", "C")],
+        [("B", "C", "A")],
+    ],
 }
 
 # Card radius of the rose pie on a given angle and the angle the
@@ -415,6 +483,28 @@ ANGLE_MARK: dict[int, list[tuple[tuple[int, int, int], float | None]]] = {
     # differs. A hair of the shorter arm is not this radius: on this plate
     # that hair is the shorter mark, and the final render length is 54px.
     15: [(PIE_ALT, None), (PIE, None)],
+    # I.16 has two sets. The exterior is the rose. The interior and
+    # opposite angles are yellow, so the comparison does not read as one
+    # equality. Both sets take the I.42 card radius, so the final render
+    # length is 54px. A hair of the shorter arm is the shorter mark on
+    # this plate. Same radius in both sets, so a smaller second pie does
+    # not read as a lesser angle.
+    16: [(PIE_ALT, None), (PIE, None)],
+    # ∠BAC, ∠ABC, and ∠ACB. One set, the I.42 card radius, so the final
+    # render length is 54px. A plate radius short of the letters is the
+    # shorter mark on this plate. Yellow is the second set; this card
+    # has one.
+    17: [(PIE_ALT, None)],
+    # I.18 has two angles. The greater is the rose. The lesser is yellow,
+    # so the comparison does not read as one equality. Both pies take the
+    # I.42 card radius, so the final render length is 54px. A hair of the
+    # shorter arm is not this radius: on this plate that hair runs past
+    # the stroke. Same radius in both sets, so a smaller second pie does
+    # not read as a lesser angle.
+    18: [(PIE_ALT, None), (PIE, None)],
+    # I.19, as I.18. The greater is the rose. The lesser is yellow. Both
+    # pies take the I.42 card radius, so the final render length is 54px.
+    19: [(PIE_ALT, None), (PIE, None)],
     # Rose, not yellow: the pie sits on the gold parallelogram, and yellow
     # reads as more of that wash. One plate radius for the pair — a fraction
     # of each arm would draw the longer angle larger. Short of the letter
