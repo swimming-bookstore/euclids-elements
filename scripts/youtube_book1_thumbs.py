@@ -1543,13 +1543,18 @@ def stamp_voice(path: Path) -> None:
     """
     surf = cairo.ImageSurface.create_from_png(str(path))
     cr = cairo.Context(surf)
-    badge = 64
+    # Big enough to read on a suggested-video card, still in the empty margin.
+    badge = 168
     x, y = W - 36 - badge, H - 28 - badge
     cr.set_source_rgb(*rgb(BRICK2))
     cr.arc(x + badge / 2, y + badge / 2, badge / 2, 0, math.tau)
     cr.fill()
+    # Glyph is drawn in the old 64-unit box, then scaled with the badge.
+    cr.save()
+    cr.translate(x, y)
+    cr.scale(badge / 64, badge / 64)
     cr.set_source_rgb(1, 1, 1)
-    sx, sy = x + 18, y + badge / 2
+    sx, sy = 18, 32
     cr.rectangle(sx, sy - 6, 8, 12)
     cr.fill()
     cr.move_to(sx + 8, sy - 6)
@@ -1564,6 +1569,7 @@ def stamp_voice(path: Path) -> None:
     cr.stroke()
     cr.arc(sx + 18, sy, 14, -0.62, 0.62)
     cr.stroke()
+    cr.restore()
     surf.write_to_png(str(path))
 
 
