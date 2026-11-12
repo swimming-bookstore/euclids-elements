@@ -1,13 +1,16 @@
 use super::layout::{read_layout, roll_shift, Atom};
 use super::player::Player;
 use super::script::{display_letters, Script};
+use leptos::html::Div;
 use leptos::prelude::*;
 use wasm_bindgen::JsCast;
 
 #[component]
 pub fn KaraokePlay(player: Player, record: RwSignal<bool>) -> impl IntoView {
+    let bar = NodeRef::<Div>::new();
     view! {
         <div class="karaoke-play">
+            <div class="play-row">
             <button
                 type="button"
                 class="play"
@@ -15,8 +18,10 @@ pub fn KaraokePlay(player: Player, record: RwSignal<bool>) -> impl IntoView {
                     if record.get() {
                         if player.playing.get() {
                             player.playing.set(false);
-                        } else {
+                        } else if player.finished() {
                             player.restart();
+                            player.playing.set(true);
+                        } else {
                             player.playing.set(true);
                         }
                     } else {
@@ -50,8 +55,108 @@ pub fn KaraokePlay(player: Player, record: RwSignal<bool>) -> impl IntoView {
                     </button>
                 })
             }}
+            </div>
+            {move || {
+                record.get().then(|| view! { <Seek player=player bar=bar /> })
+            }}
         </div>
     }
+}
+
+/// A bar under the buttons. Left is earlier, right is later. The fill
+/// follows the spoken clock, including while a drag is held.
+#[component]
+fn Seek(player: Player, bar: NodeRef<Div>) -> impl IntoView {
+    let dragging = RwSignal::new(false);
+    let shown = RwSignal::new(0u32);
+    Effect::new(move |_| {
+        let playing = player.playing.get();
+        if !playing {
+            if !dragging.get_untracked() {
+                shown.set(player.elapsed());
+            }
+            return;
+        }
+        // One subscription for the whole play. A fresh frame is scheduled
+        // only after the previous one, so a pause stops the chain.
+        let mine = clock_gen(true);
+        follow_clock(player, dragging, shown, mine);
+    });
+    view! {
+        <div
+            class="seek"
+            node_ref=bar
+            role="slider"
+            aria-label="Seek"
+            aria-orientation="horizontal"
+            aria-valuemin="0"
+            aria-valuemax=player.duration_ms
+            aria-valuenow=move || shown.get()
+            on:pointerdown=move |ev| {
+                ev.prevent_default();
+                dragging.set(true);
+                scrub(player, bar, ev.client_x(), shown);
+                let _ = ev.current_target()
+                    .and_then(|t| t.dyn_into::<web_sys::Element>().ok())
+                    .map(|el| el.set_pointer_capture(ev.pointer_id()));
+            }
+            on:pointermove=move |ev| {
+                if dragging.get_untracked() {
+                    scrub(player, bar, ev.client_x(), shown);
+                }
+            }
+            on:pointerup=move |_| dragging.set(false)
+            on:pointercancel=move |_| dragging.set(false)
+        >
+            <span
+                class="seek-fill"
+                style=move || {
+                    let total = player.duration_ms.max(1) as f64;
+                    let pct = shown.get() as f64 / total * 100.0;
+                    format!("--seek: {pct:.2}%")
+                }
+            ></span>
+        </div>
+    }
+}
+
+fn clock_gen(bump: bool) -> u32 {
+    thread_local! {
+        static GEN: std::cell::Cell<u32> = const { std::cell::Cell::new(0) };
+    }
+    GEN.with(|g| {
+        if !bump {
+            return g.get();
+        }
+        let n = g.get().wrapping_add(1);
+        g.set(n);
+        n
+    })
+}
+
+fn follow_clock(player: Player, dragging: RwSignal<bool>, shown: RwSignal<u32>, mine: u32) {
+    if !player.playing.get_untracked() || clock_gen(false) != mine {
+        return;
+    }
+    if !dragging.get_untracked() {
+        shown.set(player.elapsed());
+    }
+    request_animation_frame(move || follow_clock(player, dragging, shown, mine));
+}
+
+fn scrub(player: Player, bar: NodeRef<Div>, client_x: i32, shown: RwSignal<u32>) {
+    let Some(el) = bar.get_untracked() else {
+        return;
+    };
+    let rect = el.get_bounding_client_rect();
+    let width = rect.width();
+    if width <= 0.0 || player.duration_ms == 0 {
+        return;
+    }
+    let x = (client_x as f64 - rect.left()).clamp(0.0, width);
+    let ms = (x / width * player.duration_ms as f64).round() as u32;
+    player.seek_ms(ms);
+    shown.set(ms.min(player.duration_ms));
 }
 
 /// Full proof: Fitzpatrick paragraphs. Cites hang in the margin;

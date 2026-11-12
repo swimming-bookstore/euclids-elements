@@ -350,6 +350,7 @@ footer {
   display: flex;
   justify-content: center;
   align-items: center;
+  box-sizing: border-box;
   /* Letter % positions assume overlay box == viewBox. Size the plate
      with contain so a wide figure (I.11) is not letterboxed. */
   container-type: size;

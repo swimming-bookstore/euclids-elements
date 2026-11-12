@@ -1,5 +1,5 @@
 use super::{s, Proposition};
-use crate::figure::book2_prop1;
+use crate::figure::{book2_prop1, book2_prop2};
 
 pub const PROP_1: Proposition = Proposition {
     book: 2,
@@ -24,4 +24,25 @@ pub const PROP_1: Proposition = Proposition {
     ],
 };
 
-pub const PROPOSITIONS: &[Proposition] = &[PROP_1];
+pub const PROP_2: Proposition = Proposition {
+    book: 2,
+    number: 2,
+    enunciation: "If a straight-line is cut at random then the (sum of the) rectangle(s) contained by the whole (straight-line), and each of the pieces (of the straight-line), is equal to the square on the whole.",
+    figure: book2_prop2,
+    phrases: &[
+        s(1, "For let the straight-line *AB* have been cut, at random, at point *C*."),
+        s(1, "I say that the rectangle contained by *AB* and *BC*, plus the rectangle contained by *BA* and *AC*, is equal to the square on *AB*."),
+        s(2, "For let the square *ADEB* have been described on *AB*,{[Prop. 1.46]} and let *CF* have been drawn through *C*, parallel to either of *AD* or *BE*.{[Prop. 1.31]}"),
+        s(3, "So the (square) *rectangle(AE)* is equal to the (rectangles) *rectangle(AF)* and *rectangle(CE)*."),
+        s(3, "And *rectangle(AE)* is the square on *AB*."),
+        s(3, "And *rectangle(AF)* (is) the rectangle contained by the (straight-lines) *BA* and *AC*."),
+        s(3, "For it is contained by *DA* and *AC*, and *AD* (is) equal to *AB*."),
+        s(3, "And *rectangle(CE)* (is) the (rectangle contained) by *AB* and *BC*."),
+        s(3, "For *BE* (is) equal to *AB*."),
+        s(3, "Thus, the (rectangle contained) by *BA* and *AC*, plus the (rectangle contained) by *AB* and *BC*, is equal to the square on *AB*."),
+        s(4, "Thus, if a straight-line is cut at random then the (sum of the) rectangle(s) contained by the whole (straight-line), and each of the pieces (of the straight-line), is equal to the square on the whole."),
+        s(4, "(Which is) the very thing it was required to show."),
+    ],
+};
+
+pub const PROPOSITIONS: &[Proposition] = &[PROP_1, PROP_2];

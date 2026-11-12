@@ -152,6 +152,7 @@ from __future__ import annotations
 
 import math
 import re
+import shutil
 import sys
 from pathlib import Path
 
@@ -1510,8 +1511,13 @@ WASHES4 = {
 # hues would say the whole and the pieces differ. A is a line, not a second
 # area, so it takes no wash. A and BC are the two straight-lines the
 # enunciation names, so they take the blue brick (LINES2), not the Book I brick.
+# II.2: the rectangles contained by the whole and each piece equal the square
+# on the whole. One wash — the square is that sum, so a second hue would say
+# the pieces differ from the square. AB is the straight-line the enunciation
+# cuts. C lies on it, so the named line is the whole chord.
 WASHES2 = {
     1: [("B", "C", "H", "G")],
+    2: [("A", "B", "E", "D")],
 }
 
 # Named straight-lines, book by book. Book I is LINES. A produced ray is
@@ -1521,9 +1527,50 @@ LINES2: dict[int, list[tuple[str, str]]] = {
     # enunciation names both. The rectangle they contain is the wash. D
     # and E lie on BC, so the cut line is the whole chord, not the pieces.
     1: [("A0", "A1"), ("B", "C")],
+    # AB, the straight-line cut at random. The square on it is the wash. C
+    # lies on AB, so the cut line is the whole chord, not the pieces.
+    2: [("A", "B")],
 }
 LINE_ALT2: dict[int, list[tuple[str, str]]] = {}
 LINE_EXTRA2: dict[int, list[tuple[tuple[int, int, int], tuple[tuple[str, str], ...]]]] = {}
+
+
+def stamp_voice(path: Path) -> None:
+    """A corner speaker so the narrated card is not the silent one.
+
+    Blue brick on the blue paper, icon only. It sits in the margin, not on
+    the figure.
+    """
+    surf = cairo.ImageSurface.create_from_png(str(path))
+    cr = cairo.Context(surf)
+    # Big enough to read on a suggested-video card, still in the empty margin.
+    badge = 168
+    x, y = W - 36 - badge, H - 28 - badge
+    cr.set_source_rgb(*rgb(BRICK2))
+    cr.arc(x + badge / 2, y + badge / 2, badge / 2, 0, math.tau)
+    cr.fill()
+    # Glyph is drawn in the old 64-unit box, then scaled with the badge.
+    cr.save()
+    cr.translate(x, y)
+    cr.scale(badge / 64, badge / 64)
+    cr.set_source_rgb(1, 1, 1)
+    sx, sy = 18, 32
+    cr.rectangle(sx, sy - 6, 8, 12)
+    cr.fill()
+    cr.move_to(sx + 8, sy - 6)
+    cr.line_to(sx + 20, sy - 16)
+    cr.line_to(sx + 20, sy + 16)
+    cr.line_to(sx + 8, sy + 6)
+    cr.close_path()
+    cr.fill()
+    cr.set_line_width(2.4)
+    cr.set_line_cap(cairo.LINE_CAP_ROUND)
+    cr.arc(sx + 18, sy, 9, -0.7, 0.7)
+    cr.stroke()
+    cr.arc(sx + 18, sy, 14, -0.62, 0.62)
+    cr.stroke()
+    cr.restore()
+    surf.write_to_png(str(path))
 
 
 def main() -> None:
@@ -1555,6 +1602,11 @@ def main() -> None:
         out = DOCS / f"youtube-book{book}-proposition{n}.png"
         render(n, scene, out, book=book, washes=washes)
         print(out)
+        if "--voice" in args:
+            voiced = out.with_name(out.stem + "-voice" + out.suffix)
+            shutil.copy(out, voiced)
+            stamp_voice(voiced)
+            print(voiced)
 
 
 if __name__ == "__main__":

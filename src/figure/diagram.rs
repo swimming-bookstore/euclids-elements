@@ -1085,6 +1085,7 @@ mod tests {
         book1_prop45, book1_prop46, book1_prop47, book1_prop48,
     };
     use crate::figure::book2_prop1;
+    use crate::figure::book2_prop2;
 
     fn has(v: &[String], id: &str) -> bool {
         v.iter().any(|s| s == id)
@@ -3242,6 +3243,55 @@ mod tests {
         assert!(has(&bc_line, "bd") && has(&bc_line, "de") && has(&bc_line, "ec"), "BC is the whole line: {bc_line:?}");
         let bd = d.highlight("BD");
         assert!(has(&bd, "bd") && !has(&bd, "de"), "BD is the piece: {bd:?}");
+    }
+
+    #[test]
+    fn prop2_2_matches_english_plate() {
+        let d = book2_prop2();
+        let ab = d.at("A").dist(d.at("B"));
+        assert!((ab - 100.0).abs() < 0.05, "AB scale {ab}");
+        assert!((d.at("A").y - d.at("B").y).abs() < 1e-6, "AB level");
+        assert!((d.at("D").y - d.at("E").y).abs() < 1e-6, "DE level");
+        assert!((d.at("A").x - d.at("D").x).abs() < 1e-6, "AD plumb");
+        assert!((d.at("C").x - d.at("F").x).abs() < 1e-6, "CF plumb");
+        assert!((d.at("B").x - d.at("E").x).abs() < 1e-6, "BE plumb");
+        assert!(d.at("C").on_seg(d.at("A"), d.at("B"), 1e-3), "C on AB");
+        assert!(d.at("F").on_seg(d.at("D"), d.at("E"), 1e-3), "F on DE");
+        assert!((d.at("A").dist(d.at("D")) - ab).abs() < 0.05, "AD = AB");
+        assert!((d.at("D").dist(d.at("E")) - ab).abs() < 0.05, "DE = AB");
+        assert!((d.at("A").dist(d.at("C")) / ab - 0.2736).abs() < 0.001, "AC/AB from the plate");
+        assert!((angle_at(&d, "D", "A", "B").to_degrees() - 90.0).abs() < 0.05, "right angle at A");
+        assert!((angle_at(&d, "A", "B", "E").to_degrees() - 90.0).abs() < 0.05, "right angle at B");
+        let adeb = d.highlight("ADEB");
+        assert!(
+            has(&adeb, "ad") && has(&adeb, "df") && has(&adeb, "fe") && has(&adeb, "be")
+                && has(&adeb, "ac") && has(&adeb, "cb") && !has(&adeb, "cf"),
+            "square ADEB is the boundary, not the cut: {adeb:?}"
+        );
+        let ae = d.highlight("AE");
+        assert!(
+            has(&ae, "ac") && has(&ae, "cb") && has(&ae, "be") && has(&ae, "fe") && has(&ae, "df")
+                && has(&ae, "ad") && !has(&ae, "cf"),
+            "square AE is the boundary, not the diagonal or the cut: {ae:?}"
+        );
+        let af = d.highlight("AF");
+        assert!(
+            has(&af, "ac") && has(&af, "cf") && has(&af, "df") && has(&af, "ad") && !has(&af, "cb"),
+            "rectangle AF: {af:?}"
+        );
+        let ce = d.highlight("CE");
+        assert!(
+            has(&ce, "cb") && has(&ce, "be") && has(&ce, "fe") && has(&ce, "cf") && !has(&ce, "ac"),
+            "rectangle CE: {ce:?}"
+        );
+        let ab_line = d.highlight("AB");
+        assert!(has(&ab_line, "ac") && has(&ab_line, "cb") && !has(&ab_line, "ad"), "AB is the whole line: {ab_line:?}");
+        let ac = d.highlight("AC");
+        assert!(has(&ac, "ac") && !has(&ac, "cb"), "AC is the piece: {ac:?}");
+        let bc = d.highlight("BC");
+        assert!(has(&bc, "cb") && !has(&bc, "ac"), "BC is the piece: {bc:?}");
+        let cf = d.highlight("CF");
+        assert!(has(&cf, "cf") && !has(&cf, "ac") && !has(&cf, "cb"), "CF is the parallel: {cf:?}");
     }
 
     fn letter_offset(html: &str, id: &str) -> (f64, f64) {
