@@ -121,9 +121,7 @@ pub fn read_layout_lines(lines: &[Line]) -> Vec<Vec<Atom>> {
                 for (ti, t) in line.tokens.iter().enumerate() {
                     if t.cite {
                         atoms.push(Atom::Cite(t.text.clone()));
-                        let more_here = line.tokens[ti + 1..]
-                            .iter()
-                            .any(|u| !u.cite);
+                        let more_here = line.tokens[ti + 1..].iter().any(|u| !u.cite);
                         let more_later = ls[i + 1..].iter().any(|l| !l.tokens.is_empty());
                         if more_here || more_later {
                             atoms.push(Atom::Break);
@@ -403,10 +401,7 @@ mod tests {
             !construction.contains("[Post. 3] And let"),
             "must not stay on the same line: {construction}"
         );
-        assert_eq!(
-            cites(&i1[2]),
-            vec!["[Post. 3]", "[Post. 3]", "[Post. 1]"]
-        );
+        assert_eq!(cites(&i1[2]), vec!["[Post. 3]", "[Post. 3]", "[Post. 1]"]);
     }
 
     #[test]
@@ -458,7 +453,10 @@ mod tests {
         assert_eq!(cites(&i3[2]), vec!["[Def. 1.15]", "[C.N. 1]"]);
         let given = para_text(&i3[0]);
         assert!(given.contains("Let AB and C be the two given unequal straight-lines"));
-        assert!(given.contains("AB. So it is required"), "plain full stop stays: {given}");
+        assert!(
+            given.contains("AB. So it is required"),
+            "plain full stop stays: {given}"
+        );
         let construction = para_text(&i3[1]);
         assert!(
             construction.contains("point A. [Prop. 1.2] \nAnd let the circle"),
@@ -505,7 +503,9 @@ mod tests {
                 && qed.contains("equal, then they will also have the base"),
             "comma at a phrase join must keep a space: {qed}"
         );
-        assert!(qed.contains("corresponding remaining angles. (Which is) the very thing it was required to show."));
+        assert!(qed.contains(
+            "corresponding remaining angles. (Which is) the very thing it was required to show."
+        ));
     }
 
     #[test]
@@ -555,16 +555,19 @@ mod tests {
         assert!(given.contains("I say that side AB is also equal to side AC."));
         let construction = para_text(&i6[1]);
         assert!(construction.contains("greater. Let AB be greater."));
-        assert!(construction.contains("greater AB. [Prop. 1.3] \nAnd let DC have been joined. [Post. 1]"));
+        assert!(construction
+            .contains("greater AB. [Prop. 1.3] \nAnd let DC have been joined. [Post. 1]"));
         let reductio = para_text(&i6[2]);
         assert!(reductio.contains("triangle ACB, [Prop. 1.4] \nthe lesser to the greater."));
         assert!(reductio.contains("absurd. [C.N. 5] \nThus, AB is not unequal"));
         assert!(
-            reductio.contains("greater. The very notion") && reductio.contains("AC. Thus, (it is) equal."),
+            reductio.contains("greater. The very notion")
+                && reductio.contains("AC. Thus, (it is) equal."),
             "plain full stops stay: {reductio}"
         );
         let qed = para_text(&i6[3]);
-        assert!(qed.contains("equal to one another. (Which is) the very thing it was required to show."));
+        assert!(qed
+            .contains("equal to one another. (Which is) the very thing it was required to show."));
     }
 
     #[test]
@@ -589,7 +592,8 @@ mod tests {
             "plain full stops stay: {proof}"
         );
         let qed = para_text(&i7[2]);
-        assert!(qed.contains("given straight-lines. (Which is) the very thing it was required to show."));
+        assert!(qed
+            .contains("given straight-lines. (Which is) the very thing it was required to show."));
     }
 
     #[test]
@@ -614,7 +618,8 @@ mod tests {
         );
         let qed = para_text(&i8[2]);
         assert!(qed.contains("two side, respectively"));
-        assert!(qed.contains("equal straight-lines. (Which is) the very thing it was required to show."));
+        assert!(qed
+            .contains("equal straight-lines. (Which is) the very thing it was required to show."));
     }
 
     #[test]
@@ -628,13 +633,20 @@ mod tests {
         let given = para_text(&i9[0]);
         assert!(given.contains("Let BAC be the given rectilinear angle"));
         let construction = para_text(&i9[1]);
-        assert!(construction.contains("cut off from AC, [Prop. 1.3] \nand let DE have been joined."));
-        assert!(construction.contains("constructed upon DE, [Prop. 1.1] \nand let AF have been joined."));
+        assert!(
+            construction.contains("cut off from AC, [Prop. 1.3] \nand let DE have been joined.")
+        );
+        assert!(construction
+            .contains("constructed upon DE, [Prop. 1.1] \nand let AF have been joined."));
         let proof = para_text(&i9[2]);
-        assert!(proof.contains("For since AD is equal to AE, and AF is common, the two (straight-lines) DA, AF"));
+        assert!(proof.contains(
+            "For since AD is equal to AE, and AF is common, the two (straight-lines) DA, AF"
+        ));
         assert!(proof.contains("angle EAF. [Prop. 1.8]"));
         let qed = para_text(&i9[3]);
-        assert!(qed.contains("cut in half by the straight-line AF. (Which is) the very thing it was required to do."));
+        assert!(qed.contains(
+            "cut in half by the straight-line AF. (Which is) the very thing it was required to do."
+        ));
     }
 
     #[test]
@@ -649,9 +661,8 @@ mod tests {
         assert!(given.contains("Let AB be the given finite straight-line"));
         assert!(given.contains("cut the finite straight-line AB in half."));
         let construction = para_text(&i10[1]);
-        assert!(construction.contains(
-            "upon (AB), [Prop. 1.1] \nand let the angle ACB have been cut in half"
-        ));
+        assert!(construction
+            .contains("upon (AB), [Prop. 1.1] \nand let the angle ACB have been cut in half"));
         assert!(construction.contains("straight-line CD. [Prop. 1.9] \nI say that"));
         let proof = para_text(&i10[2]);
         assert!(proof.contains("For since AC is equal to CB, and CD (is) common"));
@@ -677,9 +688,7 @@ mod tests {
         assert!(construction.contains("on DE, [Prop. 1.1] \nand let FC have been joined."));
         let proof = para_text(&i11[2]);
         assert!(proof.contains("For since DC is equal to CE, and CF is common"));
-        assert!(proof.contains(
-            "equal to the angle ECF, [Prop. 1.8] \nand they are adjacent."
-        ));
+        assert!(proof.contains("equal to the angle ECF, [Prop. 1.8] \nand they are adjacent."));
         assert!(proof.contains("is a right-angle. [Def. 1.10] \nThus, each of the (angles) DCF"));
         assert!(
             proof.contains("respectively. And the base DF is equal to the base FE."),
@@ -707,20 +716,16 @@ mod tests {
         assert!(construction.contains("at (point) H, [Prop. 1.10] \nand let the straight-lines CG"));
         let proof = para_text(&i12[2]);
         assert!(proof.contains("For since GH is equal to HE, and HC (is) common"));
-        assert!(proof.contains(
-            "equal to the angle EHC, [Prop. 1.8] \nand they are adjacent."
-        ));
-        assert!(proof.contains(
-            "upon which it stands. [Def. 1.10]"
-        ));
+        assert!(proof.contains("equal to the angle EHC, [Prop. 1.8] \nand they are adjacent."));
+        assert!(proof.contains("upon which it stands. [Def. 1.10]"));
         assert!(
             proof.contains("respectively, and the base CG is equal to the base CE."),
             "plain full stops stay: {proof}"
         );
         let qed = para_text(&i12[3]);
-        assert!(qed.contains(
-            "which is not on (AB). (Which is) the very thing it was required to do."
-        ));
+        assert!(
+            qed.contains("which is not on (AB). (Which is) the very thing it was required to do.")
+        );
     }
 
     #[test]
@@ -730,7 +735,13 @@ mod tests {
         assert!(cites(&i13[0]).is_empty());
         assert_eq!(
             cites(&i13[1]),
-            vec!["[Def. 1.10]", "[Prop. 1.11]", "[C.N. 2]", "[C.N. 2]", "[C.N. 1]"]
+            vec![
+                "[Def. 1.10]",
+                "[Prop. 1.11]",
+                "[C.N. 2]",
+                "[C.N. 2]",
+                "[C.N. 1]"
+            ]
         );
         assert!(cites(&i13[2]).is_empty());
         let given = para_text(&i13[0]);
@@ -768,9 +779,8 @@ mod tests {
         assert!(construction.contains("equal to BE, [Prop. 1.3] \nand let FC have been joined"));
         let proof = para_text(&i16[2]);
         assert!(proof.contains("vertically opposite. [Prop. 1.15] \nThus, the base AB"));
-        assert!(proof.contains(
-            "corresponding remaining angles. [Prop. 1.4] \nThus, BAE is equal to ECF."
-        ));
+        assert!(proof
+            .contains("corresponding remaining angles. [Prop. 1.4] \nThus, BAE is equal to ECF."));
         assert!(
             proof.contains("greater than ECF. Thus, ACD is greater than BAE."),
             "plain full stops stay: {proof}"
@@ -823,9 +833,7 @@ mod tests {
         assert!(given.contains("For let ABC be a triangle having side AC greater than AB."));
         assert!(given.contains("angle ABC is also greater than BCA."));
         let construction = para_text(&i18[1]);
-        assert!(construction.contains(
-            "equal to AB, [Prop. 1.3] \nand let BD have been joined."
-        ));
+        assert!(construction.contains("equal to AB, [Prop. 1.3] \nand let BD have been joined."));
         let proof = para_text(&i18[2]);
         assert!(proof.contains("opposite (angle) DCB. [Prop. 1.16] \nBut ADB (is) equal"));
         assert!(proof.contains("equal to side AD. [Prop. 1.5] \nThus, ABD is also greater"));
@@ -834,9 +842,9 @@ mod tests {
             "plain full stops stay: {proof}"
         );
         let qed = para_text(&i18[3]);
-        assert!(qed.contains(
-            "the greater angle. (Which is) the very thing it was required to show."
-        ));
+        assert!(
+            qed.contains("the greater angle. (Which is) the very thing it was required to show.")
+        );
     }
 
     #[test]
@@ -857,9 +865,9 @@ mod tests {
             "plain full stops stay: {proof}"
         );
         let qed = para_text(&i19[2]);
-        assert!(qed.contains(
-            "by the greater side. (Which is) the very thing it was required to show."
-        ));
+        assert!(
+            qed.contains("by the greater side. (Which is) the very thing it was required to show.")
+        );
     }
 
     #[test]
@@ -880,9 +888,7 @@ mod tests {
         assert!(angles.contains("opposite (angles), [Prop. 1.16] \nin triangle CDE"));
         assert!(angles.contains("Thus, BDC is much greater than BAC."));
         let qed = para_text(&i21[3]);
-        assert!(qed.contains(
-            "a greater angle. (Which is) the very thing it was required to show."
-        ));
+        assert!(qed.contains("a greater angle. (Which is) the very thing it was required to show."));
     }
 
     #[test]
@@ -903,9 +909,7 @@ mod tests {
         assert!(proof.contains("FD is equal to FK."));
         assert!(proof.contains("equal to A, B, and C (respectively)."));
         let qed = para_text(&i22[3]);
-        assert!(qed.contains(
-            "(respectively). (Which is) the very thing it was required to do."
-        ));
+        assert!(qed.contains("(respectively). (Which is) the very thing it was required to do."));
     }
 
     #[test]
@@ -925,9 +929,7 @@ mod tests {
         let proof = para_text(&i23[2]);
         assert!(proof.contains("the angle DCE is thus equal to the angle FAG. [Prop. 1.8]"));
         let qed = para_text(&i23[3]);
-        assert!(qed.contains(
-            "AB. (Which is) the very thing it was required to do."
-        ));
+        assert!(qed.contains("AB. (Which is) the very thing it was required to do."));
     }
 
     #[test]
@@ -946,16 +948,16 @@ mod tests {
         assert!(given.contains("greater than the base EF."));
         let construction = para_text(&i24[1]);
         assert!(construction.contains("on the straight-line DE. [Prop. 1.23] \nAnd let DG"));
-        assert!(construction.contains("AC or DF, [Prop. 1.3] \nand let EG and FG have been joined."));
+        assert!(
+            construction.contains("AC or DF, [Prop. 1.3] \nand let EG and FG have been joined.")
+        );
         let proof = para_text(&i24[2]);
         assert!(proof.contains("the base BC is equal to the base EG. [Prop. 1.4] \nAgain"));
         assert!(proof.contains("angle DFG. [Prop. 1.5] \nThus, DFG"));
         assert!(proof.contains("greater side, [Prop. 1.19] \nside EG"));
         assert!(proof.contains("Thus, BC (is) also greater than EF."));
         let qed = para_text(&i24[3]);
-        assert!(qed.contains(
-            "(of the latter). (Which is) the very thing it was required to show."
-        ));
+        assert!(qed.contains("(of the latter). (Which is) the very thing it was required to show."));
     }
 
     #[test]
@@ -976,7 +978,13 @@ mod tests {
         assert!(cites(&i37[0]).is_empty());
         assert_eq!(
             cites(&i37[1]),
-            vec!["[Prop. 1.31]", "[Prop. 1.31]", "[Prop. 1.35]", "[Prop. 1.34]", "[Prop. 1.34]"]
+            vec![
+                "[Prop. 1.31]",
+                "[Prop. 1.31]",
+                "[Prop. 1.35]",
+                "[Prop. 1.34]",
+                "[Prop. 1.34]"
+            ]
         );
         assert!(cites(&i37[2]).is_empty());
         let proof = para_text(&i37[1]);
@@ -994,7 +1002,13 @@ mod tests {
         assert!(cites(&i38[0]).is_empty());
         assert_eq!(
             cites(&i38[1]),
-            vec!["[Prop. 1.31]", "[Prop. 1.31]", "[Prop. 1.36]", "[Prop. 1.34]", "[Prop. 1.34]"]
+            vec![
+                "[Prop. 1.31]",
+                "[Prop. 1.31]",
+                "[Prop. 1.36]",
+                "[Prop. 1.34]",
+                "[Prop. 1.34]"
+            ]
         );
         let proof = para_text(&i38[1]);
         assert!(proof.contains("parallels BF and GH. [Prop. 1.36] \nAnd triangle ABC"));
@@ -1025,11 +1039,20 @@ mod tests {
         assert!(cites(&i42[0]).is_empty());
         assert_eq!(
             cites(&i42[1]),
-            vec!["[Prop. 1.10]", "[Prop. 1.23]", "[Prop. 1.31]", "[Prop. 1.31]", "[Prop. 1.38]", "[Prop. 1.41]"]
+            vec![
+                "[Prop. 1.10]",
+                "[Prop. 1.23]",
+                "[Prop. 1.31]",
+                "[Prop. 1.31]",
+                "[Prop. 1.38]",
+                "[Prop. 1.41]"
+            ]
         );
         let proof = para_text(&i42[1]);
         assert!(proof.contains("Thus, FECG is a parallelogram. And since BE is equal to EC"));
-        assert!(proof.contains("the same base as (AEC), and is between the same parallels as (AEC)"));
+        assert!(
+            proof.contains("the same base as (AEC), and is between the same parallels as (AEC)")
+        );
         assert!(proof.contains("(FECG) also has the angle CEF equal to the given (angle) D."));
         let close = para_text(&i42[2]);
         assert!(close.starts_with("Thus, parallelogram FECG"));
@@ -1051,9 +1074,12 @@ mod tests {
         let proof = para_text(&i43[1]);
         assert!(proof.contains("triangle ABC is equal to triangle ACD."));
         assert!(proof.contains("triangle KFC is also equal to (triangle) KGC."));
-        assert!(proof.contains("and KFC to KGC, triangle AEK plus KGC is equal to triangle AHK plus KFC."));
+        assert!(proof
+            .contains("and KFC to KGC, triangle AEK plus KGC is equal to triangle AHK plus KFC."));
         assert!(proof.contains("the whole (triangle) ADC."));
-        assert!(proof.contains("the remaining complement BK is equal to the remaining complement KD."));
+        assert!(
+            proof.contains("the remaining complement BK is equal to the remaining complement KD.")
+        );
         let close = para_text(&i43[2]);
         assert!(close.starts_with("Thus, for any parallelogramic figure"));
         assert!(close.contains("the very thing it was required to show."));
@@ -1069,7 +1095,15 @@ mod tests {
         assert!(cites(&i44[0]).is_empty());
         assert_eq!(
             cites(&i44[1]),
-            vec!["[Prop. 1.42]", "[Prop. 1.31]", "[Prop. 1.29]", "[Post. 5]", "[Prop. 1.31]", "[Prop. 1.43]", "[Prop. 1.15]"]
+            vec![
+                "[Prop. 1.42]",
+                "[Prop. 1.31]",
+                "[Prop. 1.29]",
+                "[Post. 5]",
+                "[Prop. 1.31]",
+                "[Prop. 1.43]",
+                "[Prop. 1.15]"
+            ]
         );
         let setting = para_text(&i44[0]);
         assert!(setting.starts_with("Let AB be the given straight-line, C the given triangle, and D the given rectilinear angle."));
@@ -1112,7 +1146,9 @@ mod tests {
             ]
         );
         let setting = para_text(&i45[0]);
-        assert!(setting.starts_with("Let ABCD be the given rectilinear figure, and E the given rectilinear angle."));
+        assert!(setting.starts_with(
+            "Let ABCD be the given rectilinear figure, and E the given rectilinear angle."
+        ));
         assert!(setting.contains("in the given angle E."));
         let proof = para_text(&i45[1]);
         assert!(proof.contains("Let DB have been joined, and let the parallelogram FH, equal to the triangle ABD, have been constructed in the angle HKF, which is equal to E."));
@@ -1120,9 +1156,13 @@ mod tests {
         assert!(proof.contains("Thus, KH is straight-on to HM."));
         assert!(proof.contains("Thus, FG is straight-on to GL."));
         assert!(proof.contains("Thus, KFLM is a parallelogram."));
-        assert!(proof.contains("the whole rectilinear figure ABCD is thus equal to the whole parallelogram KFLM."));
+        assert!(proof.contains(
+            "the whole rectilinear figure ABCD is thus equal to the whole parallelogram KFLM."
+        ));
         let close = para_text(&i45[2]);
-        assert!(close.starts_with("Thus, the parallelogram KFLM, equal to the given rectilinear figure ABCD,"));
+        assert!(close.starts_with(
+            "Thus, the parallelogram KFLM, equal to the given rectilinear figure ABCD,"
+        ));
         assert!(close.contains("in the angle FKM, which is equal to the given (angle) E."));
         assert!(close.contains("the very thing it was required to do."));
     }

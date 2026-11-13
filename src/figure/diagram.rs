@@ -1086,6 +1086,7 @@ mod tests {
     };
     use crate::figure::book2_prop1;
     use crate::figure::book2_prop2;
+    use crate::figure::book2_prop3;
 
     fn has(v: &[String], id: &str) -> bool {
         v.iter().any(|s| s == id)
@@ -3292,6 +3293,76 @@ mod tests {
         assert!(has(&bc, "cb") && !has(&bc, "ac"), "BC is the piece: {bc:?}");
         let cf = d.highlight("CF");
         assert!(has(&cf, "cf") && !has(&cf, "ac") && !has(&cf, "cb"), "CF is the parallel: {cf:?}");
+    }
+
+
+    #[test]
+    fn prop2_3_matches_english_plate() {
+        let d = book2_prop3();
+        let ab = d.at("A").dist(d.at("B"));
+        assert!((ab - 100.0).abs() < 0.05, "AB scale {ab}");
+        assert!((d.at("A").y - d.at("B").y).abs() < 1e-6, "AB level");
+        assert!((d.at("F").y - d.at("E").y).abs() < 1e-6, "FE level");
+        assert!((d.at("A").x - d.at("F").x).abs() < 1e-6, "AF plumb");
+        assert!((d.at("C").x - d.at("D").x).abs() < 1e-6, "CD plumb");
+        assert!((d.at("B").x - d.at("E").x).abs() < 1e-6, "BE plumb");
+        assert!(d.at("C").on_seg(d.at("A"), d.at("B"), 1e-3), "C on AB");
+        assert!(d.at("D").on_seg(d.at("F"), d.at("E"), 1e-3), "D on FE");
+        let cb = d.at("C").dist(d.at("B"));
+        assert!((d.at("C").dist(d.at("D")) - cb).abs() < 0.05, "CD = CB");
+        assert!((d.at("D").dist(d.at("E")) - cb).abs() < 0.05, "DE = CB");
+        assert!((d.at("B").dist(d.at("E")) - cb).abs() < 0.05, "BE = CB");
+        assert!((d.at("A").dist(d.at("C")) / ab - 1.0 / 3.0).abs() < 0.001, "AC/AB from the plate");
+        assert!((cb / ab - 2.0 / 3.0).abs() < 0.001, "CB/AB from the plate");
+        assert!((angle_at(&d, "F", "A", "B").to_degrees() - 90.0).abs() < 0.05, "right angle at A");
+        assert!((angle_at(&d, "A", "B", "E").to_degrees() - 90.0).abs() < 0.05, "right angle at B");
+        assert!((angle_at(&d, "D", "C", "B").to_degrees() - 90.0).abs() < 0.05, "right angle at C");
+        let cdeb = d.highlight("CDEB");
+        assert!(
+            has(&cdeb, "cd") && has(&cdeb, "de") && has(&cdeb, "be") && has(&cdeb, "cb") && !has(&cdeb, "ac")
+                && !has(&cdeb, "fd"),
+            "square CDEB is the boundary, not the production: {cdeb:?}"
+        );
+        let ae = d.highlight("AE");
+        assert!(
+            has(&ae, "ac") && has(&ae, "cb") && has(&ae, "be") && has(&ae, "de") && has(&ae, "fd")
+                && has(&ae, "af") && !has(&ae, "cd"),
+            "rectangle AE is the boundary, not the diagonal or the cut: {ae:?}"
+        );
+        let ad = d.highlight("AD");
+        assert!(
+            has(&ad, "ac") && has(&ad, "cd") && has(&ad, "fd") && has(&ad, "af") && !has(&ad, "cb"),
+            "rectangle AD: {ad:?}"
+        );
+        let ce = d.highlight("CE");
+        assert!(
+            has(&ce, "cb") && has(&ce, "be") && has(&ce, "de") && has(&ce, "cd") && !has(&ce, "ac"),
+            "square CE: {ce:?}"
+        );
+        let db = d.highlight("DB");
+        assert!(
+            has(&db, "de") && has(&db, "be") && has(&db, "cb") && has(&db, "cd") && !has(&db, "fd")
+                && !has(&db, "ac"),
+            "square DB is the boundary, not the diagonal: {db:?}"
+        );
+        let ab_line = d.highlight("AB");
+        assert!(has(&ab_line, "ac") && has(&ab_line, "cb") && !has(&ab_line, "af"), "AB is the whole line: {ab_line:?}");
+        let ac = d.highlight("AC");
+        assert!(has(&ac, "ac") && !has(&ac, "cb"), "AC is the piece: {ac:?}");
+        let bc = d.highlight("BC");
+        assert!(has(&bc, "cb") && !has(&bc, "ac"), "BC is the piece: {bc:?}");
+        let cb_line = d.highlight("CB");
+        assert!(has(&cb_line, "cb") && !has(&cb_line, "ac"), "CB is the piece: {cb_line:?}");
+        let af = d.highlight("AF");
+        assert!(has(&af, "af") && !has(&af, "ac"), "AF is the parallel: {af:?}");
+        let ef = d.highlight("EF");
+        assert!(has(&ef, "de") && has(&ef, "fd") && !has(&ef, "be"), "EF is the side drawn through to F: {ef:?}");
+        let cd = d.highlight("CD");
+        assert!(has(&cd, "cd") && !has(&cd, "de"), "CD is the side: {cd:?}");
+        let be = d.highlight("BE");
+        assert!(has(&be, "be") && !has(&be, "de"), "BE is the side: {be:?}");
+        let dc = d.highlight("DC");
+        assert!(has(&dc, "cd") && !has(&dc, "fd"), "DC is the side: {dc:?}");
     }
 
     fn letter_offset(html: &str, id: &str) -> (f64, f64) {

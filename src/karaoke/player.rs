@@ -23,6 +23,9 @@ pub struct Player {
     /// Token that began at `anchor_ms`. A seek retargets both.
     anchor: RwSignal<usize>,
     anchor_ms: RwSignal<f64>,
+    /// False until Play or a seek. The black plate before that is not time
+    /// spent on the opening word.
+    live: RwSignal<bool>,
 }
 
 impl Player {
@@ -50,6 +53,7 @@ impl Player {
             durs: StoredValue::new(durs.clone()),
             anchor: RwSignal::new(start),
             anchor_ms: RwSignal::new(0.0),
+            live: RwSignal::new(false),
         };
         if autoplay {
             // Let the finished plate sit in solid black before karaoke.
@@ -76,6 +80,7 @@ impl Player {
         let ms = ms.min(self.duration_ms);
         let (i, _) = self.durs.with_value(|durs| token_at_ms(ms, durs));
         let i = self.playable_from(i);
+        self.live.set(true);
         self.anchor.set(i);
         self.anchor_ms.set(now_ms());
         self.elapsed_ms.set(ms);
@@ -118,8 +123,11 @@ impl Player {
             if !playing {
                 // Freeze the clock where the word actually was, not at its start.
                 // A seek already stored that time, so only a live play adds the hold.
+                // Before the first Play the anchor is still page-load, and that
+                // wait is the black plate — counting it eats the opening word.
                 let start = starts.get(i).copied().unwrap_or(0);
-                if self.anchor.get_untracked() == i
+                if self.live.get_untracked()
+                    && self.anchor.get_untracked() == i
                     && self.elapsed_ms.get_untracked() == start
                     && self.elapsed_ms.get_untracked() < self.duration_ms
                 {
@@ -131,8 +139,14 @@ impl Player {
                 }
                 return;
             }
-            // A seek already placed the anchor. A natural step has to.
-            if self.anchor.get_untracked() != i {
+            // The first Play starts the opening word now, not back at page load.
+            if !self.live.get_untracked() {
+                self.live.set(true);
+                self.anchor.set(i);
+                self.anchor_ms.set(now_ms());
+                self.elapsed_ms.set(starts.get(i).copied().unwrap_or(0));
+            } else if self.anchor.get_untracked() != i {
+                // A seek already placed the anchor. A natural step has to.
                 self.anchor.set(i);
                 self.anchor_ms.set(now_ms());
                 self.elapsed_ms.set(starts.get(i).copied().unwrap_or(0));
@@ -148,7 +162,10 @@ impl Player {
             }
             let dur = durs.get(i).copied().unwrap_or(400).max(1);
             let skip_later = skip.clone();
-            let into_word = self.elapsed_ms.get_untracked().saturating_sub(starts.get(i).copied().unwrap_or(0));
+            let into_word = self
+                .elapsed_ms
+                .get_untracked()
+                .saturating_sub(starts.get(i).copied().unwrap_or(0));
             let remaining = dur.saturating_sub(into_word);
             later(remaining.max(1), move || {
                 if self.playing.get_untracked() && self.cursor.get_untracked() == i {

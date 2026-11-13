@@ -1,5 +1,5 @@
 use super::{s, Proposition};
-use crate::figure::{book2_prop1, book2_prop2};
+use crate::figure::{book2_prop1, book2_prop2, book2_prop3};
 
 pub const PROP_1: Proposition = Proposition {
     book: 2,
@@ -45,4 +45,26 @@ pub const PROP_2: Proposition = Proposition {
     ],
 };
 
-pub const PROPOSITIONS: &[Proposition] = &[PROP_1, PROP_2];
+
+pub const PROP_3: Proposition = Proposition {
+    book: 2,
+    number: 3,
+    enunciation: "If a straight-line is cut at random then the rectangle contained by the whole (straight-line), and one of the pieces (of the straight-line), is equal to the rectangle contained by (both of) the pieces, and the square on the aforementioned piece.",
+    figure: book2_prop3,
+    phrases: &[
+        s(1, "For let the straight-line *AB* have been cut, at random, at (point) *C*."),
+        s(1, "I say that the rectangle contained by *AB* and *BC* is equal to the rectangle contained by *AC* and *CB*, plus the square on *BC*."),
+        s(2, "For let the square *CDEB* have been described on *CB*,{[Prop. 1.46]} and let *ED* have been drawn through to *F*, and let *AF* have been drawn through *A*, parallel to either of *CD* or *BE*.{[Prop. 1.31]}"),
+        s(3, "So the (rectangle) *rectangle(AE)* is equal to the (rectangle) *rectangle(AD)* and the (square) *rectangle(CE)*."),
+        s(3, "And *rectangle(AE)* is the rectangle contained by *AB* and *BC*."),
+        s(3, "For it is contained by *AB* and *BE*, and *BE* (is) equal to *BC*."),
+        s(3, "And *rectangle(AD)* (is) the (rectangle contained) by *AC* and *CB*."),
+        s(3, "For *DC* (is) equal to *CB*."),
+        s(3, "And *DB* (is) the square on *CB*."),
+        s(3, "Thus, the rectangle contained by *AB* and *BC* is equal to the rectangle contained by *AC* and *CB*, plus the square on *BC*."),
+        s(4, "Thus, if a straight-line is cut at random then the rectangle contained by the whole (straight-line), and one of the pieces (of the straight-line), is equal to the rectangle contained by (both of) the pieces, and the square on the aforementioned piece."),
+        s(4, "(Which is) the very thing it was required to show."),
+    ],
+};
+
+pub const PROPOSITIONS: &[Proposition] = &[PROP_1, PROP_2, PROP_3];

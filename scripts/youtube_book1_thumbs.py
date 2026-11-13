@@ -1605,9 +1605,15 @@ WASHES4 = {
 # on the whole. One wash — the square is that sum, so a second hue would say
 # the pieces differ from the square. AB is the straight-line the enunciation
 # cuts. C lies on it, so the named line is the whole chord.
+# II.3: the rectangle contained by the whole and one piece equals the rectangle
+# contained by the pieces, plus the square on that piece. Those are one area,
+# so one wash. Two hues would say the rectangle and the square differ. AB is
+# the straight-line the enunciation cuts. C lies on it, so the named line is
+# the whole chord.
 WASHES2 = {
     1: [("B", "C", "H", "G")],
     2: [("A", "B", "E", "D")],
+    3: [("A", "B", "E", "F")],
 }
 
 # Named straight-lines, book by book. Book I is LINES. A produced ray is
@@ -1620,6 +1626,9 @@ LINES2: dict[int, list[tuple[str, str]]] = {
     # AB, the straight-line cut at random. The square on it is the wash. C
     # lies on AB, so the cut line is the whole chord, not the pieces.
     2: [("A", "B")],
+    # AB, the straight-line cut at random. The rectangle it contains with one
+    # piece is the wash. C lies on AB, so the cut line is the whole chord.
+    3: [("A", "B")],
 }
 LINE_ALT2: dict[int, list[tuple[str, str]]] = {}
 LINE_EXTRA2: dict[int, list[tuple[tuple[int, int, int], tuple[tuple[str, str], ...]]]] = {}
@@ -1633,9 +1642,10 @@ def stamp_voice(path: Path) -> None:
     """
     surf = cairo.ImageSurface.create_from_png(str(path))
     cr = cairo.Context(surf)
-    # Big enough to read on a suggested-video card, still in the empty margin.
+    # Upper right, in the empty margin above the figure. The lower right is
+    # where the plate letters sit, so the badge must not land there.
     badge = 168
-    x, y = W - 36 - badge, H - 28 - badge
+    x, y = W - 36 - badge, 28
     cr.set_source_rgb(*rgb(BRICK2))
     cr.arc(x + badge / 2, y + badge / 2, badge / 2, 0, math.tau)
     cr.fill()

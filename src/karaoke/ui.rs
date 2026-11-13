@@ -372,7 +372,10 @@ fn shift_px(script: &Script, line: usize, active: Option<usize>, window: usize) 
     }
     let _ = html.style().set_property("max-height", "none");
     let _ = html.style().set_property("overflow", "visible");
-    let saved_transform = body.style().get_property_value("transform").unwrap_or_default();
+    let saved_transform = body
+        .style()
+        .get_property_value("transform")
+        .unwrap_or_default();
     let _ = body.style().set_property("transform", "none");
     let _ = body.offset_height();
 
@@ -422,12 +425,16 @@ fn cited_wrap_top(body: &web_sys::HtmlElement) -> i32 {
     let mut last = 0.0;
     let mut cited = None;
     for i in 0..words.length() {
-        let Some(n) = words.item(i).and_then(|n| n.dyn_into::<web_sys::HtmlElement>().ok()) else {
+        let Some(n) = words
+            .item(i)
+            .and_then(|n| n.dyn_into::<web_sys::HtmlElement>().ok())
+        else {
             continue;
         };
         let top = n.get_bounding_client_rect().top() - origin;
         last = top;
-        if n.class_list().contains("cite-break") || n.get_elements_by_class_name("cite").length() > 0
+        if n.class_list().contains("cite-break")
+            || n.get_elements_by_class_name("cite").length() > 0
         {
             cited = Some(top);
         }
@@ -438,7 +445,10 @@ fn cited_wrap_top(body: &web_sys::HtmlElement) -> i32 {
 fn line_body(line: usize) -> Option<(web_sys::HtmlElement, web_sys::HtmlElement)> {
     let doc = web_sys::window()?.document()?;
     let lines = doc.get_elements_by_class_name("line");
-    let line_el = lines.item(line as u32)?.dyn_into::<web_sys::Element>().ok()?;
+    let line_el = lines
+        .item(line as u32)?
+        .dyn_into::<web_sys::Element>()
+        .ok()?;
     let html = line_el.dyn_into::<web_sys::HtmlElement>().ok()?;
     let body = html.get_elements_by_class_name("body").item(0)?;
     let body = body.dyn_into::<web_sys::HtmlElement>().ok()?;
@@ -456,7 +466,10 @@ fn wrap_from_dom(body: &web_sys::HtmlElement) -> (Vec<usize>, f32) {
     let mut after_cite = false;
     let mut step = 0i32;
     for i in 0..words.length() {
-        let Some(n) = words.item(i).and_then(|n| n.dyn_into::<web_sys::HtmlElement>().ok()) else {
+        let Some(n) = words
+            .item(i)
+            .and_then(|n| n.dyn_into::<web_sys::HtmlElement>().ok())
+        else {
             continue;
         };
         let top = (n.get_bounding_client_rect().top() - origin).round() as i32;
@@ -501,10 +514,7 @@ fn space(spaced: bool) -> &'static str {
 /// Where a long word may break, so a wrap can show a hyphen. `None` if the
 /// word is short, a name, or already hyphenated.
 fn hyphen_at(text: &str) -> Option<usize> {
-    let bare: String = text
-        .chars()
-        .filter(|c| c.is_ascii_alphabetic())
-        .collect();
+    let bare: String = text.chars().filter(|c| c.is_ascii_alphabetic()).collect();
     if bare.len() < 10 || bare.chars().any(|c| c.is_ascii_uppercase()) {
         return None;
     }
@@ -551,7 +561,10 @@ fn mark_broken_words() {
     };
     let words = doc.get_elements_by_class_name("word break");
     for i in 0..words.length() {
-        let Some(el) = words.item(i).and_then(|n| n.dyn_into::<web_sys::Element>().ok()) else {
+        let Some(el) = words
+            .item(i)
+            .and_then(|n| n.dyn_into::<web_sys::Element>().ok())
+        else {
             continue;
         };
         let pre = el.get_elements_by_class_name("pre").item(0);
