@@ -220,7 +220,12 @@ def plate_letters(text: str) -> str | None:
 
 
 def word_key(text: str) -> str | None:
-    """Library key for a function word. Plate letters are not words."""
+    """Library key for a function word. Plate letters are not words.
+
+    The stored "square" is not the word Piper says for "square": that clip
+    drops the S and is heard as "where". The library clip is "skware" with
+    the leading S faded, which keeps the S of "square".
+    """
     if plate_letters(text):
         return None
     key = "".join(c.lower() for c in text if c.isalpha() or c == "'")
