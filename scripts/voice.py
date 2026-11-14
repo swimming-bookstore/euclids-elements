@@ -38,6 +38,26 @@ def speakable(text: str) -> str:
     raw = "".join(c for c in text if c.isalpha())
     # Plate letters are names, not words. A semicolon is the fallback spelling
     # for a single letter. Pairs are not sent here: Piper reads "A; B." as "AC".
+    # A, AC, CDEB, ED, AF, and BE are exceptions. The stored A has lost its
+    # glide, so "A." is heard as "I"; spelling it "A." again keeps the letter.
+    # Joining that A onto C says "I, C", and "A; C." is the spelling that keeps
+    # both. Joining the stored E onto CDEB says "C, D, B, B" — that E is heard
+    # as B — and "C; D; E; B." is the spelling that keeps all four. The same E
+    # makes ED "B, D"; "E. D." keeps both letters. The same A makes AF
+    # "I, Earth"; "A. F." keeps both letters. The same E makes BE "B, B";
+    # "B. E." keeps both letters.
+    if raw == "A":
+        return "A."
+    if raw == "AC":
+        return "A; C."
+    if raw == "CDEB":
+        return "C; D; E; B."
+    if raw == "ED":
+        return "E. D."
+    if raw == "AF":
+        return "A. F."
+    if raw == "BE":
+        return "B. E."
     if raw and raw.isupper() and 1 <= len(raw) <= 4 and raw != "I":
         return "; ".join(raw) + "."
     spoken = text.replace("(", " ").replace(")", " ")
@@ -216,7 +236,20 @@ def compose_plate(name: str) -> array.array | None:
 
     Piper reads "A; B." as "AC", so a plate name is never synthesized as a
     phrase. Each letter is its own library clip, with a short breath between.
+    A is not taken from the old single-letter clip: that clip has lost its
+    glide and is heard as "I". speakable spells the name "A." instead, and
+    that clip is what the library keeps. AC is not joined from the old A:
+    "I, C". speakable spells that name "A; C." instead. CDEB is not joined
+    either: the stored E is heard as B, so C plus D plus E plus B says
+    "C, D, B, B". speakable spells that name "C; D; E; B." instead. ED is
+    not joined for the same E: E plus D says "B, D", and speakable spells
+    that name "E. D." instead. AF is not joined for the same A: A plus F
+    says "I, Earth", and speakable spells that name "A. F." instead. BE is
+    not joined for the same E: B plus E says "B, B", and speakable spells
+    that name "B. E." instead.
     """
+    if name in ("A", "AC", "CDEB", "ED", "AF", "BE"):
+        return None
     clips = [library_clip(ch) for ch in name]
     if any(clip is None for clip in clips):
         return None
