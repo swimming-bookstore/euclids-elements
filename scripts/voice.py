@@ -235,8 +235,10 @@ def word_key(text: str) -> str | None:
     """Library key for a function word. Plate letters are not words.
 
     The stored "square" is not the word Piper says for "square": that clip
-    drops the S and is heard as "where". The library clip is "skware",
-    which keeps the leading S. Fading that S makes the word "where" again.
+    drops the S and is heard as "where". "skware" keeps an S, but it is
+    read as "es-kware", a particle a plus square, so the word is "a square".
+    The library clip joins the S of "so" to the vowel of "square": one
+    syllable, with the S left on, and no particle a in front.
     The stored "a" is
     not the particle either: an isolated "a" is the letter name, and that
     clip is heard as "ah". An isolated "uh" is heard as "oh", and the short
