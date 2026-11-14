@@ -51,10 +51,13 @@ def speakable(text: str) -> str:
     # A makes AF "I, Earth". "A. F." keeps the letters, but that F is a
     # click, so the stored clip is "A; F." with the dead pause closed.
     # The same E makes BE "B, B"; "B. E." keeps both letters.
+    # Joining the stored A and E says "I, B". "A. E." keeps both letters.
     if raw == "A":
         return "A."
     if raw == "AC":
         return "A; C."
+    if raw == "AE":
+        return "A. E."
     if raw == "CDEB":
         return "C; D; E; B."
     if raw == "ED":
@@ -262,9 +265,10 @@ def compose_plate(name: str) -> array.array | None:
     the letters, but that F is a click, so the stored clip is "A; F." with
     the dead pause between the letters closed. BE is not
     joined for the same E: B plus E says "B, B", and speakable spells that
-    name "B. E." instead.
+    name "B. E." instead. AE is not joined either: A plus E says "I, B",
+    and speakable spells that name "A. E." instead.
     """
-    if name in ("A", "AC", "CDEB", "ED", "AF", "BE"):
+    if name in ("A", "AC", "CDEB", "ED", "AF", "BE", "AE"):
         return None
     clips = [library_clip(ch) for ch in name]
     if any(clip is None for clip in clips):
