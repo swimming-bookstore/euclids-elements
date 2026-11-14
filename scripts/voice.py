@@ -38,7 +38,7 @@ def speakable(text: str) -> str:
     raw = "".join(c for c in text if c.isalpha())
     # Plate letters are names, not words. A semicolon is the fallback spelling
     # for a single letter. Pairs are not sent here: Piper reads "A; B." as "AC".
-    # A, AC, CDEB, ED, AF, and BE are exceptions. The stored A has lost its
+    # A, AC, CDEB, ED, AF, BE, AE, AD, and CE are exceptions. The stored A has lost its
     # glide, so "A." is heard as "I"; spelling it "A." again keeps the letter.
     # Joining that A onto C says "I, C", and "A; C." is the spelling that keeps
     # both. Joining the stored E onto CDEB says "C, D, B, B" — that E is heard
@@ -53,6 +53,7 @@ def speakable(text: str) -> str:
     # The same E makes BE "B, B"; "B. E." keeps both letters.
     # Joining the stored A and E says "I, B". "A. E." keeps both letters.
     # Joining the stored A and D says "I, D". "A. D." keeps both letters.
+    # Joining the stored C and E says "C, B". "C. E." keeps both letters.
     if raw == "A":
         return "A."
     if raw == "AC":
@@ -61,6 +62,8 @@ def speakable(text: str) -> str:
         return "A. D."
     if raw == "AE":
         return "A. E."
+    if raw == "CE":
+        return "C. E."
     if raw == "CDEB":
         return "C; D; E; B."
     if raw == "ED":
@@ -271,9 +274,10 @@ def compose_plate(name: str) -> array.array | None:
     name "B. E." instead. AE is not joined either: A plus E says "I, B",
     and speakable spells that name "A. E." instead. AD is not joined
     either: A plus D says "I, D", and speakable spells that name "A. D."
-    instead.
+    instead. CE is not joined either: C plus E says "C, B", and speakable
+    spells that name "C. E." instead.
     """
-    if name in ("A", "AC", "CDEB", "ED", "AF", "BE", "AE", "AD"):
+    if name in ("A", "AC", "CDEB", "ED", "AF", "BE", "AE", "AD", "CE"):
         return None
     clips = [library_clip(ch) for ch in name]
     if any(clip is None for clip in clips):
