@@ -979,8 +979,6 @@ impl Diagram {
         if on.len() < 2 || on[0].0 != start || on.last().map(|x| x.0) != Some(goal) {
             return None;
         }
-        // A longer collinear chain (B–C–E) still names the short piece (C–E)
-        // when every step of it is drawn.
         let mut ids = Vec::new();
         for w in on.windows(2) {
             let id = self.edge_id(w[0].0, w[1].0)?;
@@ -1087,6 +1085,7 @@ mod tests {
     use crate::figure::book2_prop1;
     use crate::figure::book2_prop2;
     use crate::figure::book2_prop3;
+    use crate::figure::book2_prop4;
 
     fn has(v: &[String], id: &str) -> bool {
         v.iter().any(|s| s == id)
@@ -3363,6 +3362,119 @@ mod tests {
         assert!(has(&be, "be") && !has(&be, "de"), "BE is the side: {be:?}");
         let dc = d.highlight("DC");
         assert!(has(&dc, "cd") && !has(&dc, "fd"), "DC is the side: {dc:?}");
+    }
+
+    #[test]
+    fn prop2_4_matches_english_plate() {
+        let d = book2_prop4();
+        let ab = d.at("A").dist(d.at("B"));
+        assert!((ab - 100.0).abs() < 0.05, "AB scale {ab}");
+        assert!((d.at("A").y - d.at("B").y).abs() < 1e-6, "AB level");
+        assert!((d.at("D").y - d.at("E").y).abs() < 1e-6, "DE level");
+        assert!((d.at("H").y - d.at("K").y).abs() < 1e-6, "HK level");
+        assert!((d.at("A").x - d.at("D").x).abs() < 1e-6, "AD plumb");
+        assert!((d.at("C").x - d.at("F").x).abs() < 1e-6, "CF plumb");
+        assert!((d.at("B").x - d.at("E").x).abs() < 1e-6, "BE plumb");
+        assert!((d.at("H").x - d.at("A").x).abs() < 1e-6, "H on AD");
+        assert!((d.at("K").x - d.at("B").x).abs() < 1e-6, "K on BE");
+        assert!(d.at("C").on_seg(d.at("A"), d.at("B"), 1e-3), "C on AB");
+        assert!(d.at("F").on_seg(d.at("D"), d.at("E"), 1e-3), "F on DE");
+        assert!(d.at("G").on_seg(d.at("B"), d.at("D"), 1e-3), "G on BD");
+        assert!(d.at("G").on_seg(d.at("C"), d.at("F"), 1e-3), "G on CF");
+        assert!(d.at("H").on_seg(d.at("A"), d.at("D"), 1e-3), "H on AD");
+        assert!(d.at("K").on_seg(d.at("B"), d.at("E"), 1e-3), "K on BE");
+        assert!((d.at("A").dist(d.at("D")) - ab).abs() < 0.05, "AD = AB");
+        assert!((d.at("D").dist(d.at("E")) - ab).abs() < 0.05, "DE = AB");
+        assert!((d.at("A").dist(d.at("C")) / ab - 0.7709).abs() < 0.001, "AC/AB from the plate");
+        let cb = d.at("C").dist(d.at("B"));
+        assert!((d.at("C").dist(d.at("G")) - cb).abs() < 0.05, "CG = CB");
+        assert!((d.at("G").dist(d.at("K")) - cb).abs() < 0.05, "GK = CB");
+        assert!((d.at("K").dist(d.at("B")) - cb).abs() < 0.05, "KB = CB");
+        assert!((angle_at(&d, "D", "A", "B").to_degrees() - 90.0).abs() < 0.05, "right angle at A");
+        assert!((angle_at(&d, "A", "B", "E").to_degrees() - 90.0).abs() < 0.05, "right angle at B");
+        assert!((angle_at(&d, "C", "B", "K").to_degrees() - 90.0).abs() < 0.05, "right angle at B of the square");
+        let adeb = d.highlight("ADEB");
+        assert!(
+            has(&adeb, "ah") && has(&adeb, "hd") && has(&adeb, "df") && has(&adeb, "fe")
+                && has(&adeb, "ke") && has(&adeb, "bk") && has(&adeb, "ac") && has(&adeb, "cb")
+                && !has(&adeb, "cg") && !has(&adeb, "bg"),
+            "square ADEB is the boundary, not the cuts: {adeb:?}"
+        );
+        let cgkb = d.highlight("CGKB");
+        assert!(
+            has(&cgkb, "cb") && has(&cgkb, "bk") && has(&cgkb, "gk") && has(&cgkb, "cg")
+                && !has(&cgkb, "ac") && !has(&cgkb, "gf"),
+            "square CGKB is the boundary: {cgkb:?}"
+        );
+        let ag = d.highlight("AG");
+        assert!(
+            has(&ag, "ac") && has(&ag, "cg") && has(&ag, "hg") && has(&ag, "ah") && !has(&ag, "cb"),
+            "rectangle AG: {ag:?}"
+        );
+        let ge = d.highlight("GE");
+        assert!(
+            has(&ge, "gk") && has(&ge, "ke") && has(&ge, "fe") && has(&ge, "gf") && !has(&ge, "cb"),
+            "rectangle GE: {ge:?}"
+        );
+        let hf = d.highlight("HF");
+        assert!(
+            has(&hf, "hg") && has(&hf, "gf") && has(&hf, "df") && has(&hf, "hd") && !has(&hf, "ac"),
+            "square HF: {hf:?}"
+        );
+        let ck = d.highlight("CK");
+        assert!(
+            has(&ck, "cb") && has(&ck, "bk") && has(&ck, "gk") && has(&ck, "cg") && !has(&ck, "ac"),
+            "square CK: {ck:?}"
+        );
+        let bd = d.highlight("BD");
+        assert!(
+            has(&bd, "bg") && has(&bd, "gd") && !has(&bd, "ac") && !has(&bd, "cb"),
+            "BD is the diagonal, not a side: {bd:?}"
+        );
+        let cgb = d.highlight_angle("CGB");
+        assert!(
+            has(&cgb, "cg") && has(&cgb, "bg") && !has(&cgb, "gf") && !has(&cgb, "gd"),
+            "angle CGB is the two rays: {cgb:?}"
+        );
+        let adb = d.highlight_angle("ADB");
+        assert!(
+            has(&adb, "ah") && has(&adb, "hd") && has(&adb, "gd") && has(&adb, "bg")
+                && !has(&adb, "df"),
+            "angle ADB is the two rays: {adb:?}"
+        );
+        let abd = d.highlight_angle("ABD");
+        assert!(
+            has(&abd, "ac") && has(&abd, "cb") && has(&abd, "bg") && has(&abd, "gd")
+                && !has(&abd, "ah"),
+            "angle ABD is the two rays: {abd:?}"
+        );
+        let ab_line = d.highlight("AB");
+        assert!(has(&ab_line, "ac") && has(&ab_line, "cb") && !has(&ab_line, "ah"), "AB is the whole line: {ab_line:?}");
+        let ac = d.highlight("AC");
+        assert!(has(&ac, "ac") && !has(&ac, "cb"), "AC is the piece: {ac:?}");
+        let cb_line = d.highlight("CB");
+        assert!(has(&cb_line, "cb") && !has(&cb_line, "ac"), "CB is the piece: {cb_line:?}");
+        let cf = d.highlight("CF");
+        assert!(has(&cf, "cg") && has(&cf, "gf") && !has(&cf, "ac"), "CF is the parallel: {cf:?}");
+        let hk = d.highlight("HK");
+        assert!(has(&hk, "hg") && has(&hk, "gk") && !has(&hk, "ah"), "HK is the parallel: {hk:?}");
+        let html = d.svg(&[] as &[String]);
+        for name in ["A", "B", "C", "D", "E", "F", "G", "H", "K"] {
+            assert!(
+                html.contains(&format!("class=\"letter\" data-id=\"{name}\"")),
+                "missing letter {name}"
+            );
+        }
+        let (gdx, gdy) = letter_offset(&html, "G");
+        // Fitzpatrick p. 53: G is below-right of BD × CF, inside the square
+        // on CB. Above-right (the old +45°) names the wrong corner.
+        assert!(
+            gdx > 0.4 && gdy > 0.4,
+            "G below-right of the crossing, --dx={gdx} --dy={gdy}"
+        );
+        if std::env::var("II4_SVG").is_ok() {
+            std::fs::write("/tmp/ii4.svg", &html).unwrap();
+        }
     }
 
     fn letter_offset(html: &str, id: &str) -> (f64, f64) {

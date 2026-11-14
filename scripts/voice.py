@@ -38,7 +38,7 @@ def speakable(text: str) -> str:
     raw = "".join(c for c in text if c.isalpha())
     # Plate letters are names, not words. A semicolon is the fallback spelling
     # for a single letter. Pairs are not sent here: Piper reads "A; B." as "AC".
-    # A, AC, CDEB, ED, AF, BE, AE, AD, and CE are exceptions. The stored A has lost its
+    # A, AC, CDEB, ADEB, DE, EB, GE, ED, AF, BE, AE, AD, and CE are exceptions. The stored A has lost its
     # glide, so "A." is heard as "I"; spelling it "A." again keeps the letter.
     # Joining that A onto C says "I, C", and "A; C." is the spelling that keeps
     # both. Joining the stored E onto CDEB says "C, D, B, B" — that E is heard
@@ -57,6 +57,16 @@ def speakable(text: str) -> str:
     # "A. D." keeps both letters, and the stored clip uses that same fuller
     # A joined to D.
     # Joining the stored C and E says "C, B". "C. E." keeps both letters.
+    # Joining the stored E onto ADEB says "A, D, B, B". "A; D; E; B." keeps
+    # all four. The same E makes DE "D, B", EB "B, B", and GE "G, B".
+    # "D; E." is still heard as "D, B". The stored DE is not that spelling.
+    # It is the stored D joined to the E of "B. E.", the letter that stays E.
+    # "G; E." keeps those letters. "E; B." is still heard as
+    # "B, B". "E. B." is the same: that E is heard as B. The vowel of "see"
+    # starts like a stop and is heard as D. The stored EB is the E of "B. E.",
+    # the letter that stays E, joined to B.
+    # ADEB and GE carry the same high hiss as CDEB, so those stored
+    # clips shelf that band.
     if raw == "A":
         return "A."
     if raw == "AC":
@@ -69,6 +79,14 @@ def speakable(text: str) -> str:
         return "C. E."
     if raw == "CDEB":
         return "C; D; E; B."
+    if raw == "ADEB":
+        return "A; D; E; B."
+    if raw == "DE":
+        return "D; E."
+    if raw == "EB":
+        return "E. B."
+    if raw == "GE":
+        return "G; E."
     if raw == "ED":
         return "E. D."
     if raw == "AF":
@@ -245,6 +263,9 @@ def word_key(text: str) -> str | None:
     schwa cut from "if a straight line" does not survive on its own. The
     library clip is the letter name "ay", which is the only reading of this
     word that stays a word when it is spoken alone.
+    The stored "it" is not the word Piper says for "it": that clip is "eat".
+    "It's" keeps a short vowel, but the S is part of the word. The library
+    clip is "sit" with the S faded out, so what is left is "it".
     """
     if plate_letters(text):
         return None
@@ -288,9 +309,16 @@ def compose_plate(name: str) -> array.array | None:
     joined either: A plus D says "I, D", and speakable spells that name
     "A. D." instead. The stored clip uses that same fuller A joined to D.
     CE is not joined either: C plus E says "C, B", and speakable
-    spells that name "C. E." instead.
+    spells that name "C. E." instead. ADEB and GE are not joined
+    either: the stored E is heard as B, so those names say ADDB and
+    GB. speakable spells them "A; D; E; B." and "G; E." instead,
+    and the stored clips shelf the high band the way CDEB does. DE is not
+    joined either. "D; E." is still heard as "D, B". The stored DE is the
+    stored D joined to the E of "B. E.", the letter that stays E. EB is not
+    joined either. "E; B." and "E. B." are still heard as "B, B", and so is
+    the E of "E. D." when it is put in front of B. The stored EB is the E of "B. E.", the letter that stays E, joined to B.
     """
-    if name in ("A", "AC", "CDEB", "ED", "AF", "BE", "AE", "AD", "CE"):
+    if name in ("A", "AC", "CDEB", "ED", "AF", "BE", "AE", "AD", "CE", "ADEB", "DE", "EB", "GE"):
         return None
     clips = [library_clip(ch) for ch in name]
     if any(clip is None for clip in clips):

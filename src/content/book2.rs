@@ -1,5 +1,5 @@
 use super::{s, Proposition};
-use crate::figure::{book2_prop1, book2_prop2, book2_prop3};
+use crate::figure::{book2_prop1, book2_prop2, book2_prop3, book2_prop4};
 
 pub const PROP_1: Proposition = Proposition {
     book: 2,
@@ -67,4 +67,46 @@ pub const PROP_3: Proposition = Proposition {
     ],
 };
 
-pub const PROPOSITIONS: &[Proposition] = &[PROP_1, PROP_2, PROP_3];
+pub const PROP_4: Proposition = Proposition {
+    book: 2,
+    number: 4,
+    enunciation: "If a straight-line is cut at random then the square on the whole (straight-line) is equal to the (sum of the) squares on the pieces (of the straight-line), and twice the rectangle contained by the pieces.",
+    figure: book2_prop4,
+    phrases: &[
+        s(1, "For let the straight-line *AB* have been cut, at random, at (point) *C*."),
+        s(1, "I say that the square on *AB* is equal to the (sum of the) squares on *AC* and *CB*, and twice the rectangle contained by *AC* and *CB*."),
+        s(2, "For let the square *ADEB* have been described on *AB*,{[Prop. 1.46]} and let *BD* have been joined, and let *CF* have been drawn through *C*, parallel to either of *AD* or *EB*,{[Prop. 1.31]} and let *HK* have been drawn through *G*, parallel to either of *AB* or *DE*.{[Prop. 1.31]}"),
+        s(3, "And since *CF* is parallel to *AD*, and *BD* has fallen across them, the external angle *angle(CGB)* is equal to the internal and opposite (angle) *angle(ADB)*.{[Prop. 1.29]}"),
+        s(3, "But, *angle(ADB)* is equal to *angle(ABD)*, since the side *BA* is also equal to *AD*.{[Prop. 1.5]}"),
+        s(3, "Thus, angle *angle(CGB)* is also equal to *angle(GBC)*."),
+        s(3, "So the side *BC* is equal to the side *CG*.{[Prop. 1.6]}"),
+        s(3, "But, *CB* is equal to *GK*, and *CG* to *KB*.{[Prop. 1.34]}"),
+        s(3, "Thus, *GK* is also equal to *KB*."),
+        s(3, "Thus, *CGKB* is equilateral."),
+        s(3, "So I say that (it is) also right-angled."),
+        s(3, "For since *CG* is parallel to *BK* [and the straight-line *CB* has fallen across them], the angles *angle(KBC)* and *angle(GCB)* are thus equal to two right-angles.{[Prop. 1.29]}"),
+        s(3, "But *angle(KBC)* (is) a right-angle."),
+        s(3, "Thus, *angle(BCG)* (is) also a right-angle."),
+        s(3, "So the opposite (angles) *angle(CGK)* and *angle(GKB)* are also right-angles.{[Prop. 1.34]}"),
+        s(3, "Thus, *CGKB* is right-angled."),
+        s(3, "And it was also shown (to be) equilateral."),
+        s(3, "Thus, it is a square."),
+        s(3, "And it is on *CB*."),
+        s(3, "So, for the same (reasons), *HF* is also a square."),
+        s(3, "And it is on *HG*, that is to say [on] *AC*.{[Prop. 1.34]}"),
+        s(3, "Thus, the squares *HF* and *KC* are on *AC* and *CB* (respectively)."),
+        s(3, "And the (rectangle) *rectangle(AG)* is equal to the (rectangle) *rectangle(GE)*.{[Prop. 1.43]}"),
+        s(3, "And *rectangle(AG)* is the (rectangle contained) by *AC* and *CB*."),
+        s(3, "For *GC* (is) equal to *CB*."),
+        s(3, "Thus, *rectangle(GE)* is also equal to the (rectangle contained) by *AC* and *CB*."),
+        s(3, "Thus, the (rectangles) *rectangle(AG)* and *rectangle(GE)* are equal to twice the (rectangle contained) by *AC* and *CB*."),
+        s(3, "And *HF* and *CK* are the squares on *AC* and *CB* (respectively)."),
+        s(3, "Thus, the four (figures) *HF*, *CK*, *rectangle(AG)*, and *rectangle(GE)* are equal to the (sum of the) squares on *AC* and *BC*, and twice the rectangle contained by *AC* and *CB*."),
+        s(3, "But, the (figures) *HF*, *CK*, *rectangle(AG)*, and *rectangle(GE)* are (equivalent to) the whole of *ADEB*, which is the square on *AB*."),
+        s(3, "Thus, the square on *AB* is equal to the (sum of the) squares on *AC* and *CB*, and twice the rectangle contained by *AC* and *CB*."),
+        s(4, "Thus, if a straight-line is cut at random then the square on the whole (straight-line) is equal to the (sum of the) squares on the pieces (of the straight-line), and twice the rectangle contained by the pieces."),
+        s(4, "(Which is) the very thing it was required to show."),
+    ],
+};
+
+pub const PROPOSITIONS: &[Proposition] = &[PROP_1, PROP_2, PROP_3, PROP_4];
