@@ -42,10 +42,12 @@ def speakable(text: str) -> str:
     # glide, so "A." is heard as "I"; spelling it "A." again keeps the letter.
     # Joining that A onto C says "I, C", and "A; C." is the spelling that keeps
     # both. Joining the stored E onto CDEB says "C, D, B, B" — that E is heard
-    # as B — and "C; D; E; B." is the spelling that keeps all four. The same E
-    # makes ED "B, D"; "E. D." keeps both letters. The same A makes AF
-    # "I, Earth"; "A. F." keeps both letters. The same E makes BE "B, B";
-    # "B. E." keeps both letters.
+    # as B — and "C; D; E; B." is the spelling that keeps all four. That
+    # spelling carries a high-pitched hiss the other words do not, so the
+    # stored clip is the phrase with the high band shelved down. The same E
+    # makes ED "B, D"; "E. D." keeps both letters, and that clip is shelved
+    # the same way. The same A makes AF "I, Earth"; "A. F." keeps both
+    # letters. The same E makes BE "B, B"; "B. E." keeps both letters.
     if raw == "A":
         return "A."
     if raw == "AC":
@@ -241,12 +243,14 @@ def compose_plate(name: str) -> array.array | None:
     that clip is what the library keeps. AC is not joined from the old A:
     "I, C". speakable spells that name "A; C." instead. CDEB is not joined
     either: the stored E is heard as B, so C plus D plus E plus B says
-    "C, D, B, B". speakable spells that name "C; D; E; B." instead. ED is
-    not joined for the same E: E plus D says "B, D", and speakable spells
-    that name "E. D." instead. AF is not joined for the same A: A plus F
-    says "I, Earth", and speakable spells that name "A. F." instead. BE is
-    not joined for the same E: B plus E says "B, B", and speakable spells
-    that name "B. E." instead.
+    "C, D, B, B". speakable spells that name "C; D; E; B." instead. That
+    spelling carries a high-pitched hiss the other words do not, so the
+    stored clip is the phrase with the high band shelved down. ED is not
+    joined for the same E: E plus D says "B, D", and speakable spells that
+    name "E. D." instead, shelved the same way. AF is not joined for the
+    same A: A plus F says "I, Earth", and speakable spells that name
+    "A. F." instead. BE is not joined for the same E: B plus E says "B, B",
+    and speakable spells that name "B. E." instead.
     """
     if name in ("A", "AC", "CDEB", "ED", "AF", "BE"):
         return None
