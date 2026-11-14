@@ -239,8 +239,10 @@ def word_key(text: str) -> str | None:
     which keeps the leading S. Fading that S makes the word "where" again.
     The stored "a" is
     not the particle either: an isolated "a" is the letter name, and that
-    clip is heard as "ah". The library clip is the schwa cut from
-    "a straight line".
+    clip is heard as "ah". An isolated "uh" is heard as "oh", and the short
+    schwa cut from "if a straight line" does not survive on its own. The
+    library clip is the letter name "ay", which is the only reading of this
+    word that stays a word when it is spoken alone.
     """
     if plate_letters(text):
         return None
