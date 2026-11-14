@@ -72,11 +72,7 @@ impl Script {
     }
 }
 
-pub fn compile(
-    phrases: &[crate::content::Phrase],
-    map: &impl PartsMap,
-    timing: Timing,
-) -> Script {
+pub fn compile(phrases: &[crate::content::Phrase], map: &impl PartsMap, timing: Timing) -> Script {
     // "the angle *BAC*" and a later "triangle *ABC*" share a phrase list.
     // Each letter-run is classified from the words that introduce it, not
     // from a flag that leaks across sentences.
@@ -88,6 +84,34 @@ pub fn compile(
                 tokens: tokenize(p.text, map, &timing),
             })
             .collect(),
+    }
+}
+
+/// The stored voice clip is longer than the default beat. Hold the highlight
+/// until that clip can finish, so the next word is not already lit.
+pub fn hold_for_voice(script: &mut Script) {
+    for line in &mut script.lines {
+        for tok in &mut line.tokens {
+            if tok.cite || tok.dur_ms == 0 {
+                continue;
+            }
+            let bare: String = tok
+                .text
+                .chars()
+                .filter(|c| c.is_ascii_alphabetic())
+                .collect();
+            let need = match bare.as_str() {
+                "rectangle" => 920,
+                "straightline" => 880,
+                "aforementioned" => 900,
+                "described" => 800,
+                "CDEB" => 2200,
+                _ => 0,
+            };
+            if need > tok.dur_ms {
+                tok.dur_ms = need;
+            }
+        }
     }
 }
 
@@ -170,10 +194,7 @@ fn pentagon_object(piece: &str) -> Option<String> {
 fn wrapped_letters(piece: &str, kind: &str) -> Option<String> {
     let t = piece.trim();
     let rest = t.strip_prefix(kind)?.strip_prefix('(')?.strip_suffix(')')?;
-    let name: String = rest
-        .chars()
-        .filter(|c| c.is_ascii_alphabetic())
-        .collect();
+    let name: String = rest.chars().filter(|c| c.is_ascii_alphabetic()).collect();
     // angle(s) is Fitzpatrick's plural, not an angle object.
     if name.len() < 2 || !name.chars().all(|c| c.is_ascii_uppercase()) {
         return None;
@@ -304,7 +325,10 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
                         || vertex
                         || (nletters == 3
                             && ((n == 0 || carried)
-                                && letters_are_angles(if carried { &[] } else { &before }, &following)
+                                && letters_are_angles(
+                                    if carried { &[] } else { &before },
+                                    &following,
+                                )
                                 && !introduced_as_figure(&before)
                                 && !paired_with_figure(&before, &following)
                                 || carried)));
@@ -320,15 +344,7 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
                 } else {
                     FigKind::Line
                 };
-                push_words(
-                    &mut out,
-                    spoken,
-                    true,
-                    map,
-                    timing,
-                    kind,
-                    &mut pending_open,
-                );
+                push_words(&mut out, spoken, true, map, timing, kind, &mut pending_open);
                 if n + 1 < pieces.len() {
                     recent.clear();
                     angle_vertex = false;
@@ -336,9 +352,10 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
             }
             recent.clear();
             glue_punct(&mut out, &chars, &mut i, &mut pending_open);
-            if out.last().is_some_and(|t| {
-                !t.cite && (t.text.ends_with('.') || t.text.ends_with(';'))
-            }) {
+            if out
+                .last()
+                .is_some_and(|t| !t.cite && (t.text.ends_with('.') || t.text.ends_with(';')))
+            {
                 angle_vertex = false;
             }
             continue;
@@ -351,7 +368,8 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
             // "(angle)" is one introducer. A parenthesis with no letters
             // still waits to glue onto the next word.
             let start = i;
-            while i < chars.len() && (opens_word(chars[i]) || chars[i].is_ascii_alphabetic() || chars[i] == '-')
+            while i < chars.len()
+                && (opens_word(chars[i]) || chars[i].is_ascii_alphabetic() || chars[i] == '-')
             {
                 i += 1;
             }
@@ -359,7 +377,15 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
                 let word: String = chars[start..i].iter().collect();
                 recent.push(word.clone());
                 note_angle_list(&word, &mut angle_vertex);
-                push_words(&mut out, &word, false, map, timing, FigKind::Line, &mut pending_open);
+                push_words(
+                    &mut out,
+                    &word,
+                    false,
+                    map,
+                    timing,
+                    FigKind::Line,
+                    &mut pending_open,
+                );
             } else {
                 pending_open.push(chars[start]);
                 i = start + 1;
@@ -386,7 +412,15 @@ fn tokenize(src: &str, map: &impl PartsMap, timing: &Timing) -> Vec<Token> {
                 recent.push(stem_src.to_string());
                 note_angle_list(stem_src, &mut angle_vertex);
             }
-            push_words(&mut out, &word, false, map, timing, FigKind::Line, &mut pending_open);
+            push_words(
+                &mut out,
+                &word,
+                false,
+                map,
+                timing,
+                FigKind::Line,
+                &mut pending_open,
+            );
         }
     }
     mark_spaces(&mut out);
@@ -694,8 +728,8 @@ fn split_sentence(inner: &str) -> Vec<String> {
     let mut start = 0;
     let mut i = 0;
     while i + 1 < chars.len() {
-        let boundary = chars[i] == '.'
-            && (chars[i + 1].is_ascii_uppercase() || chars[i + 1].is_whitespace());
+        let boundary =
+            chars[i] == '.' && (chars[i + 1].is_ascii_uppercase() || chars[i + 1].is_whitespace());
         if boundary {
             out.push(chars[start..=i].iter().collect());
             start = i + 1;
@@ -825,7 +859,7 @@ fn push_one(
 mod tests {
     use super::*;
     use crate::content::Phrase;
-    use crate::figure::{book1_prop4, book1_prop21, book1_prop23, book1_prop27, book1_prop32};
+    use crate::figure::{book1_prop21, book1_prop23, book1_prop27, book1_prop32, book1_prop4};
 
     fn parts_of(text: &'static str, word: &str) -> Vec<String> {
         let phrases = [Phrase { para: 1, text }];
@@ -873,7 +907,10 @@ mod tests {
         let bac = parts_of("the angle *BAC*", "BAC");
         assert!(is_angle(&bac), "∠BAC is not triangle ABC: {bac:?}");
         let abc = parts_of("triangle *ABC*", "ABC");
-        assert!(abc.iter().any(|s| s == "bc"), "triangle ABC includes the base: {abc:?}");
+        assert!(
+            abc.iter().any(|s| s == "bc"),
+            "triangle ABC includes the base: {abc:?}"
+        );
     }
 
     #[test]
@@ -890,7 +927,9 @@ mod tests {
         );
         let abe = first_parts(&script, "ABE");
         assert!(
-            abe.iter().any(|s| s == "bd") && abe.iter().any(|s| s == "ab") && abe.iter().any(|s| s == "ae"),
+            abe.iter().any(|s| s == "bd")
+                && abe.iter().any(|s| s == "ab")
+                && abe.iter().any(|s| s == "ae"),
             "triangle ABE keeps its sides: {abe:?}"
         );
         let bdc = first_parts(
@@ -905,7 +944,9 @@ mod tests {
             "BDC",
         );
         assert!(
-            bdc.iter().any(|s| s == "bd") && bdc.iter().any(|s| s == "dc") && !bdc.iter().any(|s| s == "bc"),
+            bdc.iter().any(|s| s == "bd")
+                && bdc.iter().any(|s| s == "dc")
+                && !bdc.iter().any(|s| s == "bc"),
             "∠BDC is not a triangle: {bdc:?}"
         );
         // "in triangle CDE the external angle BDC" used to keep the figure
@@ -979,7 +1020,10 @@ mod tests {
         let ab = parts_of("having side *AC* greater than *AB*.", "AB");
         assert!(ab.iter().any(|s| s == "ab") && !ab.iter().any(|s| s == "bc"));
         let abc = parts_of("of the triangle *ABC* greater than *AB*", "ABC");
-        assert!(abc.iter().any(|s| s == "bc"), "a named triangle stays a triangle: {abc:?}");
+        assert!(
+            abc.iter().any(|s| s == "bc"),
+            "a named triangle stays a triangle: {abc:?}"
+        );
     }
 
     #[test]
@@ -1071,7 +1115,9 @@ mod tests {
             .collect::<Vec<_>>();
         assert!(
             bca.len() >= 2
-                && bca[0].iter().any(|s| s == "bc" || s == "cb" || s == "bh" || s == "hc")
+                && bca[0]
+                    .iter()
+                    .any(|s| s == "bc" || s == "cb" || s == "bh" || s == "hc")
                 && bca[0].iter().any(|s| s == "ca" || s == "ac")
                 && !bca[0].iter().any(|s| s == "ab" || s == "ba"),
             "BCA equal to EFD is ∠BCA, not triangle BCA: {bca:?}"
@@ -1128,7 +1174,11 @@ mod tests {
     #[test]
     fn prop32_added_acb_is_an_angle() {
         let phrases = crate::content::get(1, 32).unwrap().phrases;
-        let say = phrases.iter().find(|p| p.text.contains("added to both")).unwrap().text;
+        let say = phrases
+            .iter()
+            .find(|p| p.text.contains("added to both"))
+            .unwrap()
+            .text;
         assert!(say.contains("*angle(ACB)*"), "added ACB is an angle: {say}");
         let script = compile(phrases, &book1_prop32(), Timing::default());
         let parts = first_parts(&script, "ACB");
@@ -1155,7 +1205,11 @@ mod tests {
             "the final sum names angles: {say}"
         );
         let script = compile(phrases, &book1_prop32(), Timing::default());
-        for (word, closed) in [("ACB", ["ab", "ba"]), ("CBA", ["ac", "ca"]), ("CAB", ["bc", "cb"])] {
+        for (word, closed) in [
+            ("ACB", ["ab", "ba"]),
+            ("CBA", ["ac", "ca"]),
+            ("CAB", ["bc", "cb"]),
+        ] {
             let parts = script
                 .lines
                 .iter()
@@ -1205,7 +1259,10 @@ mod tests {
                 .last()
                 .map(|t| t.parts.clone())
                 .unwrap_or_default();
-            let rays_hit = rays.iter().filter(|s| parts.iter().any(|p| p == *s)).count();
+            let rays_hit = rays
+                .iter()
+                .filter(|s| parts.iter().any(|p| p == *s))
+                .count();
             assert!(
                 rays_hit >= 2 && closed.iter().all(|s| !parts.iter().any(|p| p == s)),
                 "{word} is an angle, not the triangle: {parts:?}"
@@ -1243,8 +1300,14 @@ mod tests {
         let text = "I say that the angle *ABC* is equal to *ACB*. And they are at the base of triangle *ABC*.";
         let runs = all_parts(text, "ABC");
         assert_eq!(runs.len(), 2, "runs={runs:?}");
-        assert!(!runs[0].iter().any(|s| s == "ac"), "first ABC is an angle: {runs:?}");
-        assert!(runs[1].iter().any(|s| s == "bc"), "second ABC is the triangle");
+        assert!(
+            !runs[0].iter().any(|s| s == "ac"),
+            "first ABC is an angle: {runs:?}"
+        );
+        assert!(
+            runs[1].iter().any(|s| s == "bc"),
+            "second ABC is the triangle"
+        );
     }
 
     #[test]
@@ -1260,7 +1323,9 @@ mod tests {
                 if t.text.contains("EFG") {
                     found = true;
                     assert!(
-                        t.parts.iter().any(|p| p == "fd" || p == "df" || p == "dg" || p == "gd")
+                        t.parts
+                            .iter()
+                            .any(|p| p == "fd" || p == "df" || p == "dg" || p == "gd")
                             && t.parts.iter().any(|p| p == "ef" || p == "fe")
                             && !t.parts.iter().any(|p| p == "fg" || p == "gf"),
                         "sung ∠EFG lights the wedge at F, not a drawn FG, got {:?} for {:?}",
@@ -1288,9 +1353,8 @@ mod tests {
                 .map(|t| t.parts.clone())
                 .collect()
         };
-        let triangle = |parts: &[String], sides: &[&str]| {
-            sides.iter().all(|s| parts.iter().any(|p| p == s))
-        };
+        let triangle =
+            |parts: &[String], sides: &[&str]| sides.iter().all(|s| parts.iter().any(|p| p == s));
         let dbc = runs("DBC");
         assert!(dbc.len() >= 3, "DBC runs: {dbc:?}");
         for (i, parts) in dbc.iter().enumerate() {
@@ -1335,9 +1399,8 @@ mod tests {
                 .map(|t| t.parts.clone())
                 .collect()
         };
-        let triangle = |parts: &[String], sides: &[&str]| {
-            sides.iter().all(|s| parts.iter().any(|p| p == s))
-        };
+        let triangle =
+            |parts: &[String], sides: &[&str]| sides.iter().all(|s| parts.iter().any(|p| p == s));
         let cde = runs("CDE");
         assert!(
             cde.len() >= 1 && triangle(&cde[0], &["df", "fc", "de", "ce"]),
@@ -1352,7 +1415,10 @@ mod tests {
         );
         let dce = runs("DCE");
         assert!(
-            dce.len() >= 2 && dce.iter().all(|parts| triangle(parts, &["df", "fc", "de", "ce"])),
+            dce.len() >= 2
+                && dce
+                    .iter()
+                    .all(|parts| triangle(parts, &["df", "fc", "de", "ce"])),
             "every DCE is △DCE, not ∠DCE: {dce:?}"
         );
         let abc = runs("ABC");
@@ -1391,12 +1457,18 @@ mod tests {
         }
         let bec = runs("BEC");
         assert!(
-            bec.len() >= 1 && bec.iter().all(|p| has(p, "eb") && has(p, "ec") && has(p, "bc")),
+            bec.len() >= 1
+                && bec
+                    .iter()
+                    .all(|p| has(p, "eb") && has(p, "ec") && has(p, "bc")),
             "BEC is △BEC: {bec:?}"
         );
         let abc = runs("ABC");
         assert!(
-            abc.len() >= 2 && abc.iter().all(|p| has(p, "ab") && has(p, "ac") && has(p, "bc")),
+            abc.len() >= 2
+                && abc
+                    .iter()
+                    .all(|p| has(p, "ab") && has(p, "ac") && has(p, "bc")),
             "ABC is △ABC: {abc:?}"
         );
         let abcd = runs("ABCD");
@@ -1457,7 +1529,9 @@ mod tests {
         let cef = runs("CEF");
         assert!(
             cef.len() >= 2
-                && cef.iter().all(|p| has(p, "ec") && has(p, "ef") && !has(p, "cf") && !has(p, "ac")),
+                && cef
+                    .iter()
+                    .all(|p| has(p, "ec") && has(p, "ef") && !has(p, "cf") && !has(p, "ac")),
             "CEF is ∠CEF: {cef:?}"
         );
         let d = runs("D");
@@ -1490,38 +1564,54 @@ mod tests {
         assert!(eh.len() >= 2, "EH runs: {eh:?}");
         for (i, parts) in eh.iter().enumerate() {
             assert!(
-                has(parts, "ae") && has(parts, "ek") && has(parts, "hk") && has(parts, "ah") && !has(parts, "ak"),
+                has(parts, "ae")
+                    && has(parts, "ek")
+                    && has(parts, "hk")
+                    && has(parts, "ah")
+                    && !has(parts, "ak"),
                 "EH run {i} is parallelogram EH, not the diagonal: {parts:?}"
             );
         }
         let fg = runs("FG");
         assert!(
             fg.len() >= 1
-                && fg.iter().all(|p| has(p, "kf") && has(p, "fc") && has(p, "gc") && has(p, "kg") && !has(p, "kc")),
+                && fg.iter().all(|p| has(p, "kf")
+                    && has(p, "fc")
+                    && has(p, "gc")
+                    && has(p, "kg")
+                    && !has(p, "kc")),
             "FG is parallelogram FG: {fg:?}"
         );
         let bk = runs("BK");
         assert!(
             bk.len() >= 3
-                && bk.iter().all(|p| has(p, "eb") && has(p, "ek") && has(p, "kg") && has(p, "bg")),
+                && bk
+                    .iter()
+                    .all(|p| has(p, "eb") && has(p, "ek") && has(p, "kg") && has(p, "bg")),
             "BK is complement BK: {bk:?}"
         );
         let kd = runs("KD");
         assert!(
             kd.len() >= 3
-                && kd.iter().all(|p| has(p, "kf") && has(p, "df") && has(p, "hd") && has(p, "hk")),
+                && kd
+                    .iter()
+                    .all(|p| has(p, "kf") && has(p, "df") && has(p, "hd") && has(p, "hk")),
             "KD is complement KD: {kd:?}"
         );
         let kfc = runs("KFC");
         assert!(
             kfc.len() >= 2
-                && kfc.iter().all(|p| has(p, "kf") && has(p, "fc") && has(p, "kc") && !has(p, "kg")),
+                && kfc
+                    .iter()
+                    .all(|p| has(p, "kf") && has(p, "fc") && has(p, "kc") && !has(p, "kg")),
             "KFC is triangle KFC, not an angle and not a walk through G: {kfc:?}"
         );
         let kgc = runs("KGC");
         assert!(
             kgc.len() >= 2
-                && kgc.iter().all(|p| has(p, "kg") && has(p, "gc") && has(p, "kc")),
+                && kgc
+                    .iter()
+                    .all(|p| has(p, "kg") && has(p, "gc") && has(p, "kc")),
             "KGC is triangle KGC: {kgc:?}"
         );
         let ak = runs("AK");
@@ -1552,39 +1642,61 @@ mod tests {
         let has = |parts: &[String], id: &str| parts.iter().any(|p| p == id);
         let a = runs("A");
         assert!(
-            a.len() >= 4 && a.iter().all(|p| has(p, "seg-a") && has(p, "A") && !has(p, "bc")),
+            a.len() >= 4
+                && a.iter()
+                    .all(|p| has(p, "seg-a") && has(p, "A") && !has(p, "bc")),
             "A is the given line: {a:?}"
         );
         let bc = runs("BC");
         assert!(
-            bc.len() >= 2 && bc.iter().all(|p| has(p, "bd") && has(p, "de") && has(p, "ec")),
+            bc.len() >= 2
+                && bc
+                    .iter()
+                    .all(|p| has(p, "bd") && has(p, "de") && has(p, "ec")),
             "BC is the whole cut line: {bc:?}"
         );
         let bh = runs("BH");
         assert!(
             bh.len() >= 2
                 && bh.iter().all(|p| {
-                    has(p, "bd") && has(p, "de") && has(p, "ec") && has(p, "ch") && has(p, "gb")
-                        && has(p, "gk") && !has(p, "dk")
+                    has(p, "bd")
+                        && has(p, "de")
+                        && has(p, "ec")
+                        && has(p, "ch")
+                        && has(p, "gb")
+                        && has(p, "gk")
+                        && !has(p, "dk")
                 }),
             "BH is the whole rectangle, not a piece: {bh:?}"
         );
         let bk = runs("BK");
         assert!(
             bk.len() >= 2
-                && bk.iter().all(|p| has(p, "bd") && has(p, "dk") && has(p, "gk") && has(p, "gb") && !has(p, "de")),
+                && bk.iter().all(|p| has(p, "bd")
+                    && has(p, "dk")
+                    && has(p, "gk")
+                    && has(p, "gb")
+                    && !has(p, "de")),
             "BK is that rectangle: {bk:?}"
         );
         let dl = runs("DL");
         assert!(
             dl.len() >= 2
-                && dl.iter().all(|p| has(p, "de") && has(p, "el") && has(p, "kl") && has(p, "dk") && !has(p, "ec")),
+                && dl.iter().all(|p| has(p, "de")
+                    && has(p, "el")
+                    && has(p, "kl")
+                    && has(p, "dk")
+                    && !has(p, "ec")),
             "DL is that rectangle: {dl:?}"
         );
         let eh = runs("EH");
         assert!(
             eh.len() >= 2
-                && eh.iter().all(|p| has(p, "ec") && has(p, "ch") && has(p, "lh") && has(p, "el") && !has(p, "bd")),
+                && eh.iter().all(|p| has(p, "ec")
+                    && has(p, "ch")
+                    && has(p, "lh")
+                    && has(p, "el")
+                    && !has(p, "bd")),
             "EH is that rectangle: {eh:?}"
         );
         assert_eq!(display_letters("rectangle(BH)"), "BH");
@@ -1615,15 +1727,27 @@ mod tests {
             .map(|t| display_letters(&t.text))
             .collect();
         let spoken = shown.join(" ");
-        assert!(spoken.contains("straight-line AB"), "AB is the given line: {spoken}");
+        assert!(
+            spoken.contains("straight-line AB"),
+            "AB is the given line: {spoken}"
+        );
         assert!(spoken.contains("point C"), "C is the cut: {spoken}");
-        assert!(spoken.contains("square ADEB"), "ADEB is the square: {spoken}");
+        assert!(
+            spoken.contains("square ADEB"),
+            "ADEB is the square: {spoken}"
+        );
         assert!(spoken.contains("(square) AE"), "AE is the square: {spoken}");
-        assert!(spoken.contains("(rectangles) AF"), "AF is a rectangle: {spoken}");
+        assert!(
+            spoken.contains("(rectangles) AF"),
+            "AF is a rectangle: {spoken}"
+        );
         assert!(spoken.contains("and CE"), "CE is a rectangle: {spoken}");
         let ab = runs("AB");
         assert!(
-            ab.len() >= 4 && ab.iter().all(|p| has(p, "ac") && has(p, "cb") && !has(p, "cf")),
+            ab.len() >= 4
+                && ab
+                    .iter()
+                    .all(|p| has(p, "ac") && has(p, "cb") && !has(p, "cf")),
             "AB is the whole cut line: {ab:?}"
         );
         let bc = runs("BC");
@@ -1640,8 +1764,13 @@ mod tests {
         assert!(
             adeb.len() >= 1
                 && adeb.iter().all(|p| {
-                    has(p, "ad") && has(p, "df") && has(p, "fe") && has(p, "be") && has(p, "ac")
-                        && has(p, "cb") && !has(p, "cf")
+                    has(p, "ad")
+                        && has(p, "df")
+                        && has(p, "fe")
+                        && has(p, "be")
+                        && has(p, "ac")
+                        && has(p, "cb")
+                        && !has(p, "cf")
                 }),
             "ADEB is the square, not the cut: {adeb:?}"
         );
@@ -1649,21 +1778,34 @@ mod tests {
         assert!(
             ae.len() >= 2
                 && ae.iter().all(|p| {
-                    has(p, "ac") && has(p, "cb") && has(p, "be") && has(p, "ad") && has(p, "df")
-                        && has(p, "fe") && !has(p, "cf")
+                    has(p, "ac")
+                        && has(p, "cb")
+                        && has(p, "be")
+                        && has(p, "ad")
+                        && has(p, "df")
+                        && has(p, "fe")
+                        && !has(p, "cf")
                 }),
             "AE is the square, not a diagonal: {ae:?}"
         );
         let af = runs("AF");
         assert!(
             af.len() >= 2
-                && af.iter().all(|p| has(p, "ac") && has(p, "cf") && has(p, "df") && has(p, "ad") && !has(p, "cb")),
+                && af.iter().all(|p| has(p, "ac")
+                    && has(p, "cf")
+                    && has(p, "df")
+                    && has(p, "ad")
+                    && !has(p, "cb")),
             "AF is that rectangle: {af:?}"
         );
         let ce = runs("CE");
         assert!(
             ce.len() >= 2
-                && ce.iter().all(|p| has(p, "cb") && has(p, "be") && has(p, "fe") && has(p, "cf") && !has(p, "ac")),
+                && ce.iter().all(|p| has(p, "cb")
+                    && has(p, "be")
+                    && has(p, "fe")
+                    && has(p, "cf")
+                    && !has(p, "ac")),
             "CE is that rectangle: {ce:?}"
         );
         let cf = runs("CF");
@@ -1683,6 +1825,187 @@ mod tests {
         );
         assert_eq!(display_letters("rectangle(AE)"), "AE");
         assert_eq!(display_letters("rectangle(AF)"), "AF");
+        assert_eq!(display_letters("rectangle(CE)"), "CE");
+    }
+
+    #[test]
+    fn speak_dump() {
+        // SPEAK=1 cargo test --bin euclids-elements speak_dump -- --nocapture --exact
+        let book = std::env::var("SPEAK_BOOK")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(2);
+        let prop = std::env::var("SPEAK_PROP")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(3);
+        let Some(p) = crate::content::get(book, prop) else {
+            return;
+        };
+        let script = compile(p.phrases, &(p.figure)(), Timing::default());
+        if std::env::var("SPEAK").is_err() {
+            return;
+        }
+        let mut at = 0u32;
+        for line in &script.lines {
+            for tok in &line.tokens {
+                if tok.cite || tok.dur_ms == 0 {
+                    continue;
+                }
+                println!("{}\t{}\t{}", at, tok.dur_ms, display_letters(&tok.text));
+                at += tok.dur_ms;
+            }
+        }
+        eprintln!("TOTAL_MS {at}");
+    }
+
+    #[test]
+    fn ii3_square_and_rectangles_are_the_boundaries() {
+        // Fitzpatrick names the rectangle by opposite corners, and the square
+        // on the piece the same way. "equal to" must not turn AE into a
+        // diagonal, and AD must not walk through the square.
+        let phrases = crate::content::get(2, 3).unwrap().phrases;
+        let script = compile(phrases, &crate::figure::book2_prop3(), Timing::default());
+        let runs = |word: &str| -> Vec<Vec<String>> {
+            script
+                .lines
+                .iter()
+                .flat_map(|l| l.tokens.iter())
+                .filter(|t| letter_key(&t.text) == word)
+                .map(|t| t.parts.clone())
+                .collect()
+        };
+        let has = |parts: &[String], id: &str| parts.iter().any(|p| p == id);
+        let shown: Vec<String> = script
+            .lines
+            .iter()
+            .flat_map(|l| l.tokens.iter())
+            .filter(|t| !t.cite)
+            .map(|t| display_letters(&t.text))
+            .collect();
+        let spoken = shown.join(" ");
+        assert!(
+            spoken.contains("straight-line AB"),
+            "AB is the given line: {spoken}"
+        );
+        assert!(spoken.contains("(point) C."), "C is the cut: {spoken}");
+        assert!(
+            spoken.contains("square CDEB"),
+            "CDEB is the square: {spoken}"
+        );
+        assert!(
+            spoken.contains("(rectangle) AE"),
+            "AE is the rectangle: {spoken}"
+        );
+        assert!(
+            spoken.contains("(rectangle) AD"),
+            "AD is a rectangle: {spoken}"
+        );
+        assert!(spoken.contains("(square) CE"), "CE is the square: {spoken}");
+        assert!(
+            spoken.contains("square on CB"),
+            "DB is spoken as the square on CB: {spoken}"
+        );
+        let ab = runs("AB");
+        assert!(
+            ab.len() >= 4
+                && ab
+                    .iter()
+                    .all(|p| has(p, "ac") && has(p, "cb") && !has(p, "af")),
+            "AB is the whole cut line: {ab:?}"
+        );
+        let bc = runs("BC");
+        assert!(
+            bc.len() >= 2 && bc.iter().all(|p| has(p, "cb") && !has(p, "ac")),
+            "BC is the piece: {bc:?}"
+        );
+        let ac = runs("AC");
+        assert!(
+            ac.len() >= 2 && ac.iter().all(|p| has(p, "ac") && !has(p, "cb")),
+            "AC is the piece: {ac:?}"
+        );
+        let cb = runs("CB");
+        assert!(
+            cb.len() >= 2 && cb.iter().all(|p| has(p, "cb") && !has(p, "ac")),
+            "CB is the piece: {cb:?}"
+        );
+        let cdeb = runs("CDEB");
+        assert!(
+            cdeb.len() >= 1
+                && cdeb.iter().all(|p| has(p, "cd")
+                    && has(p, "de")
+                    && has(p, "be")
+                    && has(p, "cb")
+                    && !has(p, "ac")),
+            "CDEB is the square, not the production: {cdeb:?}"
+        );
+        let ae = runs("AE");
+        assert!(
+            ae.len() >= 2
+                && ae.iter().all(|p| {
+                    has(p, "ac")
+                        && has(p, "cb")
+                        && has(p, "be")
+                        && has(p, "de")
+                        && has(p, "fd")
+                        && has(p, "af")
+                        && !has(p, "cd")
+                }),
+            "AE is the rectangle, not a diagonal: {ae:?}"
+        );
+        let ad = runs("AD");
+        assert!(
+            ad.len() >= 2
+                && ad.iter().all(|p| has(p, "ac")
+                    && has(p, "cd")
+                    && has(p, "fd")
+                    && has(p, "af")
+                    && !has(p, "cb")),
+            "AD is that rectangle: {ad:?}"
+        );
+        let ce = runs("CE");
+        assert!(
+            ce.len() >= 1
+                && ce.iter().all(|p| has(p, "cb")
+                    && has(p, "be")
+                    && has(p, "de")
+                    && has(p, "cd")
+                    && !has(p, "ac")),
+            "CE is the square: {ce:?}"
+        );
+        let db = runs("DB");
+        assert!(
+            db.len() >= 1
+                && db.iter().all(|p| {
+                    has(p, "de") && has(p, "be") && has(p, "cb") && has(p, "cd") && !has(p, "fd")
+                }),
+            "DB is the square, not the diagonal: {db:?}"
+        );
+        let af = runs("AF");
+        assert!(
+            af.len() >= 1 && af.iter().all(|p| has(p, "af") && !has(p, "ac")),
+            "AF is the parallel: {af:?}"
+        );
+        let ed = runs("ED");
+        assert!(
+            ed.len() >= 1
+                && ed
+                    .iter()
+                    .all(|p| has(p, "de") && !has(p, "fd") && !has(p, "be")),
+            "ED is the side drawn through to F: {ed:?}"
+        );
+        let cd = runs("CD");
+        assert!(
+            cd.len() >= 1 && cd.iter().all(|p| has(p, "cd") && !has(p, "de")),
+            "CD is the side: {cd:?}"
+        );
+        let be = runs("BE");
+        assert!(
+            be.len() >= 1 && be.iter().all(|p| has(p, "be") && !has(p, "de")),
+            "BE is the side: {be:?}"
+        );
+        assert_eq!(display_letters("rectangle(AE)"), "AE");
+        assert_eq!(display_letters("rectangle(AD)"), "AD");
         assert_eq!(display_letters("rectangle(CE)"), "CE");
     }
 
@@ -1707,31 +2030,43 @@ mod tests {
         let bhg = runs("BHG");
         assert!(
             bhg.len() >= 1
-                && bhg.iter().all(|p| has(p, "bh") && has(p, "gh") && !has(p, "gb")),
+                && bhg
+                    .iter()
+                    .all(|p| has(p, "bh") && has(p, "gh") && !has(p, "gb")),
             "BHG is the angle, not the triangle: {bhg:?}"
         );
         let gfe = runs("GFE");
         assert!(
             gfe.len() >= 1
-                && gfe.iter().all(|p| has(p, "fg") && has(p, "fe") && !has(p, "eg")),
+                && gfe
+                    .iter()
+                    .all(|p| has(p, "fg") && has(p, "fe") && !has(p, "eg")),
             "GFE is the angle, not the triangle: {gfe:?}"
         );
         let ag = runs("AG");
         assert!(
             ag.len() >= 1
-                && ag.iter().all(|p| has(p, "ba") && has(p, "gb") && has(p, "gh") && has(p, "ha") && !has(p, "bh")),
+                && ag.iter().all(|p| has(p, "ba")
+                    && has(p, "gb")
+                    && has(p, "gh")
+                    && has(p, "ha")
+                    && !has(p, "bh")),
             "AG is the parallelogram: {ag:?}"
         );
         let lb = runs("LB");
         assert!(
             lb.len() >= 2
-                && lb.iter().all(|p| has(p, "al") && has(p, "ba") && has(p, "bm") && has(p, "ml")),
+                && lb
+                    .iter()
+                    .all(|p| has(p, "al") && has(p, "ba") && has(p, "bm") && has(p, "ml")),
             "LB is the complement: {lb:?}"
         );
         let bf = runs("BF");
         assert!(
             bf.len() >= 2
-                && bf.iter().all(|p| has(p, "eb") && has(p, "fe") && has(p, "fg") && has(p, "gb")),
+                && bf
+                    .iter()
+                    .all(|p| has(p, "eb") && has(p, "fe") && has(p, "fg") && has(p, "gb")),
             "BF is the complement: {bf:?}"
         );
         let c = runs("C");
@@ -1789,49 +2124,73 @@ mod tests {
         let gm = runs("GM");
         assert!(
             gm.len() >= 2
-                && gm.iter().all(|p| has(p, "hg") && has(p, "hm") && has(p, "ml") && has(p, "gl") && !has(p, "fg") && !has(p, "kf")),
+                && gm.iter().all(|p| has(p, "hg")
+                    && has(p, "hm")
+                    && has(p, "ml")
+                    && has(p, "gl")
+                    && !has(p, "fg")
+                    && !has(p, "kf")),
             "GM is parallelogram GM, not the outer path: {gm:?}"
         );
         let abd = runs("ABD");
         assert!(
             abd.len() >= 2
-                && abd.iter().all(|p| has(p, "ad") && has(p, "db") && has(p, "ba") && !has(p, "dc")),
+                && abd
+                    .iter()
+                    .all(|p| has(p, "ad") && has(p, "db") && has(p, "ba") && !has(p, "dc")),
             "ABD is the triangle, not an angle: {abd:?}"
         );
         let dbc = runs("DBC");
         assert!(
             dbc.len() >= 2
-                && dbc.iter().all(|p| has(p, "db") && has(p, "cb") && has(p, "dc") && !has(p, "ad")),
+                && dbc
+                    .iter()
+                    .all(|p| has(p, "db") && has(p, "cb") && has(p, "dc") && !has(p, "ad")),
             "DBC is the triangle: {dbc:?}"
         );
         let abcd = runs("ABCD");
         assert!(
             abcd.len() >= 2
-                && abcd.iter().all(|p| has(p, "ad") && has(p, "dc") && has(p, "cb") && has(p, "ba") && !has(p, "db")),
+                && abcd.iter().all(|p| has(p, "ad")
+                    && has(p, "dc")
+                    && has(p, "cb")
+                    && has(p, "ba")
+                    && !has(p, "db")),
             "ABCD is the rectilinear figure, not its diagonal: {abcd:?}"
         );
         let kflm = runs("KFLM");
         assert!(
             kflm.len() >= 2
-                && kflm.iter().all(|p| has(p, "kf") && has(p, "fg") && has(p, "gl") && has(p, "ml") && has(p, "kh") && has(p, "hm")),
+                && kflm.iter().all(|p| has(p, "kf")
+                    && has(p, "fg")
+                    && has(p, "gl")
+                    && has(p, "ml")
+                    && has(p, "kh")
+                    && has(p, "hm")),
             "KFLM is the outer parallelogram: {kflm:?}"
         );
         let hkf = runs("HKF");
         assert!(
             hkf.len() >= 1
-                && hkf.iter().all(|p| has(p, "kh") && has(p, "kf") && !has(p, "fg")),
+                && hkf
+                    .iter()
+                    .all(|p| has(p, "kh") && has(p, "kf") && !has(p, "fg")),
             "HKF is the angle, not the triangle: {hkf:?}"
         );
         let ghm = runs("GHM");
         assert!(
             ghm.len() >= 1
-                && ghm.iter().all(|p| has(p, "hg") && has(p, "hm") && !has(p, "ml")),
+                && ghm
+                    .iter()
+                    .all(|p| has(p, "hg") && has(p, "hm") && !has(p, "ml")),
             "GHM is the angle, not the triangle: {ghm:?}"
         );
         let fkm = runs("FKM");
         assert!(
             fkm.len() >= 1
-                && fkm.iter().all(|p| has(p, "kf") && (has(p, "km") || (has(p, "kh") && has(p, "hm"))) && !has(p, "ml")),
+                && fkm.iter().all(|p| has(p, "kf")
+                    && (has(p, "km") || (has(p, "kh") && has(p, "hm")))
+                    && !has(p, "ml")),
             "FKM is the angle the parallelogram stands in: {fkm:?}"
         );
         let e = runs("E");
@@ -1874,32 +2233,51 @@ mod tests {
         let adeb = runs("ADEB");
         assert!(
             adeb.len() >= 3
-                && adeb.iter().all(|p| has(p, "ab") && has(p, "da") && has(p, "ed") && has(p, "be") && !has(p, "cd")),
+                && adeb.iter().all(|p| has(p, "ab")
+                    && has(p, "da")
+                    && has(p, "ed")
+                    && has(p, "be")
+                    && !has(p, "cd")),
             "ADEB is the square, not the produced line: {adeb:?}"
         );
         let ac = runs("AC");
         assert!(
-            ac.len() >= 1 && ac.iter().all(|p| has(p, "cd") && has(p, "da") && !has(p, "ab")),
+            ac.len() >= 1
+                && ac
+                    .iter()
+                    .all(|p| has(p, "cd") && has(p, "da") && !has(p, "ab")),
             "AC is the whole upright: {ac:?}"
         );
         let bad = runs("BAD");
         assert!(
-            bad.len() >= 1 && bad.iter().all(|p| has(p, "ab") && has(p, "da") && !has(p, "ed") && !has(p, "be")),
+            bad.len() >= 1
+                && bad
+                    .iter()
+                    .all(|p| has(p, "ab") && has(p, "da") && !has(p, "ed") && !has(p, "be")),
             "BAD is the angle: {bad:?}"
         );
         let ade = runs("ADE");
         assert!(
-            ade.len() >= 1 && ade.iter().all(|p| has(p, "da") && has(p, "ed") && !has(p, "ab") && !has(p, "be")),
+            ade.len() >= 1
+                && ade
+                    .iter()
+                    .all(|p| has(p, "da") && has(p, "ed") && !has(p, "ab") && !has(p, "be")),
             "ADE is the angle, not the square: {ade:?}"
         );
         let abe = runs("ABE");
         assert!(
-            abe.len() >= 1 && abe.iter().all(|p| has(p, "ab") && has(p, "be") && !has(p, "da") && !has(p, "ed")),
+            abe.len() >= 1
+                && abe
+                    .iter()
+                    .all(|p| has(p, "ab") && has(p, "be") && !has(p, "da") && !has(p, "ed")),
             "ABE is the angle: {abe:?}"
         );
         let bed = runs("BED");
         assert!(
-            bed.len() >= 1 && bed.iter().all(|p| has(p, "be") && has(p, "ed") && !has(p, "ab") && !has(p, "da")),
+            bed.len() >= 1
+                && bed
+                    .iter()
+                    .all(|p| has(p, "be") && has(p, "ed") && !has(p, "ab") && !has(p, "da")),
             "BED is the angle: {bed:?}"
         );
         assert_eq!(display_letters("angle(BAD)"), "BAD");
@@ -1926,75 +2304,124 @@ mod tests {
         let gb = runs("GB");
         assert!(
             gb.len() >= 3
-                && gb.iter().all(|p| has(p, "fg") && has(p, "ga") && has(p, "ab") && has(p, "fb") && !has(p, "ah")),
+                && gb.iter().all(|p| has(p, "fg")
+                    && has(p, "ga")
+                    && has(p, "ab")
+                    && has(p, "fb")
+                    && !has(p, "ah")),
             "GB is the square, not a walk: {gb:?}"
         );
         let hc = runs("HC");
         assert!(
             hc.len() >= 3
-                && hc.iter().all(|p| has(p, "ah") && has(p, "ac") && has(p, "kc") && has(p, "hk") && !has(p, "ab")),
+                && hc.iter().all(|p| has(p, "ah")
+                    && has(p, "ac")
+                    && has(p, "kc")
+                    && has(p, "hk")
+                    && !has(p, "ab")),
             "HC is the square, not a walk: {hc:?}"
         );
         let bl = runs("BL");
         assert!(
             bl.len() >= 2
-                && bl.iter().all(|p| has(p, "bd") && has(p, "dl") && has(p, "pl") && has(p, "bp") && !has(p, "ab") && !has(p, "ap")),
+                && bl.iter().all(|p| has(p, "bd")
+                    && has(p, "dl")
+                    && has(p, "pl")
+                    && has(p, "bp")
+                    && !has(p, "ab")
+                    && !has(p, "ap")),
             "BL is the parallelogram, not the path through A: {bl:?}"
         );
         let cl = runs("CL");
         assert!(
             cl.len() >= 1
-                && cl.iter().all(|p| has(p, "ce") && has(p, "le") && has(p, "pl") && has(p, "pc") && !has(p, "ac") && !has(p, "ap")),
+                && cl.iter().all(|p| has(p, "ce")
+                    && has(p, "le")
+                    && has(p, "pl")
+                    && has(p, "pc")
+                    && !has(p, "ac")
+                    && !has(p, "ap")),
             "CL is the parallelogram, not the path through A: {cl:?}"
         );
         let bdec = runs("BDEC");
         assert!(
             bdec.len() >= 3
-                && bdec.iter().all(|p| has(p, "bd") && has(p, "dl") && has(p, "le") && has(p, "ce") && has(p, "bp") && has(p, "pc") && !has(p, "ad")),
+                && bdec.iter().all(|p| has(p, "bd")
+                    && has(p, "dl")
+                    && has(p, "le")
+                    && has(p, "ce")
+                    && has(p, "bp")
+                    && has(p, "pc")
+                    && !has(p, "ad")),
             "BDEC is the square on BC: {bdec:?}"
         );
         let bac = runs("BAC");
         assert!(
-            bac.len() >= 1 && bac.iter().all(|p| has(p, "ab") && has(p, "ac") && !has(p, "bp") && !has(p, "pc")),
+            bac.len() >= 1
+                && bac
+                    .iter()
+                    .all(|p| has(p, "ab") && has(p, "ac") && !has(p, "bp") && !has(p, "pc")),
             "BAC is the angle, not the triangle: {bac:?}"
         );
         let bag = runs("BAG");
         assert!(
-            bag.len() >= 1 && bag.iter().all(|p| has(p, "ab") && has(p, "ga") && !has(p, "fb")),
+            bag.len() >= 1
+                && bag
+                    .iter()
+                    .all(|p| has(p, "ab") && has(p, "ga") && !has(p, "fb")),
             "BAG is the angle: {bag:?}"
         );
         let dbc = runs("DBC");
         assert!(
-            dbc.len() >= 1 && dbc.iter().all(|p| has(p, "bd") && (has(p, "bp") || has(p, "pc")) && !has(p, "ad")),
+            dbc.len() >= 1
+                && dbc
+                    .iter()
+                    .all(|p| has(p, "bd") && (has(p, "bp") || has(p, "pc")) && !has(p, "ad")),
             "DBC is the angle: {dbc:?}"
         );
         let dba = runs("DBA");
         assert!(
-            dba.len() >= 1 && dba.iter().all(|p| has(p, "bd") && has(p, "ab") && !has(p, "ad")),
+            dba.len() >= 1
+                && dba
+                    .iter()
+                    .all(|p| has(p, "bd") && has(p, "ab") && !has(p, "ad")),
             "DBA is the angle, not triangle ABD: {dba:?}"
         );
         let fbc_ang = runs("FBC");
         assert!(
-            fbc_ang.iter().any(|p| has(p, "fb") && (has(p, "bp") || has(p, "pc")) && !has(p, "fc")),
+            fbc_ang
+                .iter()
+                .any(|p| has(p, "fb") && (has(p, "bp") || has(p, "pc")) && !has(p, "fc")),
             "FBC is an angle as well as a triangle: {fbc_ang:?}"
         );
         assert!(
-            fbc_ang.iter().any(|p| has(p, "fb") && has(p, "fc") && (has(p, "bp") || has(p, "pc"))),
+            fbc_ang
+                .iter()
+                .any(|p| has(p, "fb") && has(p, "fc") && (has(p, "bp") || has(p, "pc"))),
             "FBC is the triangle as well as the angle: {fbc_ang:?}"
         );
         let abd = runs("ABD");
         assert!(
-            abd.len() >= 1 && abd.iter().all(|p| has(p, "ab") && has(p, "bd") && has(p, "ad") && !has(p, "bp")),
+            abd.len() >= 1
+                && abd
+                    .iter()
+                    .all(|p| has(p, "ab") && has(p, "bd") && has(p, "ad") && !has(p, "bp")),
             "ABD is the triangle, not the angle: {abd:?}"
         );
         let gc = runs("GC");
         assert!(
-            gc.len() >= 1 && gc.iter().all(|p| has(p, "ga") && has(p, "ac") && !has(p, "fb") && !has(p, "hk")),
+            gc.len() >= 1
+                && gc
+                    .iter()
+                    .all(|p| has(p, "ga") && has(p, "ac") && !has(p, "fb") && !has(p, "hk")),
             "GC is GA straight-on to AC: {gc:?}"
         );
         let al = runs("AL");
         assert!(
-            al.len() >= 2 && al.iter().all(|p| has(p, "ap") && has(p, "pl") && !has(p, "ab")),
+            al.len() >= 2
+                && al
+                    .iter()
+                    .all(|p| has(p, "ap") && has(p, "pl") && !has(p, "ab")),
             "AL is the parallel, both pieces: {al:?}"
         );
         assert_eq!(display_letters("parallelogram(BL)"), "BL");
@@ -2020,22 +2447,34 @@ mod tests {
         let has = |parts: &[String], id: &str| parts.iter().any(|p| p == id);
         let bac = runs("BAC");
         assert!(
-            bac.len() >= 2 && bac.iter().all(|p| has(p, "ab") && has(p, "ac") && !has(p, "bc")),
+            bac.len() >= 2
+                && bac
+                    .iter()
+                    .all(|p| has(p, "ab") && has(p, "ac") && !has(p, "bc")),
             "BAC is the angle, not the triangle: {bac:?}"
         );
         let dac = runs("DAC");
         assert!(
-            dac.len() >= 2 && dac.iter().all(|p| has(p, "da") && has(p, "ac") && !has(p, "dc")),
+            dac.len() >= 2
+                && dac
+                    .iter()
+                    .all(|p| has(p, "da") && has(p, "ac") && !has(p, "dc")),
             "DAC is the angle, not triangle DAC: {dac:?}"
         );
         let abc = runs("ABC");
         assert!(
-            abc.len() >= 1 && abc.iter().all(|p| has(p, "ab") && has(p, "ac") && has(p, "bc")),
+            abc.len() >= 1
+                && abc
+                    .iter()
+                    .all(|p| has(p, "ab") && has(p, "ac") && has(p, "bc")),
             "ABC is the triangle: {abc:?}"
         );
         let dc = runs("DC");
         assert!(
-            dc.len() >= 2 && dc.iter().all(|p| has(p, "dc") && !has(p, "da") && !has(p, "ac")),
+            dc.len() >= 2
+                && dc
+                    .iter()
+                    .all(|p| has(p, "dc") && !has(p, "da") && !has(p, "ac")),
             "DC is the joined side: {dc:?}"
         );
         assert_eq!(display_letters("angle(BAC)"), "BAC");

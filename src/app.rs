@@ -1,5 +1,7 @@
 use crate::content::{get, propositions_in, Proposition, BOOKS};
-use crate::karaoke::{compile, KaraokeLyrics, KaraokePlay, KaraokeRead, Player, Timing};
+use crate::karaoke::{
+    compile, hold_for_voice, KaraokeLyrics, KaraokePlay, KaraokeRead, Player, Timing,
+};
 use leptos::ev;
 use leptos::html::Div;
 use leptos::prelude::*;
@@ -98,7 +100,10 @@ pub fn App() -> impl IntoView {
 
 #[component]
 fn PropositionPage(prop: Proposition) -> impl IntoView {
-    let script = compile(prop.phrases, &(prop.figure)(), Timing::default());
+    let mut script = compile(prop.phrases, &(prop.figure)(), Timing::default());
+    if prop.book == 2 && prop.number == 3 {
+        hold_for_voice(&mut script);
+    }
     let capture = wants_record();
     let record = RwSignal::new(capture);
     let player = Player::start(&script, record.get_untracked());
@@ -111,8 +116,7 @@ fn PropositionPage(prop: Proposition) -> impl IntoView {
     fig_slot.on_load(move |slot| slot_el.set(Some(slot)));
     Effect::new(move |_| {
         let cursor = player.cursor.get();
-        let lighting = record.get()
-            && (player.playing.get() || cursor != player.start_at);
+        let lighting = record.get() && (player.playing.get() || cursor != player.start_at);
         let on: Vec<String> = if lighting {
             script_fig.parts_at(cursor).to_vec()
         } else {
@@ -244,9 +248,9 @@ fn parse_pair(raw: &str) -> Option<(u8, u8)> {
         .filter(|p| !p.is_empty())
         .collect();
     let (b, p) = match parts.as_slice() {
-        ["book", b, "prop", p]
-        | ["book", b, "proposition", p]
-        | ["b", b, "p", p] => (b.parse().ok()?, p.parse().ok()?),
+        ["book", b, "prop", p] | ["book", b, "proposition", p] | ["b", b, "p", p] => {
+            (b.parse().ok()?, p.parse().ok()?)
+        }
         ["book", b] | ["b", b] => (b.parse().ok()?, 1),
         [b, p] => (b.parse().ok()?, p.parse().ok()?),
         [b] => (b.parse().ok()?, 1),
@@ -286,6 +290,8 @@ fn write_route(book: u8, prop: u8, push: bool) {
 
 fn set_title(book: u8, prop: u8) {
     if let Some(doc) = web_sys::window().and_then(|w| w.document()) {
-        doc.set_title(&format!("Book {book} Proposition {prop} — Euclid’s Elements"));
+        doc.set_title(&format!(
+            "Book {book} Proposition {prop} — Euclid’s Elements"
+        ));
     }
 }
