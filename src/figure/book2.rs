@@ -119,3 +119,57 @@ pub fn book2_prop3() -> Diagram {
     d.dots(&["A", "B", "C", "D", "E", "F"]);
     d
 }
+
+/// II.4 — Fitzpatrick English plate (Elements PDF p. 53, the right-hand figure).
+///
+/// Square ADEB described on AB. AB is the top side, cut at random at C.
+/// BD is joined. CF is drawn through C, parallel to AD and BE, meeting DE
+/// at F and BD at G. HK is drawn through G, parallel to AB and DE, meeting
+/// AD at H and BE at K.
+///
+/// AG, GE, HF, and CK are named by opposite corners. The plate draws no
+/// stroke across those rectangles, so the spoken name is the boundary.
+/// ADEB, CGKB, and HF are the squares, named by their corners.
+///
+/// One scale AB = 100. The plate square is the side AB. C is 0.7709 of
+/// the way from A to B — the ink column, not a round fraction. G is the
+/// crossing of BD and CF, so HK is the row of that crossing and CGKB is
+/// the square on CB. The plate letter G sits below-right of that crossing,
+/// inside the square on CB. The other letters sit outside the square, on
+/// the measured tip→glyph heading.
+pub fn book2_prop4() -> Diagram {
+    let mut d = Diagram::new();
+    let ac = 77.09;
+    d.put("A", V2::new(0.0, 0.0), Place::Deg(95.5));
+    d.level("C", "A", ac, Place::Deg(86.3));
+    d.level("B", "A", 100.0, Place::Deg(75.9));
+    d.plumb("D", "A", -100.0, Place::Deg(-91.3));
+    d.corner("F", "C", "D", Place::Deg(-90.3));
+    d.corner("E", "B", "D", Place::Deg(-82.6));
+    // G is BD × CF. On the English plate the capital sits below-right of
+    // the crossing, in the square on CB, clear of both strokes — not in
+    // the open angle above them. Heading −45° is tip→glyph (PDF p. 53).
+    d.meet_pin("G", "B", "D", "C", "F");
+    d.label("G", Place::Deg(-45.0));
+    d.corner("H", "A", "G", Place::Deg(-178.9));
+    d.corner("K", "B", "G", Place::Deg(-2.9));
+    // AB, HK, and DE split at the cuts, so AC, CB, HG, GK, DF, and FE
+    // are the pieces. AD and BE split at H and K.
+    d.chain(&["A", "C", "B"]);
+    d.chain(&["H", "G", "K"]);
+    d.chain(&["D", "F", "E"]);
+    d.chain(&["A", "H", "D"]);
+    d.chain(&["B", "K", "E"]);
+    d.chain(&["C", "G", "F"]);
+    d.join("B", "G");
+    d.join("G", "D");
+    // Spoken by opposite corners. The plate draws no stroke across them.
+    // HF is the square on HG, the same boundary as DH, named the other way.
+    d.region("AG", &["A", "C", "G", "H"]);
+    d.region("GE", &["G", "K", "E", "F"]);
+    d.region("HF", &["H", "G", "F", "D"]);
+    d.region("CK", &["C", "B", "K", "G"]);
+    d.region("CGKB", &["C", "B", "K", "G"]);
+    d.dots(&["A", "B", "C", "D", "E", "F", "G", "H", "K"]);
+    d
+}

@@ -2010,6 +2010,110 @@ mod tests {
     }
 
     #[test]
+    fn ii4_square_and_rectangles_are_the_boundaries() {
+        // Fitzpatrick names the square by its four corners, and the pieces by
+        // opposite corners. "equal to" must not turn AG into a diagonal, and
+        // HF must not walk through the other square.
+        let phrases = crate::content::get(2, 4).unwrap().phrases;
+        let script = compile(phrases, &crate::figure::book2_prop4(), Timing::default());
+        let runs = |word: &str| -> Vec<Vec<String>> {
+            script
+                .lines
+                .iter()
+                .flat_map(|l| l.tokens.iter())
+                .filter(|t| letter_key(&t.text) == word)
+                .map(|t| t.parts.clone())
+                .collect()
+        };
+        let has = |parts: &[String], id: &str| parts.iter().any(|p| p == id);
+        let shown: Vec<String> = script
+            .lines
+            .iter()
+            .flat_map(|l| l.tokens.iter())
+            .filter(|t| !t.cite)
+            .map(|t| display_letters(&t.text))
+            .collect();
+        let spoken = shown.join(" ");
+        assert!(spoken.contains("straight-line AB"), "AB is the given line: {spoken}");
+        assert!(spoken.contains("square ADEB"), "ADEB is the square: {spoken}");
+        assert!(spoken.contains("angle CGB"), "CGB is the angle: {spoken}");
+        assert!(spoken.contains("(point) C"), "C is the cut: {spoken}");
+        assert!(spoken.contains("(rectangle) AG"), "AG is a rectangle: {spoken}");
+        assert!(spoken.contains("and GE"), "GE is a rectangle: {spoken}");
+        let ab = runs("AB");
+        assert!(
+            ab.len() >= 4 && ab.iter().all(|p| has(p, "ac") && has(p, "cb") && !has(p, "cg")),
+            "AB is the whole cut line: {ab:?}"
+        );
+        let adeb = runs("ADEB");
+        assert!(
+            adeb.len() >= 2
+                && adeb.iter().all(|p| {
+                    has(p, "ah")
+                        && has(p, "hd")
+                        && has(p, "df")
+                        && has(p, "fe")
+                        && has(p, "ke")
+                        && has(p, "bk")
+                        && has(p, "ac")
+                        && has(p, "cb")
+                        && !has(p, "cg")
+                        && !has(p, "bg")
+                }),
+            "ADEB is the square, not the cuts: {adeb:?}"
+        );
+        let ag = runs("AG");
+        assert!(
+            ag.len() >= 2
+                && ag.iter().all(|p| has(p, "ac")
+                    && has(p, "cg")
+                    && has(p, "hg")
+                    && has(p, "ah")
+                    && !has(p, "cb")
+                    && !has(p, "bg")),
+            "AG is that rectangle, not the diagonal: {ag:?}"
+        );
+        let ge = runs("GE");
+        assert!(
+            ge.len() >= 2
+                && ge.iter().all(|p| has(p, "gk")
+                    && has(p, "ke")
+                    && has(p, "fe")
+                    && has(p, "gf")
+                    && !has(p, "cb")),
+            "GE is that rectangle: {ge:?}"
+        );
+        let hf = runs("HF");
+        assert!(
+            hf.len() >= 2
+                && hf.iter().all(|p| has(p, "hg")
+                    && has(p, "gf")
+                    && has(p, "df")
+                    && has(p, "hd")
+                    && !has(p, "ac")),
+            "HF is the square: {hf:?}"
+        );
+        let cgkb = runs("CGKB");
+        assert!(
+            cgkb.len() >= 2
+                && cgkb.iter().all(|p| has(p, "cb")
+                    && has(p, "bk")
+                    && has(p, "gk")
+                    && has(p, "cg")
+                    && !has(p, "ac")),
+            "CGKB is the square: {cgkb:?}"
+        );
+        let cgb = runs("CGB");
+        assert!(
+            cgb.iter().all(|p| has(p, "cg") && has(p, "bg") && !has(p, "gf") && !has(p, "gd")),
+            "angle CGB is the two rays: {cgb:?}"
+        );
+        assert_eq!(display_letters("rectangle(AG)"), "AG");
+        assert_eq!(display_letters("rectangle(GE)"), "GE");
+        assert_eq!(display_letters("angle(CGB)"), "CGB");
+    }
+
+    #[test]
     fn i44_names_light_the_plate() {
         // BHG and GFE are angles, not the triangles the three letters span.
         // AG and ME are the parallelograms about the diagonal; LB and BF the

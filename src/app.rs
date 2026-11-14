@@ -101,7 +101,7 @@ pub fn App() -> impl IntoView {
 #[component]
 fn PropositionPage(prop: Proposition) -> impl IntoView {
     let mut script = compile(prop.phrases, &(prop.figure)(), Timing::default());
-    if prop.book == 2 && prop.number == 3 {
+    if prop.book == 2 && (prop.number == 3 || prop.number == 4) {
         hold_for_voice(&mut script);
     }
     let capture = wants_record();

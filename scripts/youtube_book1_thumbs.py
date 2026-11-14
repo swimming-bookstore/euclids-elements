@@ -1610,10 +1610,16 @@ WASHES4 = {
 # so one wash. Two hues would say the rectangle and the square differ. AB is
 # the straight-line the enunciation cuts. C lies on it, so the named line is
 # the whole chord.
+# II.4: the square on the whole equals the squares on the pieces, plus twice
+# the rectangle contained by the pieces. Those four figures are the square,
+# so one wash. Two hues would say the squares and the rectangles differ. AB
+# is the straight-line the enunciation cuts. C lies on it, so the named line
+# is the whole chord.
 WASHES2 = {
     1: [("B", "C", "H", "G")],
     2: [("A", "B", "E", "D")],
     3: [("A", "B", "E", "F")],
+    4: [("A", "B", "E", "D")],
 }
 
 # Named straight-lines, book by book. Book I is LINES. A produced ray is
@@ -1629,6 +1635,9 @@ LINES2: dict[int, list[tuple[str, str]]] = {
     # AB, the straight-line cut at random. The rectangle it contains with one
     # piece is the wash. C lies on AB, so the cut line is the whole chord.
     3: [("A", "B")],
+    # AB, the straight-line cut at random. The square on it is the wash. C
+    # lies on AB, so the cut line is the whole chord, not the pieces.
+    4: [("A", "B")],
 }
 LINE_ALT2: dict[int, list[tuple[str, str]]] = {}
 LINE_EXTRA2: dict[int, list[tuple[tuple[int, int, int], tuple[tuple[str, str], ...]]]] = {}
