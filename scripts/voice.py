@@ -232,8 +232,9 @@ def word_key(text: str) -> str | None:
     """Library key for a function word. Plate letters are not words.
 
     The stored "square" is not the word Piper says for "square": that clip
-    drops the S and is heard as "where". The library clip is "skware" with
-    the leading S faded, which keeps the S of "square". The stored "a" is
+    drops the S and is heard as "where". The library clip is "skware",
+    which keeps the leading S. Fading that S makes the word "where" again.
+    The stored "a" is
     not the particle either: an isolated "a" is the letter name, and that
     clip is heard as "ah". The library clip is the schwa cut from
     "a straight line".
