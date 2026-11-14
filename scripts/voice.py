@@ -48,8 +48,9 @@ def speakable(text: str) -> str:
     # ends in a high chirp the shelf does not remove, so the stored clip fades
     # the tail out before the chirp. The same E makes ED "B, D"; "E. D." keeps
     # both letters, and that clip is shelved and faded the same way. The same
-    # A makes AF "I, Earth"; "A. F." keeps both letters. The same E makes BE
-    # "B, B"; "B. E." keeps both letters.
+    # A makes AF "I, Earth". "A. F." keeps the letters, but that F is a
+    # click, so the stored clip is "A; F." with the dead pause closed.
+    # The same E makes BE "B, B"; "B. E." keeps both letters.
     if raw == "A":
         return "A."
     if raw == "AC":
@@ -59,7 +60,7 @@ def speakable(text: str) -> str:
     if raw == "ED":
         return "E. D."
     if raw == "AF":
-        return "A. F."
+        return "A; F."
     if raw == "BE":
         return "B. E."
     if raw and raw.isupper() and 1 <= len(raw) <= 4 and raw != "I":
@@ -252,7 +253,9 @@ def compose_plate(name: str) -> array.array | None:
     the tail out before the chirp. ED is not joined for the same E: E plus D
     says "B, D", and speakable spells that name "E. D." instead, shelved and
     faded the same way. AF is not joined for the same A: A plus F says
-    "I, Earth", and speakable spells that name "A. F." instead. BE is not
+    "I, Earth". speakable spells that name "A; F." instead. "A. F." keeps
+    the letters, but that F is a click, so the stored clip is "A; F." with
+    the dead pause between the letters closed. BE is not
     joined for the same E: B plus E says "B, B", and speakable spells that
     name "B. E." instead.
     """
