@@ -51,8 +51,11 @@ def speakable(text: str) -> str:
     # A makes AF "I, Earth". "A. F." keeps the letters, but that F is a
     # click, so the stored clip is "A; F." with the dead pause closed.
     # The same E makes BE "B, B"; "B. E." keeps both letters.
-    # Joining the stored A and E says "I, B". "A. E." keeps both letters.
-    # Joining the stored A and D says "I, D". "A. D." keeps both letters.
+    # Joining the stored A and E says "I, B". "A. E." keeps both letters,
+    # but that A is thin. The stored clip takes the fuller second A of
+    # "A. A." and joins it to E. Joining the stored A and D says "I, D".
+    # "A. D." keeps both letters, and the stored clip uses that same fuller
+    # A joined to D.
     # Joining the stored C and E says "C, B". "C. E." keeps both letters.
     if raw == "A":
         return "A."
@@ -276,9 +279,11 @@ def compose_plate(name: str) -> array.array | None:
     the dead pause between the letters closed. BE is not
     joined for the same E: B plus E says "B, B", and speakable spells that
     name "B. E." instead. AE is not joined either: A plus E says "I, B",
-    and speakable spells that name "A. E." instead. AD is not joined
-    either: A plus D says "I, D", and speakable spells that name "A. D."
-    instead. CE is not joined either: C plus E says "C, B", and speakable
+    and speakable spells that name "A. E." instead. That A is thin, so the
+    stored clip is the fuller second A of "A. A." joined to E. AD is not
+    joined either: A plus D says "I, D", and speakable spells that name
+    "A. D." instead. The stored clip uses that same fuller A joined to D.
+    CE is not joined either: C plus E says "C, B", and speakable
     spells that name "C. E." instead.
     """
     if name in ("A", "AC", "CDEB", "ED", "AF", "BE", "AE", "AD", "CE"):
