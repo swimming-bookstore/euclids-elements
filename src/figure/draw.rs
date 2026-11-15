@@ -174,7 +174,7 @@ impl Figure {
                         id,
                         n(c.x),
                         n(y(c.y)),
-                        n(*r)
+                        n(*r),
                     ));
                 }
                 Mark::Arc { id, a, b, via } => {
@@ -186,12 +186,35 @@ impl Figure {
                         } else {
                             arc_d(*a, *b, *via, y)
                         };
+                        let dash = if id.starts_with("ring-") {
+                            // Fitzpatrick's ring about H (II.5, PDF p. 54): dash
+                            // and gap are 0.151 of the radius (2.34 pt on a
+                            // 15.48 pt ring). The CSS stroke shorthand resets
+                            // dasharray, so the length is a custom property the
+                            // ring rule reads. Butt caps: a round cap paints the
+                            // open quadrant shut.
+                            if let Some((c, r)) = circle3(*a, *b, *via) {
+                                let _ = c;
+                                let step = r * 0.150;
+                                format!(
+                                    r#" style="--dash:{}" stroke-dasharray="{} {}" stroke-linecap="butt""#,
+                                    n(step),
+                                    n(step),
+                                    n(step)
+                                )
+                            } else {
+                                String::new()
+                            }
+                        } else {
+                            String::new()
+                        };
                         if let Some(d) = d {
                             out.push_str(&format!(
-                                r##"<path class="{}" data-id="{}" d="{}" fill="none"/>"##,
+                                r##"<path class="{}" data-id="{}" d="{}" fill="none"{dash}/>"##,
                                 cls(id, "arc"),
                                 id,
-                                d
+                                d,
+                                dash = dash,
                             ));
                         }
                     }
@@ -367,29 +390,35 @@ fn arc_upper_d(a: V2, b: V2, via: V2, y: impl Fn(f64) -> f64) -> Option<String> 
 }
 
 fn arc_d(a: V2, b: V2, via: V2, y: impl Fn(f64) -> f64) -> Option<String> {
+    // Flags are taken in SVG coordinates. Computing them y-up and flipping
+    // the sweep picked the other circle of the same radius: II.5's ring sat
+    // in LG instead of in the gnomon NOP.
+    let a = V2::new(a.x, y(a.y));
+    let b = V2::new(b.x, y(b.y));
+    let via = V2::new(via.x, y(via.y));
     let (c, r) = circle3(a, b, via)?;
     let ang = |p: V2| (p.y - c.y).atan2(p.x - c.x);
-    let mut sweep = (ang(b) - ang(a)).rem_euclid(std::f64::consts::TAU);
-    let via_off = (ang(via) - ang(a)).rem_euclid(std::f64::consts::TAU);
-    let short = via_off <= sweep;
-    if !short {
-        sweep = std::f64::consts::TAU - sweep;
-    }
-    let large = if sweep > std::f64::consts::PI { 1 } else { 0 };
-    // y-up CCW becomes clockwise in SVG (y-down). Flip when the via-point
-    // lies on the long way around.
-    let ccw = (b.x - a.x) * (via.y - a.y) - (b.y - a.y) * (via.x - a.x) > 0.0;
-    let sweep_flag = if ccw == short { 1 } else { 0 };
+    let to_b = (ang(b) - ang(a)).rem_euclid(std::f64::consts::TAU);
+    let to_via = (ang(via) - ang(a)).rem_euclid(std::f64::consts::TAU);
+    let via_on_pos = to_via <= to_b;
+    // Positive angle in y-down is clockwise on the plate = SVG sweep 1.
+    let sweep_flag = if via_on_pos { 1 } else { 0 };
+    let span = if via_on_pos {
+        to_b
+    } else {
+        std::f64::consts::TAU - to_b
+    };
+    let large = if span > std::f64::consts::PI { 1 } else { 0 };
     Some(format!(
         "M {} {} A {} {} 0 {} {} {} {}",
         n(a.x),
-        n(y(a.y)),
+        n(a.y),
         n(r),
         n(r),
         large,
         sweep_flag,
         n(b.x),
-        n(y(b.y))
+        n(b.y)
     ))
 }
 

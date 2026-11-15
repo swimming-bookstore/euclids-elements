@@ -173,3 +173,77 @@ pub fn book2_prop4() -> Diagram {
     d.dots(&["A", "B", "C", "D", "E", "F", "G", "H", "K"]);
     d
 }
+
+/// II.5 — Fitzpatrick English plate (Elements PDF p. 54, the right-hand figure).
+///
+/// AB is cut equally at C and unequally at D. The square CEFB is described
+/// on CB. BE is joined. DG is drawn through D, parallel to CE and BF, and
+/// meets the diagonal at H. KM is drawn through H, parallel to AB and EF.
+/// AK is drawn through A, parallel to CL and BM.
+///
+/// CH and HF are the complements. DM and LG are the squares on DB and CD.
+/// CM, DF, AL, and AH are the rectangles the proof adds. Each is named by
+/// opposite corners. The plate draws no stroke across them, so the spoken
+/// name is the boundary, not a diagonal. NOP is the gnomon: the square on
+/// CB with the square LG taken out. N, O, and P are that gnomon's plate
+/// letters, not vertices.
+///
+/// One scale CB = 100. The plate square is the side CB, and C is the
+/// midpoint of AB, so AC = CB. D is a fifth of the way from C to B — the
+/// ink column, 20.60 pt on a side of 103.20. H is BE × DG, so KM is the
+/// row of that crossing and LG is the square on CD. Vertex letters sit on
+/// the measured tip→glyph heading. N, O, and P sit at the measured glyph
+/// centers.
+pub fn book2_prop5() -> Diagram {
+    let mut d = Diagram::new();
+    d.put("A", V2::new(0.0, 0.0), Place::Deg(94.7));
+    d.level("C", "A", 100.0, Place::Deg(95.0));
+    d.level("D", "A", 120.0, Place::Deg(72.0));
+    d.level("B", "A", 200.0, Place::Deg(76.6));
+    d.plumb("K", "A", -80.0, Place::Deg(-95.6));
+    d.corner("L", "C", "K", Place::Deg(-129.2));
+    d.corner("H", "D", "K", Place::Deg(130.5));
+    d.corner("M", "B", "K", Place::Deg(-2.2));
+    d.plumb("E", "C", -100.0, Place::Deg(-97.4));
+    d.corner("G", "D", "E", Place::Deg(-73.4));
+    d.corner("F", "B", "E", Place::Deg(-64.7));
+    // AB, KM, and the base of the square split at the cuts. The uprights
+    // split where KM crosses them. BE splits at H.
+    d.chain(&["A", "C", "D", "B"]);
+    d.chain(&["K", "L", "H", "M"]);
+    d.chain(&["E", "G", "F"]);
+    d.chain(&["A", "K"]);
+    d.chain(&["C", "L", "E"]);
+    d.chain(&["D", "H", "G"]);
+    d.chain(&["B", "M", "F"]);
+    d.chain(&["B", "H", "E"]);
+    // The plate's dotted stroke about H is three quadrants, not a circle.
+    // PDF p. 54, the English figure (not p. 55, which is II.6): moveto the
+    // left point, then cubics to the top, the right, and the bottom, and
+    // stop. The missing piece is the lower-left, toward the square LG. The
+    // ink sits on the upper-right of H, inside CEFB. Radius 15.48 pt on the
+    // 103.19 pt square, so 15.0 on this scale — 0.150 of the side, not the
+    // 0.222 ring from II.6. Dash and gap are 2.34 pt, 0.151 of that radius.
+    d.dotted_ring("H", 15.0, -135.0);
+    // Spoken by opposite corners. The plate draws no stroke across them.
+    d.region("CH", &["C", "D", "H", "L"]);
+    d.region("HF", &["H", "M", "F", "G"]);
+    d.region("DM", &["D", "B", "M", "H"]);
+    d.region("CM", &["C", "B", "M", "L"]);
+    d.region("DF", &["D", "B", "F", "G"]);
+    d.region("AL", &["A", "C", "L", "K"]);
+    d.region("AH", &["A", "D", "H", "K"]);
+    d.region("LG", &["L", "H", "G", "E"]);
+    // Square on CB, minus the square on CD. The outline is the L.
+    d.region("NOP", &["C", "B", "F", "G", "H", "L"]);
+    // Gnomon letters. The center is the plate glyph, not an offset from a
+    // vertex — a heading would walk them out of the square they name.
+    d.pin("N", V2::new(105.48, -84.25));
+    d.glyph("N", V2::new(105.48, -84.25));
+    d.pin("O", V2::new(126.58, -61.25));
+    d.glyph("O", V2::new(126.58, -61.25));
+    d.pin("P", V2::new(114.62, -93.78));
+    d.glyph("P", V2::new(114.62, -93.78));
+    d.dots(&["A", "B", "C", "D", "E", "F", "G", "H", "K", "L", "M"]);
+    d
+}

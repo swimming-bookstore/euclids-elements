@@ -517,6 +517,27 @@ impl Diagram {
         self
     }
 
+    /// A dotted ring the plate draws and does not name.
+    ///
+    /// II.5 rings the crossing H. The id starts `ring-`, so the stroke is
+    /// dashed and a spoken letter does not light it. `open` is the direction
+    /// of the missing quadrant, in degrees, y-up. On the English plate (PDF
+    /// p. 54) the three cubics run left, top, right, bottom, and stop. The
+    /// missing piece is the lower-left, toward LG, so `open` is -135. The
+    /// ink is then the upper-right of H, inside the square on CB.
+    pub fn dotted_ring(&mut self, center: &str, r: f64, open: f64) -> &mut Self {
+        let c = self.at(center);
+        let id = format!("ring-{}", center.to_ascii_lowercase());
+        // The plate's moveto is the left end of the gap. The cubics then run
+        // the long way — top, right, bottom — and stop. Starting there puts
+        // the first dash on the left end; the lower end falls in a gap.
+        let a = c.polar(r, open - 45.0);
+        let b = c.polar(r, open + 45.0);
+        let via = c.polar(r, open + 180.0);
+        self.fig.arc(id, a, b, via);
+        self
+    }
+
     /// Decorative circular arc `a` → `b` through `via` (not a spoken name).
     pub fn arc(&mut self, a: &str, b: &str, via: V2) -> &mut Self {
         let id = format!("arc-{}{}", a.to_ascii_lowercase(), b.to_ascii_lowercase());
@@ -739,12 +760,46 @@ impl Diagram {
                 c.to_string(),
             ];
         }
+        // A three-letter name that is a registered figure (II.5's gnomon NOP),
+        // not the triangle the letters would otherwise walk.
+        if let Some(ids) = self.named_region(key) {
+            return ids;
+        }
         let mut out = self.pair(a, b);
         out.extend(self.pair(b, c));
         out.extend(self.pair(c, a));
         out.sort();
         out.dedup();
         out
+    }
+
+    /// Boundary of a figure registered under exactly these letters.
+    ///
+    /// A two-letter opposite-corner name is resolved in `link`. A longer name
+    /// (II.5's gnomon NOP) would otherwise be the polygon of those letters.
+    /// The spoken letters are included so the plate labels light with the
+    /// outline.
+    fn named_region(&self, key: &str) -> Option<Vec<String>> {
+        let want = sorted_letters(key);
+        let region = self.regions.iter().find(|r| {
+            r.letters.len() == key.len() && sorted_letters(&r.letters) == want
+        })?;
+        let n = region.boundary.len();
+        if n < 3 {
+            return None;
+        }
+        let mut out = Vec::new();
+        for ch in key.chars() {
+            if let Some(name) = self.letter(ch) {
+                out.push(name.to_string());
+            }
+        }
+        for i in 0..n {
+            out.extend(self.side(region.boundary[i], region.boundary[(i + 1) % n]));
+        }
+        out.sort();
+        out.dedup();
+        Some(out)
     }
 
     /// A five-or-more letter figure (*ABCDE* the pentagon) is the polygon of
@@ -1086,6 +1141,7 @@ mod tests {
     use crate::figure::book2_prop2;
     use crate::figure::book2_prop3;
     use crate::figure::book2_prop4;
+    use crate::figure::book2_prop5;
 
     fn has(v: &[String], id: &str) -> bool {
         v.iter().any(|s| s == id)
@@ -3474,6 +3530,86 @@ mod tests {
         );
         if std::env::var("II4_SVG").is_ok() {
             std::fs::write("/tmp/ii4.svg", &html).unwrap();
+        }
+    }
+
+    #[test]
+    fn book2_prop5_dotted_stroke_is_three_quadrants_open_below_left() {
+        let d = book2_prop5();
+        let html = d.svg(&[] as &[String]);
+        let start = html.find("data-id=\"ring-h\"").expect("dotted stroke");
+        let chunk = &html[start..html[start..].find("/>").map(|i| start + i).unwrap()];
+        assert!(
+            chunk.contains("stroke-dasharray"),
+            "the plate's stroke about H is dotted: {chunk}"
+        );
+        assert!(
+            chunk.contains("stroke-linecap=\"butt\""),
+            "round caps would paint the open quadrant shut: {chunk}"
+        );
+        // Three quadrants, so the arc flag is the long way. The plate's cubics
+        // run left, top, right, bottom and stop, so the gap is the lower-left:
+        // one end on the side toward K, the other on the upright below H.
+        let d_at = chunk.find(" d=\"").unwrap() + 4;
+        let path = chunk[d_at..].split('"').next().unwrap();
+        let nums: Vec<f64> = path
+            .split_whitespace()
+            .filter_map(|w| w.parse().ok())
+            .collect();
+        assert!(nums.len() >= 8, "arc path {path}");
+        let (ax, ay) = (nums[0], nums[1]);
+        let (bx, by) = (nums[nums.len() - 2], nums[nums.len() - 1]);
+        let h_needle = "data-id=\"H\" cx=\"";
+        let h_at = html.find(h_needle).expect("dot H") + h_needle.len();
+        let hx: f64 = html[h_at..].split('"').next().unwrap().parse().unwrap();
+        let cy_at = html[h_at..].find("cy=\"").unwrap() + h_at + 4;
+        let hy: f64 = html[cy_at..].split('"').next().unwrap().parse().unwrap();
+        let left = ax < hx - 1.0 && (ay - hy).abs() < (ax - hx).abs();
+        let below = by > hy + 1.0 && (bx - hx).abs() < (by - hy).abs();
+        assert!(
+            left && below,
+            "the plate starts on the left and stops below H: {path} H {hx},{hy}"
+        );
+        let r = ((ax - hx).powi(2) + (ay - hy).powi(2)).sqrt();
+        let c_at = html.find("data-id=\"C\" cx=\"").expect("dot C") + "data-id=\"C\" cx=\"".len();
+        let cx: f64 = html[c_at..].split('"').next().unwrap().parse().unwrap();
+        let b_at = html.find("data-id=\"B\" cx=\"").expect("dot B") + "data-id=\"B\" cx=\"".len();
+        let bx: f64 = html[b_at..].split('"').next().unwrap().parse().unwrap();
+        let side = (bx - cx).abs();
+        assert!(
+            (r / side - 0.150).abs() < 0.01,
+            "ring is 15.0 on the side of 100, inside the square: r={r} side={side}"
+        );
+        // H is 20 in from CE and from EF. Radius 15 keeps every dash inside
+        // CEFB; 22.2 (II.6's ring) would cross CE and EF.
+        let e_needle = "data-id=\"E\" cx=\"";
+        let e_at = html.find(e_needle).expect("dot E") + e_needle.len();
+        let cy_e = html[e_at..].find("cy=\"").unwrap() + e_at + 4;
+        let ey: f64 = html[cy_e..].split('"').next().unwrap().parse().unwrap();
+        assert!(
+            ax > cx && by < ey,
+            "the stroke stays inside CEFB, not outside: left {ax} C {cx} below {by} E {ey}"
+        );
+        let dash = chunk
+            .split("stroke-dasharray=\"")
+            .nth(1)
+            .unwrap()
+            .split('"')
+            .next()
+            .unwrap();
+        let step: f64 = dash.split_whitespace().next().unwrap().parse().unwrap();
+        assert!(
+            (step / r - 0.150).abs() < 0.004,
+            "dash is 0.150 of the radius: {step} / {r}"
+        );
+        // Sweep 1 is clockwise on the plate: left → top → right → bottom, through
+        // the gnomon NOP. Sweep 0 was the other circle, wrapping LG.
+        assert!(
+            path.contains(" 0 1 1 "),
+            "three quadrants through NOP, clockwise: {path}"
+        );
+        if std::env::var("II5_SVG").is_ok() {
+            std::fs::write("/tmp/elements/ii5-fix/live.svg", &html).unwrap();
         }
     }
 

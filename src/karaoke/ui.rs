@@ -518,7 +518,7 @@ fn hyphen_at(text: &str) -> Option<usize> {
     if bare.len() < 10 || bare.chars().any(|c| c.is_ascii_uppercase()) {
         return None;
     }
-    if text.contains('-') {
+    if text.contains('-') || text.contains('—') || text.contains('–') {
         return None;
     }
     let chars: Vec<char> = text.chars().collect();

@@ -93,9 +93,23 @@ def speakable(text: str) -> str:
         return "A; F."
     if raw == "BE":
         return "B. E."
+    # Joining the stored A says "I", so AK, AL, and AH are spelled the way AD is.
+    # EF and CEFB are not joined from the stored E: that E is heard as B. The
+    # stored clips use the E of "B. E.", the letter that stays E.
+    if raw == "AK":
+        return "A. K."
+    if raw == "AL":
+        return "A. L."
+    if raw == "AH":
+        return "A. H."
+    if raw == "EF":
+        return "E. F."
+    if raw == "CEFB":
+        return "C; E; F; B."
     if raw and raw.isupper() and 1 <= len(raw) <= 4 and raw != "I":
         return "; ".join(raw) + "."
     spoken = text.replace("(", " ").replace(")", " ")
+    spoken = spoken.replace("—", " ").replace("–", " ")
     spoken = spoken.strip(" ,.;:!?")
     spoken = " ".join(spoken.split())
     if spoken == "rectangle s":
@@ -317,8 +331,12 @@ def compose_plate(name: str) -> array.array | None:
     stored D joined to the E of "B. E.", the letter that stays E. EB is not
     joined either. "E; B." and "E. B." are still heard as "B, B", and so is
     the E of "E. D." when it is put in front of B. The stored EB is the E of "B. E.", the letter that stays E, joined to B.
+    AK, AL, and AH are not joined from the stored A: that join says "I".
+    They are spelled "A. K.", "A. L.", and "A. H.", the way AD is.
+    EF and CEFB are not joined from the stored E. The stored clips use the
+    E of "B. E.", the letter that stays E.
     """
-    if name in ("A", "AC", "CDEB", "ED", "AF", "BE", "AE", "AD", "CE", "ADEB", "DE", "EB", "GE"):
+    if name in ("A", "AC", "CDEB", "ED", "AF", "BE", "AE", "AD", "CE", "ADEB", "DE", "EB", "GE", "AK", "AL", "AH", "EF", "CEFB"):
         return None
     clips = [library_clip(ch) for ch in name]
     if any(clip is None for clip in clips):
