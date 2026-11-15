@@ -104,6 +104,13 @@ h1 {
   fill: none;
 }
 
+/* The plate's dotted stroke (II.5) is dashed in the markup. A shorthand
+   stroke resets dasharray, so the ring would come out solid. */
+.figure .arc[data-id^="ring-"] {
+  stroke-dasharray: var(--dash) var(--dash);
+  stroke-linecap: butt;
+}
+
 .figure .on { stroke: #c0392b; }
 
 .figure .circ.on { fill: none; }

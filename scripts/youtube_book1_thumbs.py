@@ -231,6 +231,11 @@ ROSE2 = (100, 150, 216)
 BRICK2 = (46, 92, 154)
 # Wash, hue-shifted. (232, 214, 176) at the same saturation and lightness.
 WASH2 = (176, 200, 232)
+# Second wash, hue-shifted from the Book I gold. II.5's square CF is the
+# first blue; the rectangle AH and the square on CD are the second, the
+# way I.47's squares take warm then gold. Where they overlap, the two
+# fills mix. Gold on this paper would be the Book I plate again.
+GOLD2 = (72, 128, 188)
 LETTER_R = 0.82  # plate::LETTER_R, em of the letter type
 
 # Subject regions, vertex order around the boundary. Two regions: warm, then gold,
@@ -791,6 +796,8 @@ class Scene:
         self.labels: dict[str, tuple[V2, float, float]] = {}
         self.segs: list[tuple[str, str]] = []
         self.circs: list[tuple[str, float]] = []
+        self.rings: list[tuple[str, float]] = []
+        self.dotted: list[tuple[V2, V2, V2]] = []
         self.arc_list: list[tuple[V2, V2, V2]] = []
         self.dot_pts: list[V2] = []
         self.clip_box: tuple[V2, V2] | None = None
@@ -908,6 +915,18 @@ class Scene:
 
     def circle_r(self, _letters: str, center: str, r: float) -> None:
         self.circs.append((center, r))
+
+    def dotted_ring(self, center: str, r: float, open_deg: float) -> None:
+        # II.5's dotted stroke about H (PDF p. 54). Three quadrants; the gap
+        # faces `open_deg` (lower-left, toward LG). The ink is the upper-right
+        # of H, inside the square. Radius is 0.150 of CB, not II.6's 0.222.
+        c = self.at(center)
+        # The plate's moveto is the left end of the lower-left gap. The stroke
+        # then runs the long way, so the first dash sits on that end.
+        a = c.polar(r, open_deg - 45.0)
+        b = c.polar(r, open_deg + 45.0)
+        via = c.polar(r, open_deg + 180.0)
+        self.dotted.append((a, b, via))
 
     def bow(self, a: str, b: str, sag: float) -> None:
         pa, pb = self.at(a), self.at(b)
@@ -1254,9 +1273,9 @@ def square_outward(p: V2, q: V2, away: V2) -> list[V2]:
     return [p, q, q.add(side), p.add(side)]
 
 
-def prepare(n: int, scene: Scene) -> None:
+def prepare(n: int, scene: Scene, book: int = 1) -> None:
     """Check the angle marks. I.48 pins the squares the plate does not draw."""
-    if n == 48:
+    if book == 1 and n == 48:
         # The enunciation is the squares on the sides of ABC, and the
         # right-angle they imply. The plate draws neither square. AD and DC
         # are the construction, so the card keeps them and draws the squares
@@ -1276,6 +1295,23 @@ def prepare(n: int, scene: Scene) -> None:
         # The edges are not stroked. They exist so the wash has corners.
         for u, v in SQUARE_QUIET.get(n, ()):
             scene.join(u, v)
+    if book == 2 and n == 5:
+        # Square on CD, the difference of the pieces. The plate's square on
+        # CD is LG, inside CEFB. The enunciation's square stands on CD, so
+        # the card draws it on CD, below AB — a shadow, not a recolor of
+        # LG. Below, it sits in CF and in AH; the mixed fill is the overlap.
+        c, d = scene.at("C"), scene.at("D")
+        above = V2((c.x + d.x) / 2, c.y + abs(d.x - c.x))
+        pts = square_outward(c, d, above)
+        scene.pin("Cd1", pts[2])
+        scene.pin("Cd2", pts[3])
+        for u, v in SQUARE_QUIET2.get(n, ()):
+            scene.join(u, v)
+    # ANGLES is Book I. Keyed by proposition number only, so I.5's pies
+    # would otherwise land on II.5: A, B, C, D, E all exist there, and the
+    # wedges read as two pies on the square.
+    if book != 1:
+        return
     for group in ANGLES.get(n, []):
         for arm, vertex, other in group:
             for name in (arm, vertex, other):
@@ -1289,7 +1325,7 @@ def prepare(n: int, scene: Scene) -> None:
 def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
     if washes is None:
         washes = WASHES
-    prepare(n, scene)
+    prepare(n, scene, book=book)
     for poly in washes.get(n, []):
         for name in poly:
             if name not in scene.pts:
@@ -1377,11 +1413,16 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
             # One very light wash. The plate does not draw these squares.
             cr.set_source_rgba(*rgb(fill[0]), fill[1])
         elif book == 2:
-            # One pale blue wash, the same weight as the Book I gold. A
-            # saturated fill hides the strokes inside the rectangle. A second
-            # hue would say the rectangle and its pieces differ, and gold
-            # would be the Book I plate again.
-            cr.set_source_rgba(*rgb(WASH2), 0.85)
+            # Pale blue, the same weight as the Book I gold. A saturated fill
+            # hides the strokes inside. Gold would be the Book I plate again.
+            # Two hues are the two sides of the equality. II.5's square CF
+            # is the first; the rectangle AH and the square on CD are the
+            # second. They overlap, so the mixed fill is a third. Recoloring
+            # LG would paint the plate's square, not the square on CD.
+            if len(regions) == 1 or i == 0:
+                cr.set_source_rgba(*rgb(WASH2), 0.85)
+            else:
+                cr.set_source_rgba(*rgb(GOLD2), 0.62)
         elif len(regions) == 1 or n in SAME_WASH:
             cr.set_source_rgba(*rgb(WASH), 0.85)
         elif i == 0:
@@ -1411,8 +1452,9 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
     # are. Each equality group is one color and one radius; the next group
     # is the other set. Larger first, so a smaller pie is not covered.
     # No entry: the I.42 rose pie, at the I.42 card size.
-    groups = ANGLES.get(n, [])
-    marks = ANGLE_MARK.get(n)
+    # Book I only. I.5's pairs would otherwise mark II.5, where A–E exist.
+    groups = ANGLES.get(n, []) if book == 1 else []
+    marks = ANGLE_MARK.get(n) if book == 1 else None
     if marks is None:
         marks = [(PIE_ALT, None)] * len(groups)
     if len(marks) != len(groups):
@@ -1481,7 +1523,8 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
     lit_ink = {(a, b) for a, b in lit_segs + alt_segs + extra_segs} | {
         (b, a) for a, b in lit_segs + alt_segs + extra_segs
     }
-    square_edges = list(SQUARE_QUIET.get(n, ()))
+    square_quiet = {1: SQUARE_QUIET, 2: SQUARE_QUIET2}.get(book, {})
+    square_edges = list(square_quiet.get(n, ()))
     square_ink = {(a, b) for a, b in square_edges} | {(b, a) for a, b in square_edges}
     # Construction stays the same ink as I.1. Only the named lines are lit.
     # A named side may be chained through a construction point (D on AB).
@@ -1495,6 +1538,21 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
         x, y = pt(name)
         cr.arc(x, y, r * scale, 0, math.tau)
         cr.stroke()
+    for a, b, via in scene.dotted:
+        # The plate's dotted stroke. Three quadrants, same ink as the construction.
+        pts = arc_points(a, b, via)
+        if len(pts) < 2:
+            continue
+        cr.new_path()
+        cr.move_to(*pt_of(V2(*pts[0])))
+        for x, y in pts[1:]:
+            cr.line_to(*pt_of(V2(x, y)))
+        step = a.dist(via) * 0.150 * scale
+        cr.set_line_cap(cairo.LINE_CAP_BUTT)
+        cr.set_dash([step, step])
+        cr.stroke()
+        cr.set_dash([])
+        cr.set_line_cap(cairo.LINE_CAP_ROUND)
     for a, b, via in scene.arc_list:
         pts = arc_points(a, b, via)
         if not pts:
@@ -1615,11 +1673,26 @@ WASHES4 = {
 # so one wash. Two hues would say the squares and the rectangles differ. AB
 # is the straight-line the enunciation cuts. C lies on it, so the named line
 # is the whole chord.
+# II.5: the rectangle contained by the unequal pieces, plus the square on
+# the difference, equals the square on the half. CF is that square — the
+# first wash. The pair on the left is rectangle AH (AD by DB) and the
+# square on CD — the second. The square on CD is not LG — LG is the
+# plate's square, inside CEFB — so the card draws a shadow standing on
+# CD, below AB. Below, it sits in CF and in AH; the mixed fill is the
+# overlap. AB is the straight-line the enunciation cuts. C and D lie on
+# it, so the named line is the whole chord, not the pieces.
 WASHES2 = {
     1: [("B", "C", "H", "G")],
     2: [("A", "B", "E", "D")],
     3: [("A", "B", "E", "F")],
     4: [("A", "B", "E", "D")],
+    5: [("C", "B", "F", "E"), ("A", "D", "H", "K"), ("C", "D", "Cd1", "Cd2")],
+}
+
+# Outer edges of II.5's shadow square on CD. Not stroked: a colored edge
+# would be a square the plate does not draw. CD is already a plate stroke.
+SQUARE_QUIET2: dict[int, tuple[tuple[str, str], ...]] = {
+    5: (("D", "Cd1"), ("Cd1", "Cd2"), ("Cd2", "C")),
 }
 
 # Named straight-lines, book by book. Book I is LINES. A produced ray is
@@ -1638,6 +1711,9 @@ LINES2: dict[int, list[tuple[str, str]]] = {
     # AB, the straight-line cut at random. The square on it is the wash. C
     # lies on AB, so the cut line is the whole chord, not the pieces.
     4: [("A", "B")],
+    # AB, the straight-line cut into equal and unequal pieces. C and D lie
+    # on AB, so the cut line is the whole chord, not the pieces.
+    5: [("A", "B")],
 }
 LINE_ALT2: dict[int, list[tuple[str, str]]] = {}
 LINE_EXTRA2: dict[int, list[tuple[tuple[int, int, int], tuple[tuple[str, str], ...]]]] = {}

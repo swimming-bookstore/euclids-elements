@@ -13,6 +13,7 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path.home() / "demo"))
+from record.cdp import js
 from record.session import RecordSession
 
 ROOT = Path(__file__).resolve().parent.parent / "dist"
@@ -34,12 +35,23 @@ def serve(port: int) -> http.server.HTTPServer:
     return httpd
 
 
+def poll_marks(ws, path: Path, stop: threading.Event, t0: float) -> None:
+    """Unused. Highlight times are collected in the page, one CDP call."""
+    del ws, path, stop, t0
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--book", type=int, default=1)
     parser.add_argument("--prop", type=int, default=1)
     parser.add_argument("--slug", default="proposition1")
     parser.add_argument("--hold", type=float, default=420)
+    parser.add_argument(
+        "--marks",
+        type=Path,
+        default=None,
+        help="write video-time highlight starts while recording",
+    )
     args = parser.parse_args()
 
     os.environ.setdefault("DISPLAY", ":0.0")
@@ -76,6 +88,23 @@ def main() -> None:
             "ready",
         )
         rec.start_capture()
+        if args.marks:
+            # One clock in the page. A second CDP socket would race the waiter.
+            js(
+                rec.ws,
+                """(() => {
+                  window.__cap = performance.now();
+                  window.__marks = [];
+                  window.__poll = setInterval(() => {
+                    const words = [...document.querySelectorAll('.karaoke .word')];
+                    const i = words.findIndex(w => w.classList.contains('sing'));
+                    const text = i >= 0 ? words[i].textContent : '';
+                    const last = window.__marks[window.__marks.length - 1];
+                    if (!last || last.i !== i) window.__marks.push({t: performance.now(), i, text});
+                  }, 30);
+                  return window.__cap;
+                })()""",
+            )
         # Hold until the last sung word, then a beat of the finished plate.
         rec.wait_js(
             "document.querySelector('.karaoke-play .play')?.textContent.trim() === 'Play'"
@@ -84,6 +113,10 @@ def main() -> None:
             "karaoke finished",
         )
         rec.hold(3.0)
+        if args.marks and rec.ws:
+            raw = js(rec.ws, "JSON.stringify({cap: window.__cap, marks: window.__marks})")
+            args.marks.write_text(raw if isinstance(raw, str) else "")
+            print("marks", args.marks)
         rec._stop.set()
         if rec._cap:
             rec._cap.join(timeout=15)
