@@ -1,5 +1,5 @@
 use super::{s, Proposition};
-use crate::figure::{book2_prop1, book2_prop2, book2_prop3, book2_prop4, book2_prop5};
+use crate::figure::{book2_prop1, book2_prop2, book2_prop3, book2_prop4, book2_prop5, book2_prop6};
 
 pub const PROP_1: Proposition = Proposition {
     book: 2,
@@ -136,4 +136,30 @@ pub const PROP_5: Proposition = Proposition {
     ],
 };
 
-pub const PROPOSITIONS: &[Proposition] = &[PROP_1, PROP_2, PROP_3, PROP_4, PROP_5];
+pub const PROP_6: Proposition = Proposition {
+    book: 2,
+    number: 6,
+    enunciation: "If a straight-line is cut in half, and any straight-line added to it straight-on, then the rectangle contained by the whole (straight-line) with the (straight-line) having being added, and the (straight-line) having being added, plus the square on half (of the original straight-line), is equal to the square on the sum of half (of the original straight-line) and the (straight-line) having been added.",
+    figure: book2_prop6,
+    phrases: &[
+        s(1, "For let any straight-line *AB* have been cut in half at point *C*, and let any straight-line *BD* have been added to it straight-on."),
+        s(1, "I say that the rectangle contained by *AD* and *DB*, plus the square on *CB*, is equal to the square on *CD*."),
+        s(2, "For let the square *CEFD* have been described on *CD*,{[Prop. 1.46]} and let *DE* have been joined, and let *BG* have been drawn through point *B*, parallel to either of *EC* or *DF*,{[Prop. 1.31]} and let *KM* have been drawn through point *H*, parallel to either of *AB* or *EF*,{[Prop. 1.31]} and finally let *AK* have been drawn through *A*, parallel to either of *CL* or *DM*.{[Prop. 1.31]}"),
+        s(3, "Therefore, since *AC* is equal to *CB*, (rectangle) *rectangle(AL)* is also equal to (rectangle) *rectangle(CH)*.{[Prop. 1.36]}"),
+        s(3, "But, (rectangle) *rectangle(CH)* is equal to (rectangle) *rectangle(HF)*.{[Prop. 1.43]}"),
+        s(3, "Thus, (rectangle) *rectangle(AL)* is also equal to (rectangle) *rectangle(HF)*."),
+        s(3, "Let (rectangle) *rectangle(CM)* have been added to both."),
+        s(3, "Thus, the whole (rectangle) *rectangle(AM)* is equal to the gnomon *gnomon(NOP)*."),
+        s(3, "But, *rectangle(AM)* is the (rectangle contained) by *AD* and *DB*."),
+        s(3, "For *DM* is equal to *DB*."),
+        s(3, "Thus, gnomon *gnomon(NOP)* is also equal to the [rectangle contained] by *AD* and *DB*."),
+        s(3, "Let *rectangle(LG)*, which is equal to the square on *BC*, have been added to both."),
+        s(3, "Thus, the rectangle contained by *AD* and *DB*, plus the square on *CB*, is equal to the gnomon *gnomon(NOP)* and the (square) *rectangle(LG)*."),
+        s(3, "But the gnomon *gnomon(NOP)* and the (square) *rectangle(LG)* is (equivalent to) the whole square *CEFD*, which is on *CD*."),
+        s(3, "Thus, the rectangle contained by *AD* and *DB*, plus the square on *CB*, is equal to the square on *CD*."),
+        s(4, "Thus, if a straight-line is cut in half, and any straight-line added to it straight-on, then the rectangle contained by the whole (straight-line) with the (straight-line) having being added, and the (straight-line) having being added, plus the square on half (of the original straight-line), is equal to the square on the sum of half (of the original straight-line) and the (straight-line) having been added."),
+        s(4, "(Which is) the very thing it was required to show."),
+    ],
+};
+
+pub const PROPOSITIONS: &[Proposition] = &[PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6];

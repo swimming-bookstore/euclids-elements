@@ -247,3 +247,88 @@ pub fn book2_prop5() -> Diagram {
     d.dots(&["A", "B", "C", "D", "E", "F", "G", "H", "K", "L", "M"]);
     d
 }
+
+/// II.6 — Fitzpatrick English plate (Elements PDF p. 55, the right-hand figure).
+///
+/// AB is cut in half at C, and BD is added straight-on. The square CEFD is
+/// described on CD. DE is joined. BG is drawn through B, parallel to EC and
+/// DF, and meets the diagonal at H. KM is drawn through H, parallel to AB
+/// and EF. AK is drawn through A, parallel to CL and DM.
+///
+/// AL and CH are the rectangles the proof equates. HF is the complement of
+/// CH. CM and AM are the rectangles the proof adds. LG is the square on BC.
+/// Each is named by opposite corners. The plate draws no stroke across them,
+/// so the spoken name is the boundary, not a diagonal. NOP is the gnomon:
+/// the square on CD with the square LG taken out. N, O, and P are that
+/// gnomon's plate letters, not vertices.
+///
+/// One scale CD = 100. The plate square is the side CD. C is the midpoint
+/// of AB, so AC = CB = 200/3, and the added line BD is the remaining
+/// third. H is DE × BG, one third of the way down the diagonal, so KM is
+/// that row and LG is the square on CB. Vertex letters sit on the measured
+/// tip→glyph heading. N, O, and P sit at the measured glyph centers.
+///
+/// The dotted stroke about H is three quadrants. PDF p. 55 starts at the
+/// left and runs top, right, bottom, then stops. The gap is the lower-left,
+/// toward LG. P sits in that gap, on the circle just past the bottom end,
+/// so the stroke does not join P. Carrying the arc on through P paints the
+/// opening shut. Radius 22.42 pt on the 100.89 pt square, so 22.2 on this
+/// scale — 0.222 of the side, not the 0.150 ring from II.5. Dash and gap
+/// are 3.36 pt, 0.150 of that radius. The dash that starts at the left
+/// lands short of the bottom end, clear of P.
+pub fn book2_prop6() -> Diagram {
+    let mut d = Diagram::new();
+    let cb = 200.0 / 3.0;
+    let bd = 100.0 / 3.0;
+    let cd = cb + bd;
+    let km = bd;
+    d.put("C", V2::new(0.0, 0.0), Place::Deg(95.0));
+    d.level("B", "C", cb, Place::Deg(96.5));
+    d.level("D", "C", cd, Place::Deg(71.9));
+    d.level("A", "C", -cb, Place::Deg(94.6));
+    d.plumb("E", "C", -cd, Place::Deg(-79.0));
+    d.corner("F", "D", "E", Place::Deg(-64.7));
+    d.corner("G", "B", "E", Place::Deg(-91.5));
+    d.plumb("K", "A", -km, Place::Deg(-95.6));
+    d.corner("L", "C", "K", Place::Deg(-129.2));
+    // H is DE × BG. On the English plate the capital sits up-left of that
+    // crossing, in the rectangle CH, clear of the diagonal and of BG.
+    // Heading 129.5° is tip→glyph (PDF p. 55).
+    d.meet_pin("H", "D", "E", "B", "G");
+    d.label("H", Place::Deg(129.5));
+    d.corner("M", "D", "K", Place::Deg(-2.1));
+    // AB, KM, and the base of the square split at the cuts. The uprights
+    // split where KM crosses them. DE splits at H.
+    d.chain(&["A", "C", "B", "D"]);
+    d.chain(&["K", "L", "H", "M"]);
+    d.chain(&["E", "G", "F"]);
+    d.chain(&["A", "K"]);
+    d.chain(&["C", "L", "E"]);
+    d.chain(&["B", "H", "G"]);
+    d.chain(&["D", "M", "F"]);
+    d.chain(&["D", "H", "E"]);
+    // PDF p. 55: left, top, right, bottom, then stop. The missing quadrant
+    // is the lower-left, toward LG. P sits in that opening, so the stroke
+    // is not carried through it. Radius 22.2, 0.222 of CD.
+    d.dotted_ring("H", 22.2, -135.0);
+    // Spoken by opposite corners. The plate draws no stroke across them.
+    d.region("AL", &["A", "C", "L", "K"]);
+    d.region("CH", &["C", "B", "H", "L"]);
+    d.region("HF", &["H", "M", "F", "G"]);
+    d.region("CM", &["C", "D", "M", "L"]);
+    d.region("AM", &["A", "D", "M", "K"]);
+    d.region("LG", &["L", "H", "G", "E"]);
+    // Square on CD, minus the square on BC. The outline is the L.
+    d.region("NOP", &["C", "D", "F", "G", "H", "L"]);
+    // Gnomon letters. The center is the plate glyph, not an offset from a
+    // vertex — a heading would walk them out of the square they name.
+    // PDF p. 55, glyph center minus the C tip, on the side of 100.89.
+    d.pin("N", V2::new(46.09, -38.64));
+    d.glyph("N", V2::new(46.09, -38.64));
+    d.pin("O", V2::new(76.72, -6.94));
+    d.glyph("O", V2::new(76.72, -6.94));
+    d.pin("P", V2::new(61.80, -55.31));
+    d.glyph("P", V2::new(61.80, -55.31));
+    d.dots(&["A", "B", "C", "D", "E", "F", "G", "H", "K", "L", "M"]);
+    d
+}

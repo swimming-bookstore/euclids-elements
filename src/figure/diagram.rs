@@ -3613,6 +3613,90 @@ mod tests {
         }
     }
 
+    #[test]
+    fn ii6_cuts_are_the_plate_thirds() {
+        // PDF p. 55. AC = CB = 2/3 of CD, BD the remaining third. KM is the
+        // row of DE × BG, so it is level, one third of the way down the square.
+        let d = crate::figure::book2_prop6();
+        let c = d.at("C");
+        let b = d.at("B");
+        let a = d.at("A");
+        let dd = d.at("D");
+        let h = d.at("H");
+        let l = d.at("L");
+        let m = d.at("M");
+        let side = c.dist(dd);
+        assert!((a.dist(c) / side - 2.0 / 3.0).abs() < 0.002, "AC is two thirds");
+        assert!((c.dist(b) / side - 2.0 / 3.0).abs() < 0.002, "CB is two thirds");
+        assert!((b.dist(dd) / side - 1.0 / 3.0).abs() < 0.002, "BD is the remaining third");
+        assert!((h.y - l.y).abs() < 0.01 && (h.y - m.y).abs() < 0.01, "KM is level");
+        assert!((c.y - h.y) / side - 1.0 / 3.0 < 0.002 && (c.y - h.y) > 0.0, "H is one third down");
+        assert!((h.x - b.x).abs() < 0.01, "BG is plumb");
+    }
+
+    #[test]
+    fn ii6_ring_is_the_plate_stroke() {
+        // PDF p. 55, the English figure. Three quadrants about H. The gap is
+        // the lower-left, toward LG, and P sits in it — the stroke stops at
+        // the bottom and does not join P. Radius is 0.222 of CD, not II.5's
+        // 0.150.
+        let html = crate::figure::book2_prop6().svg(&[] as &[String]);
+        let needle = "data-id=\"ring-h\"";
+        let start = html.find(needle).expect("dotted ring about H");
+        let chunk = &html[start..html[start..].find("/>").map(|i| start + i).unwrap()];
+        assert!(chunk.contains("stroke-dasharray"), "the plate's stroke about H is dotted: {chunk}");
+        assert!(
+            chunk.contains("stroke-linecap=\"butt\""),
+            "round caps would paint the open quadrant shut: {chunk}"
+        );
+        let d_at = chunk.find(" d=\"").unwrap() + 4;
+        let path = chunk[d_at..].split('"').next().unwrap();
+        let nums: Vec<f64> = path.split_whitespace().filter_map(|w| w.parse().ok()).collect();
+        assert!(nums.len() >= 8, "arc path {path}");
+        let (ax, ay) = (nums[0], nums[1]);
+        let (bx, by) = (nums[nums.len() - 2], nums[nums.len() - 1]);
+        let h_needle = "data-id=\"H\" cx=\"";
+        let h_at = html.find(h_needle).expect("dot H") + h_needle.len();
+        let hx: f64 = html[h_at..].split('"').next().unwrap().parse().unwrap();
+        let cy_at = html[h_at..].find("cy=\"").unwrap() + h_at + 4;
+        let hy: f64 = html[cy_at..].split('"').next().unwrap().parse().unwrap();
+        // Starts at the left of H. Stops on the upright below H. The lower-left
+        // end would be through P; that opening is the plate's gap.
+        let left = ax < hx - 1.0 && (ay - hy).abs() < (ax - hx).abs();
+        let below = by > hy + 1.0 && (bx - hx).abs() < (by - hy).abs();
+        let through_p = bx < hx - 1.0 && by > hy + 1.0;
+        assert!(
+            left && below && !through_p,
+            "the stroke starts left of H and stops below, short of P: {path} H {hx},{hy}"
+        );
+        let r = ((ax - hx).powi(2) + (ay - hy).powi(2)).sqrt();
+        let c_at = html.find("data-id=\"C\" cx=\"").expect("dot C") + "data-id=\"C\" cx=\"".len();
+        let cx: f64 = html[c_at..].split('"').next().unwrap().parse().unwrap();
+        let d_needle = "data-id=\"D\" cx=\"";
+        let d_at = html.find(d_needle).expect("dot D") + d_needle.len();
+        let dx: f64 = html[d_at..].split('"').next().unwrap().parse().unwrap();
+        let side = (dx - cx).abs();
+        assert!(
+            (r / side - 0.222).abs() < 0.004,
+            "ring is 22.2 on the side of 100, inside the square: r={r} side={side}"
+        );
+        let e_needle = "data-id=\"E\" cx=\"";
+        let e_at = html.find(e_needle).expect("dot E") + e_needle.len();
+        let cy_e = html[e_at..].find("cy=\"").unwrap() + e_at + 4;
+        let ey: f64 = html[cy_e..].split('"').next().unwrap().parse().unwrap();
+        assert!(
+            ax > cx && by < ey,
+            "the stroke stays inside CEFD, not outside: left {ax} C {cx} below {by} E {ey}"
+        );
+        let dash = chunk.split("stroke-dasharray=\"").nth(1).unwrap().split('"').next().unwrap();
+        let step: f64 = dash.split_whitespace().next().unwrap().parse().unwrap();
+        assert!((step / r - 0.150).abs() < 0.004, "dash is 0.150 of the radius: {step} / {r}");
+        assert!(path.contains(" 0 1 1 "), "three quadrants through NOP, clockwise: {path}");
+        if std::env::var("II6_SVG").is_ok() {
+            std::fs::write("/tmp/elements/ii6-live.svg", &html).unwrap();
+        }
+    }
+
     fn letter_offset(html: &str, id: &str) -> (f64, f64) {
         let needle = format!("class=\"letter\" data-id=\"{id}\"");
         let start = html.find(&needle).expect(id);
