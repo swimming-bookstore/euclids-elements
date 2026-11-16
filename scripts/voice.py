@@ -102,10 +102,11 @@ def speakable(text: str) -> str:
         return "A. L."
     if raw == "AH":
         return "A. H."
-    # AM is not joined from the stored A and M. That join is heard as "A em".
-    # "A, M." is one phrase, so the A stays A and the M stays M.
+    # M is not the letter name. Piper reads "M", "M.", and "A, M." as "em",
+    # a vowel then a nasal. The stored clip is the phoneme m, with no vowel
+    # in front, and AM is that M joined to the stored A. Neither is synthesized.
     if raw == "AM":
-        return "A, M."
+        return "A. M."
     if raw == "EF":
         return "E. F."
     if raw == "CEFB":
@@ -114,14 +115,15 @@ def speakable(text: str) -> str:
     # clip is the C, E, and F of CEFB — the E that stays E — joined to D.
     # EC is not joined either. E plus C says "B, C". The stored clip is that
     # same E joined to C.
-    # CM is not joined from the stored C and M. That join is heard as "C em".
-    # "C, M." is one phrase, so the C stays C and the M stays M.
+    # CM is not joined from a spelled "C, M.". Piper reads that M as "em".
+    # The stored clip is the stored C joined to the phoneme M, the letter
+    # that stays M.
     if raw == "CEFD":
         return "C; E; F; D."
     if raw == "EC":
         return "E. C."
     if raw == "CM":
-        return "C, M."
+        return "C. M."
     if raw and raw.isupper() and 1 <= len(raw) <= 4 and raw != "I":
         return "; ".join(raw) + "."
     spoken = text.replace("(", " ").replace(")", " ")
@@ -349,15 +351,18 @@ def compose_plate(name: str) -> array.array | None:
     the E of "E. D." when it is put in front of B. The stored EB is the E of "B. E.", the letter that stays E, joined to B.
     AK, AL, and AH are not joined from the stored A: that join says "I".
     They are spelled "A. K.", "A. L.", and "A. H.", the way AD is.
-    AM is not joined either. The stored A plus M is heard as "A em".
-    speakable spells that name "A, M." instead, one phrase, so both letters stay.
+    AM is not spelled "A, M." either. Piper reads that M as "em". The stored
+    clip is the stored A joined to the phoneme M, the letter that stays M.
+    BM, DM, and KM are the same join. The stored M was "em", so those names
+    were heard as B em, D em, and K em. Each stored clip is the first letter
+    joined to the phoneme M.
     EF and CEFB are not joined from the stored E. The stored clips use the
     E of "B. E.", the letter that stays E. CEFD is that same C, E, and F
     joined to D. EC is that same E joined to C: E plus C says "B, C".
-    CM is not joined either. The stored C plus M is heard as "C em".
-    speakable spells that name "C, M." instead, one phrase, so both letters stay.
+    CM is not spelled "C, M." either. Piper reads that M as "em". The stored
+    clip is the stored C joined to the phoneme M, the letter that stays M.
     """
-    if name in ("A", "AC", "CDEB", "ED", "AF", "BE", "AE", "AD", "CE", "ADEB", "DE", "EB", "GE", "AK", "AL", "AH", "EF", "CEFB", "CEFD", "EC", "AM", "CM"):
+    if name in ("A", "AC", "CDEB", "ED", "AF", "BE", "AE", "AD", "CE", "ADEB", "DE", "EB", "GE", "AK", "AL", "AH", "EF", "CEFB", "CEFD", "EC", "M", "AM", "BM", "CM", "DM", "KM"):
         return None
     clips = [library_clip(ch) for ch in name]
     if any(clip is None for clip in clips):
