@@ -103,8 +103,10 @@ def speakable(text: str) -> str:
     if raw == "AH":
         return "A. H."
     # M is not the letter name. Piper reads "M", "M.", and "A, M." as "em",
-    # a vowel then a nasal. The stored clip is the phoneme m, with no vowel
-    # in front, and AM is that M joined to the stored A. Neither is synthesized.
+    # a vowel then a nasal. A looped phoneme clicks every few dozen
+    # milliseconds, so that M was broken in KM and the other names. The
+    # stored clip is the nasal of "him", one continuous M with no vowel in
+    # front. AM is that M joined to the stored A. Neither is synthesized.
     if raw == "AM":
         return "A. M."
     if raw == "EF":
@@ -359,16 +361,17 @@ def compose_plate(name: str) -> array.array | None:
     the E of "E. D." when it is put in front of B. The stored EB is the E of "B. E.", the letter that stays E, joined to B.
     AK, AL, and AH are not joined from the stored A: that join says "I".
     They are spelled "A. K.", "A. L.", and "A. H.", the way AD is.
-    AM is not spelled "A, M." either. Piper reads that M as "em". The stored
-    clip is the stored A joined to the phoneme M, the letter that stays M.
-    BM, DM, and KM are the same join. The stored M was "em", so those names
-    were heard as B em, D em, and K em. Each stored clip is the first letter
-    joined to the phoneme M.
+    AM is not spelled "A, M." either. Piper reads that M as "em". A looped
+    phoneme clicks, so that M was broken. The stored clip is the stored A
+    joined to the nasal of "him", one continuous M. BM, DM, and KM are the
+    same join. The stored M was "em", so those names were heard as B em,
+    D em, and K em. Each stored clip is the first letter joined to that M.
     EF and CEFB are not joined from the stored E. The stored clips use the
     E of "B. E.", the letter that stays E. CEFD is that same C, E, and F
     joined to D. EC is that same E joined to C: E plus C says "B, C".
     CM is not spelled "C, M." either. Piper reads that M as "em". The stored
-    clip is the stored C joined to the phoneme M, the letter that stays M.
+    clip is the stored C joined to the nasal of "him", the M that stays one
+    continuous consonant.
     """
     if name in ("A", "AC", "CDEB", "ED", "AF", "BE", "AE", "AD", "CE", "ADEB", "DE", "EB", "GE", "AK", "AL", "AH", "EF", "CEFB", "CEFD", "EC", "M", "AM", "BM", "CM", "DM", "KM"):
         return None
