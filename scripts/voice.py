@@ -296,8 +296,10 @@ def word_key(text: str) -> str | None:
     library clip is the letter name "ay", which is the only reading of this
     word that stays a word when it is spoken alone.
     The stored "it" is not the word Piper says for "it": that clip is "eat".
-    "It's" keeps a short vowel, but the S is part of the word. The library
-    clip is "sit" with the S faded out, so what is left is "it".
+    "It's" keeps a short vowel, but the S is part of the word. Fading the S
+    off "sit" leaves the stop, and that stop is heard as D, so the word is
+    "dit". The library clip is "it" cut from "leave it": the vowel comes
+    first, and the T is the stop at the end.
     The stored "with" is not the word Piper says for "with": that clip drops
     the W and is heard as "the". The library clip is "with" cut from
     "line with the", so the W stays and it does not become another "the".
