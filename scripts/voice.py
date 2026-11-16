@@ -298,6 +298,12 @@ def word_key(text: str) -> str | None:
     The stored "it" is not the word Piper says for "it": that clip is "eat".
     "It's" keeps a short vowel, but the S is part of the word. The library
     clip is "sit" with the S faded out, so what is left is "it".
+    The stored "with" is not the word Piper says for "with": that clip drops
+    the W and is heard as "the". The library clip is "with" cut from
+    "line with the", so the W stays and it does not become another "the".
+    The stored "having" is not the word Piper says for "having": that clip
+    drops the H and is heard as "being". The library clip is "having" cut
+    from "line having been", so the H stays and the word is not skipped.
     """
     if plate_letters(text):
         return None
