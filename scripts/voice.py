@@ -308,6 +308,10 @@ def word_key(text: str) -> str | None:
     The stored "having" is not the word Piper says for "having": that clip
     drops the H and is heard as "being". The library clip is "having" cut
     from "line having been", so the H stays and the word is not skipped.
+    The stored "being" is not the word Piper says for "being": that clip
+    drops the B and is heard as "eating", and the short tail that was stored
+    is heard as "added". The library clip is "being" cut from "see being",
+    so the B stays and the word is not "added".
     """
     if plate_letters(text):
         return None
