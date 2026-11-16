@@ -38,7 +38,7 @@ def speakable(text: str) -> str:
     raw = "".join(c for c in text if c.isalpha())
     # Plate letters are names, not words. A semicolon is the fallback spelling
     # for a single letter. Pairs are not sent here: Piper reads "A; B." as "AC".
-    # A, AC, CDEB, ADEB, DE, EB, GE, ED, AF, BE, AE, AD, and CE are exceptions. The stored A has lost its
+    # A, AC, CDEB, ADEB, DE, EB, GE, ED, AF, BE, AE, AD, CE, and CM are exceptions. The stored A has lost its
     # glide, so "A." is heard as "I"; spelling it "A." again keeps the letter.
     # Joining that A onto C says "I, C", and "A; C." is the spelling that keeps
     # both. Joining the stored E onto CDEB says "C, D, B, B" — that E is heard
@@ -102,10 +102,26 @@ def speakable(text: str) -> str:
         return "A. L."
     if raw == "AH":
         return "A. H."
+    # AM is not joined from the stored A and M. That join is heard as "A em".
+    # "A, M." is one phrase, so the A stays A and the M stays M.
+    if raw == "AM":
+        return "A, M."
     if raw == "EF":
         return "E. F."
     if raw == "CEFB":
         return "C; E; F; B."
+    # CEFD is not joined from the stored E: that E is heard as B. The stored
+    # clip is the C, E, and F of CEFB — the E that stays E — joined to D.
+    # EC is not joined either. E plus C says "B, C". The stored clip is that
+    # same E joined to C.
+    # CM is not joined from the stored C and M. That join is heard as "C em".
+    # "C, M." is one phrase, so the C stays C and the M stays M.
+    if raw == "CEFD":
+        return "C; E; F; D."
+    if raw == "EC":
+        return "E. C."
+    if raw == "CM":
+        return "C, M."
     if raw and raw.isupper() and 1 <= len(raw) <= 4 and raw != "I":
         return "; ".join(raw) + "."
     spoken = text.replace("(", " ").replace(")", " ")
@@ -333,10 +349,15 @@ def compose_plate(name: str) -> array.array | None:
     the E of "E. D." when it is put in front of B. The stored EB is the E of "B. E.", the letter that stays E, joined to B.
     AK, AL, and AH are not joined from the stored A: that join says "I".
     They are spelled "A. K.", "A. L.", and "A. H.", the way AD is.
+    AM is not joined either. The stored A plus M is heard as "A em".
+    speakable spells that name "A, M." instead, one phrase, so both letters stay.
     EF and CEFB are not joined from the stored E. The stored clips use the
-    E of "B. E.", the letter that stays E.
+    E of "B. E.", the letter that stays E. CEFD is that same C, E, and F
+    joined to D. EC is that same E joined to C: E plus C says "B, C".
+    CM is not joined either. The stored C plus M is heard as "C em".
+    speakable spells that name "C, M." instead, one phrase, so both letters stay.
     """
-    if name in ("A", "AC", "CDEB", "ED", "AF", "BE", "AE", "AD", "CE", "ADEB", "DE", "EB", "GE", "AK", "AL", "AH", "EF", "CEFB"):
+    if name in ("A", "AC", "CDEB", "ED", "AF", "BE", "AE", "AD", "CE", "ADEB", "DE", "EB", "GE", "AK", "AL", "AH", "EF", "CEFB", "CEFD", "EC", "AM", "CM"):
         return None
     clips = [library_clip(ch) for ch in name]
     if any(clip is None for clip in clips):
