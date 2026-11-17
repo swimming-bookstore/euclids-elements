@@ -3,6 +3,7 @@
 use super::geom::{Place, V2};
 use super::labels::{self, Label};
 use super::plate::{self, Fit, Size};
+use std::collections::HashMap;
 
 pub(crate) enum Mark {
     Circle { id: String, c: V2, r: f64 },
@@ -17,6 +18,8 @@ pub(crate) struct Figure {
     marks: Vec<Mark>,
     labels: Vec<Label>,
     clip: Option<(V2, V2)>,
+    /// Dash length as a fraction of the radius, for a dotted-ring id.
+    ring_dash: HashMap<String, f64>,
 }
 
 impl Figure {
@@ -51,6 +54,14 @@ impl Figure {
             b,
             via,
         });
+    }
+
+    /// Plate dash for a dotted ring, as a fraction of its radius.
+    ///
+    /// II.5 and II.6 are 0.150. II.7 (PDF p. 56) is 0.120. Unset rings keep
+    /// 0.150, the step `svg` uses when this was not called.
+    pub(crate) fn ring_dash(&mut self, id: &str, frac: f64) {
+        self.ring_dash.insert(id.to_string(), frac);
     }
 
     pub(crate) fn dot(&mut self, id: impl Into<String>, p: V2) {
@@ -187,15 +198,16 @@ impl Figure {
                             arc_d(*a, *b, *via, y)
                         };
                         let dash = if id.starts_with("ring-") {
-                            // Fitzpatrick's ring about H (II.5, PDF p. 54): dash
-                            // and gap are 0.151 of the radius (2.34 pt on a
-                            // 15.48 pt ring). The CSS stroke shorthand resets
-                            // dasharray, so the length is a custom property the
-                            // ring rule reads. Butt caps: a round cap paints the
-                            // open quadrant shut.
+                            // Fitzpatrick's ring: dash and gap are a fraction of
+                            // the radius. II.5 (PDF p. 54) is 0.150 — 2.34 pt on
+                            // a 15.48 pt ring. II.7 (PDF p. 56) is 0.120. The CSS
+                            // stroke shorthand resets dasharray, so the length is
+                            // a custom property the ring rule reads. Butt caps: a
+                            // round cap paints the open quadrant shut.
                             if let Some((c, r)) = circle3(*a, *b, *via) {
                                 let _ = c;
-                                let step = r * 0.150;
+                                let frac = self.ring_dash.get(id).copied().unwrap_or(0.150);
+                                let step = r * frac;
                                 format!(
                                     r#" style="--dash:{}" stroke-dasharray="{} {}" stroke-linecap="butt""#,
                                     n(step),
