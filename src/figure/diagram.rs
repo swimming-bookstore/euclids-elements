@@ -394,6 +394,20 @@ impl Diagram {
         self.stroke(a, b, id)
     }
 
+    /// A stroke the plate draws and the proof does not call by those ends.
+    ///
+    /// II.7 draws the diagonal of the square, then calls *BG* and *DG* the
+    /// squares on the pieces. A join would make those names the diagonal.
+    /// The ink is still there; a registered opposite-corner name keeps the
+    /// boundary.
+    pub fn ink(&mut self, a: &'static str, b: &'static str) -> &mut Self {
+        let id = format!("{}{}", a.to_ascii_lowercase(), b.to_ascii_lowercase());
+        let pa = self.at(a);
+        let pb = self.at(b);
+        self.fig.seg(&id, pa, pb);
+        self
+    }
+
     /// Spoken name for a segment (`C` in I.3).
     pub fn named_line(&mut self, letters: &'static str, a: &'static str, b: &'static str) -> &mut Self {
         let id = format!("seg-{}", letters.to_ascii_lowercase());
@@ -535,6 +549,21 @@ impl Diagram {
         let b = c.polar(r, open + 45.0);
         let via = c.polar(r, open + 180.0);
         self.fig.arc(id, a, b, via);
+        self
+    }
+
+    /// Same three-quadrant ring, with the plate's dash as a fraction of the radius.
+    ///
+    /// II.5 and II.6 are 0.150. II.7 (PDF p. 56) is 0.120 — 3.05 pt on a
+    /// 25.45 pt ring. The default ring keeps 0.150 so those plates do not move.
+    pub fn dotted_ring_dash(&mut self, center: &str, r: f64, open: f64, dash: f64) -> &mut Self {
+        let c = self.at(center);
+        let id = format!("ring-{}", center.to_ascii_lowercase());
+        let a = c.polar(r, open - 45.0);
+        let b = c.polar(r, open + 45.0);
+        let via = c.polar(r, open + 180.0);
+        self.fig.arc(id.clone(), a, b, via);
+        self.fig.ring_dash(&id, dash);
         self
     }
 
@@ -3695,6 +3724,85 @@ mod tests {
         if std::env::var("II6_SVG").is_ok() {
             std::fs::write("/tmp/elements/ii6-live.svg", &html).unwrap();
         }
+    }
+
+    #[test]
+    fn ii7_cut_is_the_plate_column() {
+        // PDF p. 56. AC is 0.6154 of AB, CB the rest. HK is the row of BD × CN,
+        // so it is level, and CF is the square on CB.
+        let d = crate::figure::book2_prop7();
+        let a = d.at("A");
+        let b = d.at("B");
+        let c = d.at("C");
+        let g = d.at("G");
+        let h = d.at("H");
+        let f = d.at("F");
+        let n = d.at("N");
+        let side = a.dist(b);
+        assert!((c.x - a.x) / side - 0.6154 < 0.001, "C is the plate column");
+        assert!((b.x - c.x) / side - 0.3846 < 0.001, "CB is the rest");
+        assert!((g.y - h.y).abs() < 0.01 && (g.y - f.y).abs() < 0.01, "HK is level");
+        assert!((g.x - c.x).abs() < 0.01 && (g.x - n.x).abs() < 0.01, "CN is plumb");
+        assert!((a.y - g.y) / side - 0.3846 < 0.001, "G is the CB row down from AB");
+        assert!((b.dist(f) - b.dist(c)).abs() < 0.01, "BF equals BC");
+    }
+
+    #[test]
+    fn ii7_ring_is_the_plate_stroke() {
+        // PDF p. 56, the English figure. Three quadrants about G. The gap is
+        // the lower-left, toward the square on AC, and M sits in it — the
+        // stroke stops at the bottom and does not join M. Radius is 0.192 of
+        // AB, not II.5's 0.150 or II.6's 0.222. Dash is 0.120 of the radius.
+        let html = crate::figure::book2_prop7().svg(&[] as &[String]);
+        let needle = "data-id=\"ring-g\"";
+        let start = html.find(needle).expect("dotted ring about G");
+        let chunk = &html[start..html[start..].find("/>").map(|i| start + i).unwrap()];
+        assert!(chunk.contains("stroke-dasharray"), "the plate's stroke about G is dotted: {chunk}");
+        assert!(
+            chunk.contains("stroke-linecap=\"butt\""),
+            "round caps would paint the open quadrant shut: {chunk}"
+        );
+        let d_at = chunk.find(" d=\"").unwrap() + 4;
+        let path = chunk[d_at..].split('"').next().unwrap();
+        let nums: Vec<f64> = path.split_whitespace().filter_map(|w| w.parse().ok()).collect();
+        assert!(nums.len() >= 8, "arc path {path}");
+        let (ax, ay) = (nums[0], nums[1]);
+        let (bx, by) = (nums[nums.len() - 2], nums[nums.len() - 1]);
+        let g_needle = "data-id=\"G\" cx=\"";
+        let g_at = html.find(g_needle).expect("dot G") + g_needle.len();
+        let gx: f64 = html[g_at..].split('"').next().unwrap().parse().unwrap();
+        let cy_at = html[g_at..].find("cy=\"").unwrap() + g_at + 4;
+        let gy: f64 = html[cy_at..].split('"').next().unwrap().parse().unwrap();
+        let left = ax < gx - 1.0 && (ay - gy).abs() < (ax - gx).abs();
+        let below = by > gy + 1.0 && (bx - gx).abs() < (by - gy).abs();
+        let through_m = bx < gx - 1.0 && by > gy + 1.0;
+        assert!(
+            left && below && !through_m,
+            "the stroke starts left of G and stops below, short of M: {path} G {gx},{gy}"
+        );
+        let r = ((ax - gx).powi(2) + (ay - gy).powi(2)).sqrt();
+        let a_at = html.find("data-id=\"A\" cx=\"").expect("dot A") + "data-id=\"A\" cx=\"".len();
+        let ax0: f64 = html[a_at..].split('"').next().unwrap().parse().unwrap();
+        let b_needle = "data-id=\"B\" cx=\"";
+        let b_at = html.find(b_needle).expect("dot B") + b_needle.len();
+        let bx0: f64 = html[b_at..].split('"').next().unwrap().parse().unwrap();
+        let side = (bx0 - ax0).abs();
+        assert!(
+            (r / side - 0.192).abs() < 0.004,
+            "ring is 19.23 on the side of 100, inside the square: r={r} side={side}"
+        );
+        let d_needle = "data-id=\"D\" cx=\"";
+        let d_at = html.find(d_needle).expect("dot D") + d_needle.len();
+        let cy_d = html[d_at..].find("cy=\"").unwrap() + d_at + 4;
+        let dy: f64 = html[cy_d..].split('"').next().unwrap().parse().unwrap();
+        assert!(
+            ax > ax0 && by < dy,
+            "the stroke stays inside ADEB, not outside: left {ax} A {ax0} below {by} D {dy}"
+        );
+        let dash = chunk.split("stroke-dasharray=\"").nth(1).unwrap().split('"').next().unwrap();
+        let step: f64 = dash.split_whitespace().next().unwrap().parse().unwrap();
+        assert!((step / r - 0.120).abs() < 0.004, "dash is 0.120 of the radius: {step} / {r}");
+        assert!(path.contains(" 0 1 1 "), "three quadrants through KLM, clockwise: {path}");
     }
 
     fn letter_offset(html: &str, id: &str) -> (f64, f64) {

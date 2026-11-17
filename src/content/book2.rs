@@ -1,5 +1,5 @@
 use super::{s, Proposition};
-use crate::figure::{book2_prop1, book2_prop2, book2_prop3, book2_prop4, book2_prop5, book2_prop6};
+use crate::figure::{book2_prop1, book2_prop2, book2_prop3, book2_prop4, book2_prop5, book2_prop6, book2_prop7};
 
 pub const PROP_1: Proposition = Proposition {
     book: 2,
@@ -162,4 +162,30 @@ pub const PROP_6: Proposition = Proposition {
     ],
 };
 
-pub const PROPOSITIONS: &[Proposition] = &[PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6];
+pub const PROP_7: Proposition = Proposition {
+    book: 2,
+    number: 7,
+    enunciation: "If a straight-line is cut at random then the sum of the squares on the whole (straight-line), and one of the pieces (of the straight-line), is equal to twice the rectangle contained by the whole, and the said piece, and the square on the remaining piece.",
+    figure: book2_prop7,
+    phrases: &[
+        s(1, "For let any straight-line *AB* have been cut, at random, at point *C*."),
+        s(1, "I say that the (sum of the) squares on *AB* and *BC* is equal to twice the rectangle contained by *AB* and *BC*, and the square on *CA*."),
+        s(2, "For let the square *ADEB* have been described on *AB*,{[Prop. 1.46]} and let the (rest of) the figure have been drawn."),
+        s(3, "Therefore, since (rectangle) *rectangle(AG)* is equal to (rectangle) *rectangle(GE)*,{[Prop. 1.43]} let the (square) *rectangle(CF)* have been added to both."),
+        s(3, "Thus, the whole (rectangle) *rectangle(AF)* is equal to the whole (rectangle) *rectangle(CE)*."),
+        s(3, "Thus, (rectangle) *rectangle(AF)* plus (rectangle) *rectangle(CE)* is double (rectangle) *rectangle(AF)*."),
+        s(3, "But, (rectangle) *rectangle(AF)* plus (rectangle) *rectangle(CE)* is the gnomon *gnomon(KLM)*, and the square *rectangle(CF)*."),
+        s(3, "Thus, the gnomon *gnomon(KLM)*, and the square *rectangle(CF)*, is double the (rectangle) *rectangle(AF)*."),
+        s(3, "But double the (rectangle) *rectangle(AF)* is also twice the (rectangle contained) by *AB* and *BC*."),
+        s(3, "For *BF* (is) equal to *BC*."),
+        s(3, "Thus, the gnomon *gnomon(KLM)*, and the square *rectangle(CF)*, are equal to twice the (rectangle contained) by *AB* and *BC*."),
+        s(3, "Let *DG*, which is the square on *AC*, have been added to both."),
+        s(3, "Thus, the gnomon *gnomon(KLM)*, and the squares *BG* and *GD*, are equal to twice the rectangle contained by *AB* and *BC*, and the square on *AC*."),
+        s(3, "But, the gnomon *gnomon(KLM)* and the squares *BG* and *GD* is (equivalent to) the whole of *ADEB* and *CF*, which are the squares on *AB* and *BC* (respectively)."),
+        s(3, "Thus, the (sum of the) squares on *AB* and *BC* is equal to twice the rectangle contained by *AB* and *BC*, and the square on *AC*."),
+        s(4, "Thus, if a straight-line is cut at random then the sum of the squares on the whole (straight-line), and one of the pieces (of the straight-line), is equal to twice the rectangle contained by the whole, and the said piece, and the square on the remaining piece."),
+        s(4, "(Which is) the very thing it was required to show."),
+    ],
+};
+
+pub const PROPOSITIONS: &[Proposition] = &[PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6, PROP_7];

@@ -104,7 +104,7 @@ h1 {
   fill: none;
 }
 
-/* The plate's dotted stroke (II.5, II.6) is dashed in the markup. A shorthand
+/* The plate's dotted stroke (II.5, II.6, II.7) is dashed in the markup. A shorthand
    stroke resets dasharray, and a unitless --dash is an invalid CSS length, so
    the property computed to none and the ring came out solid in read mode.
    --dash is the user-unit step; cqi / --fw is one user unit on this frame, so

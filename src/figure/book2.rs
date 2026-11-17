@@ -332,3 +332,83 @@ pub fn book2_prop6() -> Diagram {
     d.dots(&["A", "B", "C", "D", "E", "F", "G", "H", "K", "L", "M"]);
     d
 }
+
+/// II.7 — Fitzpatrick English plate (Elements PDF p. 56, the right-hand figure).
+///
+/// Square ADEB described on AB. AB is the top side, cut at random at C. BD is
+/// joined. The upright through C, parallel to AD and BE, meets BD at G and DE
+/// at N. HK is the row of that crossing: H on AD, F on BE. CF is the square
+/// on BC, named by the opposite corners C and F. DG is the square on AC,
+/// named the other way as GD. AG and GE are the complements about the
+/// diagonal. AF and CE are the rectangles the proof adds. Each is named by
+/// opposite corners. The plate draws no stroke across them, so the spoken
+/// name is the boundary, not a diagonal. KLM is the gnomon: the square on AB
+/// with the square on AC taken out. K, L, and M are that gnomon's plate
+/// letters, not vertices. N is the foot of the upright, not a gnomon letter.
+///
+/// One scale AB = 100. C is 0.6154 of the way from A to B — the ink column,
+/// not a round fraction. G is BD × CN, so HK is that row and CF is the square
+/// on CB. Vertex letters sit on the measured tip→glyph heading. K, L, and M
+/// sit at the measured glyph centers.
+///
+/// The dotted stroke about G is three quadrants. PDF p. 56 starts at the left
+/// and runs top, right, bottom, then stops. The gap is the lower-left, toward
+/// the square on AC, and M sits in that gap, so the stroke does not join M.
+/// Radius 25.45 pt on the 132.32 pt square, so 19.23 on this scale — 0.192 of
+/// the side, not the 0.150 ring from II.5 or the 0.222 ring from II.6. Dash
+/// and gap are 3.05 pt, 0.120 of that radius.
+pub fn book2_prop7() -> Diagram {
+    let mut d = Diagram::new();
+    let ac = 61.54;
+    d.put("A", V2::new(0.0, 100.0), Place::Deg(94.6));
+    d.level("C", "A", ac, Place::Deg(94.4));
+    d.level("B", "A", 100.0, Place::Deg(76.5));
+    d.plumb("H", "A", ac, Place::Deg(-177.0));
+    d.plumb("D", "A", 0.0, Place::Deg(-73.9));
+    d.corner("G", "C", "H", Place::Deg(-47.8));
+    d.corner("F", "B", "H", Place::Deg(-3.6));
+    d.corner("N", "C", "D", Place::Deg(-90.1));
+    d.corner("E", "B", "D", Place::Deg(-79.1));
+    // AB, HK, and DE split at the cuts. The uprights split where HK crosses
+    // them. BD splits at G.
+    d.chain(&["A", "C", "B"]);
+    d.chain(&["H", "G", "F"]);
+    d.chain(&["D", "N", "E"]);
+    d.chain(&["A", "H", "D"]);
+    d.chain(&["B", "F", "E"]);
+    d.chain(&["C", "G", "N"]);
+    // The plate joins BD. The proof never calls that diagonal by its ends:
+    // BG and DG are the squares. A join would light the diagonal for those
+    // names.
+    d.ink("B", "G");
+    d.ink("G", "D");
+    // PDF p. 56: left, top, right, bottom, then stop. The missing quadrant is
+    // the lower-left, toward the square on AC. M sits in that opening.
+    // Radius 19.23, 0.192 of AB. Dash 0.120 of the radius.
+    d.dotted_ring_dash("G", 19.23, -135.0, 0.120);
+    // Spoken by opposite corners. The plate draws no stroke across them.
+    // BG is the square on BC, the same boundary as CF, named the other way.
+    // GD is the square on AC, the same boundary as DG.
+    d.region("AG", &["A", "C", "G", "H"]);
+    d.region("GE", &["G", "F", "E", "N"]);
+    d.region("CF", &["C", "B", "F", "G"]);
+    d.region("AF", &["A", "B", "F", "H"]);
+    d.region("CE", &["C", "B", "E", "N"]);
+    d.region("BG", &["B", "F", "G", "C"]);
+    d.region("GD", &["G", "N", "D", "H"]);
+    d.region("DG", &["D", "N", "G", "H"]);
+    // Square on AB, minus the square on AC. The outline is the L.
+    d.region("KLM", &["A", "B", "E", "N", "G", "H"]);
+    d.region("ADEB", &["A", "B", "E", "D"]);
+    // Gnomon letters. The center is the plate glyph, not an offset from a
+    // vertex — a heading would walk L into the ring and K out of the square.
+    // PDF p. 56, glyph center minus the D tip, on the side of 132.32.
+    d.pin("K", V2::new(42.98, 57.42));
+    d.glyph("K", V2::new(42.98, 57.42));
+    d.pin("L", V2::new(64.90, 85.16));
+    d.glyph("L", V2::new(64.90, 85.16));
+    d.pin("M", V2::new(56.39, 42.84));
+    d.glyph("M", V2::new(56.39, 42.84));
+    d.dots(&["A", "B", "C", "D", "E", "F", "G", "H", "N"]);
+    d
+}

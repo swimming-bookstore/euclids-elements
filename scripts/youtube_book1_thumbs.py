@@ -798,6 +798,9 @@ class Scene:
         self.circs: list[tuple[str, float]] = []
         self.rings: list[tuple[str, float]] = []
         self.dotted: list[tuple[V2, V2, V2]] = []
+        # Dash and gap as a fraction of the ring radius. II.5 and II.6 are
+        # 0.150. II.7's plate stroke is 0.120, set from the figure.
+        self.dash = 0.150
         self.arc_list: list[tuple[V2, V2, V2]] = []
         self.dot_pts: list[V2] = []
         self.clip_box: tuple[V2, V2] | None = None
@@ -929,6 +932,12 @@ class Scene:
         via = c.polar(r, open_deg + 180.0)
         self.dotted.append((a, b, via))
 
+    def dotted_ring_dash(self, center: str, r: float, open_deg: float, dash: float) -> None:
+        # II.7's ring (PDF p. 56). Same three quadrants; the dash is 0.120 of
+        # the radius, not the 0.150 of II.5 and II.6.
+        self.dash = dash
+        self.dotted_ring(center, r, open_deg)
+
     def bow(self, a: str, b: str, sag: float) -> None:
         pa, pb = self.at(a), self.at(b)
         mid = V2((pa.x + pb.x) / 2, (pa.y + pb.y) / 2)
@@ -983,6 +992,11 @@ class Scene:
     def region(self, _name: str, _boundary: list) -> None:
         # Opposite-corner names (I.43's EH, BK). The card washes the
         # complements; it does not redraw the plate.
+        return
+
+    def ink(self, _a: str, _b: str) -> None:
+        # A plate stroke the proof does not name (II.7's diagonal). The
+        # chain already drew it. The card does not light it a second time.
         return
 
     def along(self, _name: str, _points: list) -> None:
@@ -1562,7 +1576,7 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
         cr.move_to(*pt_of(V2(*pts[0])))
         for x, y in pts[1:]:
             cr.line_to(*pt_of(V2(x, y)))
-        step = a.dist(via) * 0.150 * scale
+        step = a.dist(via) * scene.dash * scale
         cr.set_line_cap(cairo.LINE_CAP_BUTT)
         cr.set_dash([step, step])
         cr.stroke()
@@ -1705,6 +1719,12 @@ WASHES4 = {
 # CF and in AM; the mixed fill is the overlap. AB is the straight-line
 # cut in half. C lies on it, so the named line is the whole chord, not
 # the half. BD is the added line, drawn on, so it takes the line too.
+# II.7: the squares on the whole and on one piece equal twice the rectangle
+# contained by the whole and that piece, plus the square on the remaining
+# piece. The square on the piece sits inside the square on the whole, so
+# one wash. Two hues would say the squares and the rectangle differ. AB is
+# the straight-line the enunciation cuts. C lies on it, so the named line
+# is the whole chord, not the piece.
 WASHES2 = {
     1: [("B", "C", "H", "G")],
     2: [("A", "B", "E", "D")],
@@ -1712,6 +1732,7 @@ WASHES2 = {
     4: [("A", "B", "E", "D")],
     5: [("C", "B", "F", "E"), ("A", "D", "H", "K"), ("C", "D", "Cd1", "Cd2")],
     6: [("C", "D", "F", "E"), ("A", "D", "M", "K"), ("C", "B", "Cb1", "Cb2")],
+    7: [("A", "B", "E", "D")],
 }
 
 # Outer edges of the shadow square the enunciation names and the plate
@@ -1744,6 +1765,9 @@ LINES2: dict[int, list[tuple[str, str]]] = {
     # AB, the straight-line cut in half, and BD, the line added straight-on.
     # C lies on AB, so the cut line is the whole chord, not the half.
     6: [("A", "B"), ("B", "D")],
+    # AB, the straight-line cut at random. The square on it is the wash. C
+    # lies on AB, so the cut line is the whole chord, not the piece.
+    7: [("A", "B")],
 }
 LINE_ALT2: dict[int, list[tuple[str, str]]] = {}
 LINE_EXTRA2: dict[int, list[tuple[tuple[int, int, int], tuple[tuple[str, str], ...]]]] = {}
