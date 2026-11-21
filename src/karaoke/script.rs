@@ -2998,8 +2998,8 @@ mod tests {
     #[test]
     fn ii9_angles_and_sides_are_the_plate() {
         // Fitzpatrick names the angles, and the sides the squares stand on.
-        // The angle at C is the right-angle ACE, not the whole pencil. The
-        // angle at D is the right-angle FDB. A triangle name is the outline,
+        // The angle at C is the right-angle ACE, not the whole pencil, and not G.
+        // The angle at D is the right-angle FDB. A triangle name is the outline,
         // not the angle of the same letters. The plate draws no square.
         let phrases = crate::content::get(2, 9).unwrap().phrases;
         let script = compile(phrases, &crate::figure::book2_prop9(), Timing::default());
@@ -3123,8 +3123,8 @@ mod tests {
         );
         let at_c = runs("C");
         assert!(
-            at_c.iter().any(|p| has(p, "ac") && has(p, "cg") && has(p, "ge") && has(p, "E") && !has(p, "cd") && !has(p, "ea")),
-            "the angle at C is the right-angle ACE, through to E, not the pencil: {at_c:?}"
+            at_c.iter().any(|p| has(p, "ac") && has(p, "cg") && has(p, "ge") && has(p, "A") && has(p, "E") && !has(p, "G") && !has(p, "cd") && !has(p, "ea")),
+            "the angle at C is ACE, through to E, without lighting G: {at_c:?}"
         );
         let aeb = runs("AEB");
         assert!(

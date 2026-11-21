@@ -693,8 +693,16 @@ impl Diagram {
         if let Some(edges) = self.adj.get(v) {
             if edges.len() > 2 {
                 if let Some(ids) = self.right_angle_at(v) {
+                    // The named angle, not every letter on its rays. II.9's
+                    // CE is C–G–E; G is a later construction point, so the
+                    // right-angle at C is ACE — A, C, E and the ink between
+                    // them — not G.
                     out.extend(self.ray_rest(v, &ids));
                     out.extend(ids);
+                    // Keep the vertex and the ends the angle names. Drop a
+                    // letter the ray only passes through.
+                    let named = out.clone();
+                    out.retain(|id| id.len() != 1 || !self.passed_letter(v, id, &named));
                     out.sort();
                     out.dedup();
                     return out;
@@ -771,6 +779,7 @@ impl Diagram {
     ///
     /// II.9's CE is drawn as C–G–E. The right-angle at C is ACE, so the
     /// upright the highlight names runs through G to E, not only as far as G.
+    /// The intermediate letter is not part of the name.
     fn ray_rest(&self, v: &'static str, ids: &[String]) -> Vec<String> {
         let mut extra = Vec::new();
         let ends: Vec<&str> = ids.iter().filter(|id| id.len() == 1).map(|s| s.as_str()).collect();
@@ -805,6 +814,32 @@ impl Diagram {
         }
         extra
     }
+
+    /// A letter the ray only passes through, between the vertex and a
+    /// further named end. G lies on C–E; A and E are ends, so they stay.
+    fn passed_letter(&self, v: &'static str, letter: &str, ids: &[String]) -> bool {
+        if letter == v {
+            return false;
+        }
+        let Some(p) = self.pts.get(letter) else {
+            return false;
+        };
+        let a = self.at(v);
+        ids.iter().any(|end| {
+            if end.len() != 1 || end == letter || end == v {
+                return false;
+            }
+            let b = self.at(end);
+            let dir = b.sub(a);
+            let d = (*p).sub(a);
+            let along = dir.dot(d);
+            let cross = dir.x * d.y - dir.y * d.x;
+            along > 1e-3
+                && along < dir.dot(dir) - 1e-3
+                && cross.abs() < 1e-3 * dir.len() * d.len().max(1e-9)
+        })
+    }
+
     fn on_one_line(&self, v: &'static str, p: &str, q: &str) -> bool {
         let a = self.at(p).sub(self.at(v));
         let b = self.at(q).sub(self.at(v));
