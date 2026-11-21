@@ -22,5 +22,8 @@ pub use book1::{
     book1_prop43, book1_prop44, book1_prop45, book1_prop46,
     book1_prop47, book1_prop48,
 };
-pub use book2::{book2_prop1, book2_prop2, book2_prop3, book2_prop4, book2_prop5, book2_prop6, book2_prop7};
+pub use book2::{
+    book2_prop1, book2_prop2, book2_prop3, book2_prop4, book2_prop5, book2_prop6, book2_prop7,
+    book2_prop8, book2_prop9,
+};
 pub use diagram::Diagram;
