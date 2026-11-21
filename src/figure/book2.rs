@@ -412,3 +412,146 @@ pub fn book2_prop7() -> Diagram {
     d.dots(&["A", "B", "C", "D", "E", "F", "G", "H", "N"]);
     d
 }
+
+/// II.8 — Fitzpatrick English plate (Elements PDF p. 58, the right-hand figure).
+///
+/// AB is cut at random at C, and BD is produced equal to CB. The square AEFD
+/// is described on AD. The figure is drawn double: a two-by-two block of the
+/// square on CB sits at the upper right, and the square equal to the square
+/// on AC sits at the lower left, named OH by the opposite corners. ED is the
+/// diagonal. It passes through Q and K. The proof never calls that stroke by
+/// its ends. Spoken squares are registered boundaries, so the join is not CK
+/// or KD.
+///
+/// CK, KD, GR, and RN are the four squares on CB. AG, MQ, QL, and RF are the
+/// four rectangles. AK is the rectangle contained by AB and BD. CP and ML are
+/// the parallelograms whose complements the proof names. STU is the gnomon:
+/// the square on AD with OH taken out. S, T, and U are that gnomon's plate
+/// letters, not vertices.
+///
+/// One scale AD = 100. The plate columns are 5 : 2 : 2 — AC is 5/9 of AD, and
+/// CB and BD are each 2/9. The rows repeat that, so the lower band is AC and
+/// OH is a square on a side equal to AC. Vertex letters sit on the measured
+/// tip→glyph heading. S, T, and U sit at the measured glyph centers.
+///
+/// The dotted stroke is not the three-quadrant ring of II.5–II.7. PDF p. 58
+/// centers it on the diagonal, inside square GR, not on a vertex. Radius
+/// 39.67 pt on the 157.55 pt square, so 25.18 on this scale — 0.252 of the
+/// side. The gap is 36.4°, centered lower-left, toward OH. Dash and gap are
+/// 2.63 pt, 0.066 of that radius. Rc is the center, not a plate letter.
+pub fn book2_prop8() -> Diagram {
+    let mut d = Diagram::new();
+    let ad = 100.0;
+    let cb = ad * 2.0 / 9.0;
+    let ac = ad * 5.0 / 9.0;
+    let ab = ac + cb;
+    let upper = ad - cb;
+    let mid = ad - 2.0 * cb;
+    d.put("A", V2::new(0.0, ad), Place::Deg(95.5));
+    d.level("C", "A", ac, Place::Deg(95.9));
+    d.level("B", "A", ab, Place::Deg(97.7));
+    d.level("D", "A", ad, Place::Deg(69.0));
+    d.plumb("E", "A", 0.0, Place::Deg(-96.5));
+    d.corner("F", "D", "E", Place::Deg(-82.1));
+    d.plumb("M", "A", upper, Place::Deg(175.8));
+    d.corner("G", "C", "M", Place::Deg(46.2));
+    d.corner("K", "B", "M", Place::Deg(-54.8));
+    d.corner("N", "D", "M", Place::Deg(5.2));
+    d.plumb("O", "A", mid, Place::Deg(179.6));
+    d.corner("Q", "C", "O", Place::Deg(-50.7));
+    d.corner("R", "B", "O", Place::Deg(-53.6));
+    d.corner("P", "D", "O", Place::Deg(9.4));
+    d.corner("H", "C", "E", Place::Deg(-89.3));
+    d.corner("L", "B", "E", Place::Deg(-98.9));
+    // AD, the two rows, and EF split at the cuts. The uprights split where
+    // the rows cross them.
+    d.chain(&["A", "C", "B", "D"]);
+    d.chain(&["M", "G", "K", "N"]);
+    d.chain(&["O", "Q", "R", "P"]);
+    d.chain(&["E", "H", "L", "F"]);
+    d.chain(&["A", "M", "O", "E"]);
+    d.chain(&["C", "G", "Q", "H"]);
+    d.chain(&["B", "K", "R", "L"]);
+    d.chain(&["D", "N", "P", "F"]);
+    // The plate joins ED. Spoken squares keep the registered boundary, so
+    // this stroke is not CK or KD.
+    d.join("E", "D");
+    // PDF p. 58. Centered on the diagonal, inside GR. The gap is 36.4°, not
+    // a quadrant, and it faces OH. Radius 25.18. Dash 0.066 of the radius.
+    d.pin("Rc", V2::new(66.92, 66.92));
+    d.dotted_ring_span("Rc", 25.18, -135.0, 36.4, 0.066);
+    // Spoken by opposite corners. The plate draws no stroke across them.
+    d.region("CK", &["C", "B", "K", "G"]);
+    d.region("KD", &["K", "B", "D", "N"]);
+    d.region("GR", &["G", "K", "R", "Q"]);
+    d.region("RN", &["R", "K", "N", "P"]);
+    d.region("AG", &["A", "C", "G", "M"]);
+    d.region("MQ", &["M", "G", "Q", "O"]);
+    d.region("QL", &["Q", "R", "L", "H"]);
+    d.region("RF", &["R", "P", "F", "L"]);
+    d.region("AK", &["A", "B", "K", "M"]);
+    d.region("OH", &["O", "Q", "H", "E"]);
+    d.region("CP", &["C", "D", "P", "Q"]);
+    d.region("ML", &["M", "K", "L", "E"]);
+    // Square on AD, minus OH. The outline is the L.
+    d.region("STU", &["A", "D", "F", "H", "Q", "O"]);
+    // Gnomon letters. The center is the plate glyph, not an offset from a
+    // vertex — a heading would walk S and U out of OH and T out of KD.
+    // PDF p. 58, glyph center minus the E tip, on the side of 157.55.
+    d.pin("S", V2::new(45.34, 52.15));
+    d.glyph("S", V2::new(45.34, 52.15));
+    d.pin("T", V2::new(82.39, 90.19));
+    d.glyph("T", V2::new(82.39, 90.19));
+    d.pin("U", V2::new(52.13, 44.63));
+    d.glyph("U", V2::new(52.13, 44.63));
+    d.dots(&[
+        "A", "B", "C", "D", "E", "F", "G", "H", "K", "L", "M", "N", "O", "P", "Q", "R",
+    ]);
+    d
+}
+
+/// II.9 — Fitzpatrick English plate (Elements PDF p. 59, the right-hand figure).
+///
+/// AB is cut equally at C and unequally at D. CE is drawn from C at
+/// right-angles to AB and made equal to each of AC and CB, so ACE and BCE
+/// are isosceles right triangles. EA and EB are joined. DF is drawn through
+/// D, parallel to EC, and meets EB at F. FG is drawn through F, parallel to
+/// AB, and meets CE at G. AF is joined.
+///
+/// One scale AB = 100. C is the midpoint. CE equals AC, so E sits 50 above
+/// C. D is 0.722 of the way from A to B — the ink, not a round fraction.
+/// F is EB × the upright through D, and G is CE × the row of F. Vertex
+/// letters sit on the measured tip→glyph heading.
+///
+/// The proof names the angles, the sides, and the squares on those sides.
+/// The plate draws no square, so a square name is not a boundary to light.
+pub fn book2_prop9() -> Diagram {
+    let mut d = Diagram::new();
+    let ab = 100.0;
+    let ac = ab / 2.0;
+    // PDF p. 59. AD is 0.7222 of AB, not a round cut.
+    let ad = 72.22;
+    d.put("A", V2::new(0.0, 0.0), Place::Deg(-94.2));
+    d.level("C", "A", ac, Place::Deg(-94.5));
+    d.level("D", "A", ad, Place::Deg(-73.5));
+    d.level("B", "A", ab, Place::Deg(-77.7));
+    d.plumb("E", "C", ac, Place::Deg(98.6));
+    // F is EB × the upright through D. meet refuses a vertical line, so the
+    // crossing is the column of D on EB. G is that row on CE.
+    let d_x = ad;
+    let t = (d_x - ac) / (ab - ac);
+    d.pin("F", V2::new(d_x, ac + t * (0.0 - ac)));
+    d.label("F", Place::Deg(13.8));
+    d.corner("G", "C", "F", Place::Deg(164.9));
+    d.chain(&["A", "C", "D", "B"]);
+    d.chain(&["C", "G", "E"]);
+    d.chain(&["D", "F"]);
+    d.chain(&["G", "F"]);
+    d.join("E", "A");
+    // F is EB × DF, so the join splits there. EF and FB are the pieces the
+    // angles name. An unsplit stroke would walk those angles around GF.
+    d.chain(&["E", "F", "B"]);
+    d.join("A", "F");
+    d.dots(&["A", "B", "C", "D", "E", "F", "G"]);
+    d
+}

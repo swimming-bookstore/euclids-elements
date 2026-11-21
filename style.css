@@ -104,11 +104,12 @@ h1 {
   fill: none;
 }
 
-/* The plate's dotted stroke (II.5, II.6, II.7) is dashed in the markup. A shorthand
+/* The plate's dotted stroke (II.5–II.8) is dashed in the markup. A shorthand
    stroke resets dasharray, and a unitless --dash is an invalid CSS length, so
    the property computed to none and the ring came out solid in read mode.
    --dash is the user-unit step; cqi / --fw is one user unit on this frame, so
-   read and record keep the same 0.150-of-radius dots. */
+   read and record keep the plate's dash. II.5 and II.6 are 0.150 of the
+   radius, II.7 is 0.120, and II.8 is 0.066. */
 .figure .arc[data-id^="ring-"],
 .figure .arc[data-id^="ring-"].dim,
 .figure .arc[data-id^="ring-"].on {

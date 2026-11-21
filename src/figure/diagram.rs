@@ -567,6 +567,32 @@ impl Diagram {
         self
     }
 
+    /// A dotted ring with the plate's gap, not always a quadrant.
+    ///
+    /// `open` is the direction of the gap's center, in degrees, y-up. `gap` is
+    /// the missing arc. II.5–II.7 leave a quadrant (90). II.8 (PDF p. 58)
+    /// leaves 36.4°, still centered lower-left. `dash` is the dash length as a
+    /// fraction of the radius. The stroke starts at the left end of the gap
+    /// and runs the long way, so the first dash sits on that end.
+    pub fn dotted_ring_span(
+        &mut self,
+        center: &str,
+        r: f64,
+        open: f64,
+        gap: f64,
+        dash: f64,
+    ) -> &mut Self {
+        let c = self.at(center);
+        let id = format!("ring-{}", center.to_ascii_lowercase());
+        let half = gap / 2.0;
+        let a = c.polar(r, open - half);
+        let b = c.polar(r, open + half);
+        let via = c.polar(r, open + 180.0);
+        self.fig.arc(id.clone(), a, b, via);
+        self.fig.ring_dash(&id, dash);
+        self
+    }
+
     /// Decorative circular arc `a` → `b` through `via` (not a spoken name).
     pub fn arc(&mut self, a: &str, b: &str, via: V2) -> &mut Self {
         let id = format!("arc-{}{}", a.to_ascii_lowercase(), b.to_ascii_lowercase());
@@ -656,13 +682,24 @@ impl Diagram {
     /// The angle at a single letter: every stroke that meets there.
     ///
     /// ∠G of triangle FGH is the two sides. A given mark (*D*, *E*) keeps its
-    /// own ink. A point with no stroke is still just the point.
+    /// own ink. A point with no stroke is still just the point. A point where
+    /// more than two strokes meet (II.9's C and D) is the right-angle the
+    /// proof names, not the whole pencil: the two rays of that right-angle.
     fn angle_at(&self, v: &'static str) -> Vec<String> {
         if self.named_id(v).is_some() {
             return self.single(v, v);
         }
         let mut out = vec![v.to_string()];
         if let Some(edges) = self.adj.get(v) {
+            if edges.len() > 2 {
+                if let Some(ids) = self.right_angle_at(v) {
+                    out.extend(self.ray_rest(v, &ids));
+                    out.extend(ids);
+                    out.sort();
+                    out.dedup();
+                    return out;
+                }
+            }
             for e in edges {
                 out.push(e.to.to_string());
                 out.push(e.id.clone());
@@ -671,6 +708,108 @@ impl Diagram {
         out.sort();
         out.dedup();
         out
+    }
+
+    /// The two rays of the right-angle at `v`, when more than one angle meets
+    /// there. II.9's angle at C is ACE, the angle at D is FDB, and the angle
+    /// at B is EBC. A point with no right-angle keeps the whole pencil.
+    fn right_angle_at(&self, v: &'static str) -> Option<Vec<String>> {
+        let edges = self.adj.get(v)?;
+        let mut hits: Vec<(f64, Vec<String>)> = Vec::new();
+        for i in 0..edges.len() {
+            for j in (i + 1)..edges.len() {
+                let a = self.at(edges[i].to).sub(self.at(v));
+                let b = self.at(edges[j].to).sub(self.at(v));
+                let ang = a.dot(b) / (a.len() * b.len());
+                if ang.abs() > 0.02 {
+                    continue;
+                }
+                hits.push((
+                    ang.abs(),
+                    vec![
+                        edges[i].to.to_string(),
+                        edges[i].id.clone(),
+                        edges[j].to.to_string(),
+                        edges[j].id.clone(),
+                    ],
+                ));
+            }
+        }
+        if hits.is_empty() {
+            return None;
+        }
+        // Two right-angles (II.9's D: the upright against both pieces of AB)
+        // is the named one, the pair whose other ends are not collinear with
+        // the vertex. A single right-angle is that pair.
+        //
+        // II.9's C has two such pairs, ACE and BCE. Stroke order takes BCE
+        // first, but the sentence "the (angle) at C is a right-angle" has
+        // just shown that the remaining angles of triangle AEC make one
+        // right-angle, so the named angle is ACE. The pair that includes the
+        // first letter of the base, not the later one, is that angle.
+        if hits.len() == 1 {
+            return Some(hits.pop().unwrap().1);
+        }
+        let named = hits.iter().find(|(_, ids)| {
+            let ends: Vec<&str> = ids.iter().filter(|id| id.len() == 1).map(|s| s.as_str()).collect();
+            ends.len() == 2
+                && !self.on_one_line(v, ends[0], ends[1])
+                && ends.iter().any(|e| *e == "A")
+        });
+        if let Some((_, ids)) = named {
+            return Some(ids.clone());
+        }
+        hits.into_iter()
+            .find(|(_, ids)| {
+                let ends: Vec<&str> = ids.iter().filter(|id| id.len() == 1).map(|s| s.as_str()).collect();
+                ends.len() == 2 && !self.on_one_line(v, ends[0], ends[1])
+            })
+            .map(|(_, ids)| ids)
+    }
+
+    /// The rest of a right-angle ray past the first segment.
+    ///
+    /// II.9's CE is drawn as C–G–E. The right-angle at C is ACE, so the
+    /// upright the highlight names runs through G to E, not only as far as G.
+    fn ray_rest(&self, v: &'static str, ids: &[String]) -> Vec<String> {
+        let mut extra = Vec::new();
+        let ends: Vec<&str> = ids.iter().filter(|id| id.len() == 1).map(|s| s.as_str()).collect();
+        for end in ends {
+            let Some(id) = self.edge_id(v, end) else {
+                continue;
+            };
+            let mut cur = end;
+            let dir = self.at(end).sub(self.at(v));
+            loop {
+                let Some(nexts) = self.adj.get(cur) else {
+                    break;
+                };
+                let step = nexts.iter().find(|e| {
+                    e.id != id
+                        && !extra.iter().any(|x: &String| x == &e.id)
+                        && e.to != v
+                        && self.at(e.to).sub(self.at(cur)).dot(dir) > 0.0
+                        && {
+                            let d = self.at(e.to).sub(self.at(cur));
+                            let cross = dir.x * d.y - dir.y * d.x;
+                            cross.abs() < 1e-3 * dir.len() * d.len()
+                        }
+                });
+                let Some(e) = step else {
+                    break;
+                };
+                extra.push(e.to.to_string());
+                extra.push(e.id.clone());
+                cur = e.to;
+            }
+        }
+        extra
+    }
+    fn on_one_line(&self, v: &'static str, p: &str, q: &str) -> bool {
+        let a = self.at(p).sub(self.at(v));
+        let b = self.at(q).sub(self.at(v));
+        let cross = a.x * b.y - a.y * b.x;
+        cross.abs() < 1e-3 * a.len() * b.len()
     }
 
     fn single(&self, a: &'static str, key: &str) -> Vec<String> {
@@ -3803,6 +3942,118 @@ mod tests {
         let step: f64 = dash.split_whitespace().next().unwrap().parse().unwrap();
         assert!((step / r - 0.120).abs() < 0.004, "dash is 0.120 of the radius: {step} / {r}");
         assert!(path.contains(" 0 1 1 "), "three quadrants through KLM, clockwise: {path}");
+    }
+
+    #[test]
+    fn ii8_cut_is_the_plate_ratio() {
+        // PDF p. 58. The columns are 5 : 2 : 2. AC is 5/9 of AD, CB and BD
+        // each 2/9. The rows repeat that, so OH is a square on a side equal
+        // to AC, and the diagonal ED passes through Q and K.
+        let d = crate::figure::book2_prop8();
+        let a = d.at("A");
+        let c = d.at("C");
+        let b = d.at("B");
+        let e = d.at("E");
+        let side = a.dist(d.at("D"));
+        assert!(((c.x - a.x) / side - 5.0 / 9.0).abs() < 0.001, "AC is 5/9 of AD");
+        assert!(((b.x - c.x) / side - 2.0 / 9.0).abs() < 0.001, "CB is 2/9 of AD");
+        assert!(((d.at("D").x - b.x) / side - 2.0 / 9.0).abs() < 0.001, "BD is 2/9 of AD");
+        assert!((b.dist(d.at("K")) - b.dist(c)).abs() < 0.01, "BK equals BC");
+        assert!((d.at("G").dist(d.at("K")) - b.dist(c)).abs() < 0.01, "GK equals BC");
+        assert!((d.at("O").dist(d.at("Q")) - a.dist(c)).abs() < 0.01, "OQ equals AC");
+        assert!((d.at("Q").dist(d.at("H")) - a.dist(c)).abs() < 0.01, "QH equals AC");
+        let q = d.at("Q");
+        let k = d.at("K");
+        assert!((q.x - q.y).abs() < 0.01 && (k.x - k.y).abs() < 0.01, "Q and K lie on ED");
+        assert!((e.x - a.x).abs() < 0.01 && (d.at("F").x - d.at("D").x).abs() < 0.01, "the uprights are plumb");
+    }
+
+    #[test]
+    fn ii8_ring_is_the_plate_stroke() {
+        // PDF p. 58. The ring is not II.7's three quadrants. It is centered on
+        // the diagonal, inside GR, not on a vertex. The gap is 36.4°, still
+        // lower-left, toward OH. Radius is 0.252 of AD. Dash is 0.066 of the
+        // radius. The stroke runs the long way and does not close through OH.
+        let html = crate::figure::book2_prop8().svg(&[] as &[String]);
+        assert!(html.contains("data-id=\"ed\""), "the plate draws the diagonal");
+        let needle = "data-id=\"ring-rc\"";
+        let start = html.find(needle).expect("dotted ring");
+        let chunk = &html[start..html[start..].find("/>").map(|i| start + i).unwrap()];
+        assert!(chunk.contains("stroke-dasharray"), "the plate's stroke is dotted: {chunk}");
+        assert!(
+            chunk.contains("stroke-linecap=\"butt\""),
+            "round caps would paint the gap shut: {chunk}"
+        );
+        let d_at = chunk.find(" d=\"").unwrap() + 4;
+        let path = chunk[d_at..].split('"').next().unwrap();
+        let nums: Vec<f64> = path.split_whitespace().filter_map(|w| w.parse().ok()).collect();
+        assert!(nums.len() >= 8, "arc path {path}");
+        let (ax, ay) = (nums[0], nums[1]);
+        let (bx, by) = (nums[nums.len() - 2], nums[nums.len() - 1]);
+        // The center is not a letter. Recover it from the radius and the side.
+        let a_at = html.find("data-id=\"A\" cx=\"").expect("dot A") + "data-id=\"A\" cx=\"".len();
+        let ax0: f64 = html[a_at..].split('"').next().unwrap().parse().unwrap();
+        let d_needle = "data-id=\"D\" cx=\"";
+        let d_tip = html.find(d_needle).expect("dot D") + d_needle.len();
+        let dx: f64 = html[d_tip..].split('"').next().unwrap().parse().unwrap();
+        let side = (dx - ax0).abs();
+        let r = 25.18 / 100.0 * side;
+        let cx = ax0 + 66.92 / 100.0 * side;
+        let e_needle = "data-id=\"E\" cx=\"";
+        let e_at = html.find(e_needle).expect("dot E") + e_needle.len();
+        let cy_e = html[e_at..].find("cy=\"").unwrap() + e_at + 4;
+        let ey: f64 = html[cy_e..].split('"').next().unwrap().parse().unwrap();
+        // SVG y grows down. E is the bottom of the square.
+        let cy = ey - 66.92 / 100.0 * side;
+        let start_r = ((ax - cx).powi(2) + (ay - cy).powi(2)).sqrt();
+        let end_r = ((bx - cx).powi(2) + (by - cy).powi(2)).sqrt();
+        assert!((start_r - r).abs() < side * 0.01, "the stroke starts on the ring: {start_r} {r}");
+        assert!((end_r - r).abs() < side * 0.01, "the stroke ends on the ring: {end_r} {r}");
+        // y-up headings. The gap is centered at -135°, 36.4° wide — not the
+        // quadrant that would start due west and stop due south.
+        let start_ang = (-(ay - cy)).atan2(ax - cx).to_degrees();
+        let end_ang = (-(by - cy)).atan2(bx - cx).to_degrees();
+        assert!(
+            (start_ang + 153.2).abs() < 2.0,
+            "the stroke starts at the left end of the gap, not due west: {start_ang}"
+        );
+        assert!(
+            (end_ang + 116.8).abs() < 2.0,
+            "the stroke stops short of due south, so the gap is not a quadrant: {end_ang}"
+        );
+        let dash = chunk.split("stroke-dasharray=\"").nth(1).unwrap().split('"').next().unwrap();
+        let step: f64 = dash.split_whitespace().next().unwrap().parse().unwrap();
+        assert!((step / r - 0.066).abs() < 0.004, "dash is 0.066 of the radius: {step} / {r}");
+        assert!(path.contains(" 0 1 1 "), "the long arc, clockwise, not the gap: {path}");
+        assert!(
+            ax > ax0 && by < ey,
+            "the stroke stays inside AEFD: left {ax} A {ax0} below {by} E {ey}"
+        );
+    }
+
+    #[test]
+    fn ii9_cut_is_the_plate() {
+        // PDF p. 59. C is the midpoint. CE equals AC, and it is plumb. D is
+        // 0.722 of the way from A to B. F lies on EB, and GF is the row of F.
+        let d = crate::figure::book2_prop9();
+        let a = d.at("A");
+        let b = d.at("B");
+        let c = d.at("C");
+        let e = d.at("E");
+        let side = a.dist(b);
+        assert!(((c.x - a.x) / side - 0.5).abs() < 0.001, "C is the midpoint");
+        assert!((e.y - c.y - c.x + a.x).abs() < 0.01, "CE equals AC");
+        assert!((e.x - c.x).abs() < 0.01, "CE is plumb");
+        assert!(((d.at("D").x - a.x) / side - 0.7222).abs() < 0.001, "D is the plate column");
+        let f = d.at("F");
+        let g = d.at("G");
+        assert!((f.x - d.at("D").x).abs() < 0.01, "DF is plumb");
+        assert!((g.y - f.y).abs() < 0.01 && (g.x - c.x).abs() < 0.01, "GF is the row of F on CE");
+        // F is on EB: the vectors E→F and E→B are parallel.
+        let ef = f.sub(e);
+        let eb = b.sub(e);
+        let cross = ef.x * eb.y - ef.y * eb.x;
+        assert!(cross.abs() < 0.05, "F lies on EB: {cross}");
     }
 
     fn letter_offset(html: &str, id: &str) -> (f64, f64) {

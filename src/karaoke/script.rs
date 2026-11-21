@@ -2699,6 +2699,503 @@ mod tests {
     }
 
     #[test]
+    fn ii8_squares_rectangles_and_the_gnomon_are_the_boundaries() {
+        // Fitzpatrick names the squares and rectangles by opposite corners, the
+        // parallelograms the same way, and the gnomon by its three plate letters.
+        // "equal to" must not turn CK into a diagonal, AK into a walk across the
+        // square, or STU into an angle. OH is the square taken out of the gnomon.
+        // ED is the plate's diagonal; the proof does not speak it.
+        let phrases = crate::content::get(2, 8).unwrap().phrases;
+        let script = compile(phrases, &crate::figure::book2_prop8(), Timing::default());
+        let runs = |word: &str| -> Vec<Vec<String>> {
+            script
+                .lines
+                .iter()
+                .flat_map(|l| l.tokens.iter())
+                .filter(|t| letter_key(&t.text) == word)
+                .map(|t| t.parts.clone())
+                .collect()
+        };
+        let has = |parts: &[String], id: &str| parts.iter().any(|p| p == id);
+        let shown: Vec<String> = script
+            .lines
+            .iter()
+            .flat_map(|l| l.tokens.iter())
+            .filter(|t| !t.cite)
+            .map(|t| display_letters(&t.text))
+            .collect();
+        let spoken = shown.join(" ");
+        assert!(spoken.contains("straight-line AB"), "AB is the given line: {spoken}");
+        assert!(spoken.contains("at point C"), "C is the cut: {spoken}");
+        assert!(spoken.contains("square AEFD"), "AEFD is the square: {spoken}");
+        assert!(spoken.contains("parallelogram CP"), "CP is the parallelogram: {spoken}");
+        assert!(spoken.contains("parallelogram ML"), "ML is the parallelogram: {spoken}");
+        assert!(spoken.contains("gnomon STU"), "STU is the gnomon: {spoken}");
+        assert!(spoken.contains("(square) OH"), "OH is the square on AC: {spoken}");
+        assert!(spoken.contains("square on AD"), "the close names the square on AD: {spoken}");
+        assert!(
+            spoken.contains("square described on AB and BC"),
+            "the close names the square on the sum: {spoken}"
+        );
+        let ab = runs("AB");
+        assert!(
+            ab.len() >= 2 && ab.iter().all(|p| has(p, "ac") && has(p, "cb") && !has(p, "bd") && !has(p, "ed")),
+            "AB is the cut line, not the produced piece or the diagonal: {ab:?}"
+        );
+        let bc = runs("BC");
+        assert!(
+            bc.len() >= 2 && bc.iter().all(|p| has(p, "cb") && !has(p, "ac") && !has(p, "bd") && !has(p, "bk")),
+            "BC is the piece: {bc:?}"
+        );
+        let cb = runs("CB");
+        assert!(
+            cb.iter().all(|p| has(p, "cb") && !has(p, "ac") && !has(p, "bd")),
+            "CB is that same piece: {cb:?}"
+        );
+        let ac = runs("AC");
+        assert!(
+            ac.len() >= 1 && ac.iter().all(|p| has(p, "ac") && !has(p, "cb")),
+            "AC is the remaining piece: {ac:?}"
+        );
+        let ad = runs("AD");
+        assert!(
+            ad.len() >= 1
+                && ad.iter().all(|p| has(p, "ac") && has(p, "cb") && has(p, "bd") && !has(p, "ed") && !has(p, "dn")),
+            "AD is the whole top, not the diagonal: {ad:?}"
+        );
+        let bd = runs("BD");
+        assert!(
+            bd.len() >= 2 && bd.iter().all(|p| has(p, "bd") && !has(p, "cb") && !has(p, "ed")),
+            "BD is the produced line: {bd:?}"
+        );
+        let gk = runs("GK");
+        assert!(
+            gk.len() >= 2 && gk.iter().all(|p| has(p, "gk") && !has(p, "cg") && !has(p, "kn") && !has(p, "ed")),
+            "GK is the side of the square on CB: {gk:?}"
+        );
+        let kn = runs("KN");
+        assert!(
+            kn.len() >= 1 && kn.iter().all(|p| has(p, "kn") && !has(p, "gk") && !has(p, "dn")),
+            "KN is the side equal to BD: {kn:?}"
+        );
+        let bk = runs("BK");
+        assert!(
+            bk.len() >= 1 && bk.iter().all(|p| has(p, "bk") && !has(p, "kr") && !has(p, "cb") && !has(p, "ed")),
+            "BK is the upright equal to BD: {bk:?}"
+        );
+        let cg = runs("CG");
+        assert!(
+            cg.len() >= 1 && cg.iter().all(|p| has(p, "cg") && !has(p, "gq") && !has(p, "ac") && !has(p, "ed")),
+            "CG is the upright, not the column: {cg:?}"
+        );
+        let gq = runs("GQ");
+        assert!(
+            gq.len() >= 1 && gq.iter().all(|p| has(p, "gq") && !has(p, "cg") && !has(p, "qh")),
+            "GQ is the upright equal to CB: {gq:?}"
+        );
+        let qr = runs("QR");
+        assert!(
+            qr.len() >= 1 && qr.iter().all(|p| has(p, "qr") && !has(p, "oq") && !has(p, "rp")),
+            "QR is the side: {qr:?}"
+        );
+        let rp = runs("RP");
+        assert!(
+            rp.len() >= 1 && rp.iter().all(|p| has(p, "rp") && !has(p, "qr") && !has(p, "pf")),
+            "RP is the side equal to QR: {rp:?}"
+        );
+        let ck = runs("CK");
+        assert!(
+            ck.len() >= 4
+                && ck.iter().all(|p| {
+                    has(p, "cb") && has(p, "bk") && has(p, "gk") && has(p, "cg") && !has(p, "ed") && !has(p, "ac") && !has(p, "kr")
+                }),
+            "CK is the square on BC, not the diagonal: {ck:?}"
+        );
+        let kd = runs("KD");
+        assert!(
+            kd.len() >= 2
+                && kd.iter().all(|p| {
+                    has(p, "bk") && has(p, "bd") && has(p, "dn") && has(p, "kn") && !has(p, "ed") && !has(p, "kr")
+                }),
+            "KD is that square, not the diagonal: {kd:?}"
+        );
+        let dk = runs("DK");
+        assert!(
+            dk.len() >= 1
+                && dk.iter().all(|p| {
+                    has(p, "bk") && has(p, "bd") && has(p, "dn") && has(p, "kn") && !has(p, "ed")
+                }),
+            "DK is the same square: {dk:?}"
+        );
+        let gr = runs("GR");
+        assert!(
+            gr.len() >= 2
+                && gr.iter().all(|p| {
+                    has(p, "gk") && has(p, "kr") && has(p, "qr") && has(p, "gq") && !has(p, "ed") && !has(p, "cb")
+                }),
+            "GR is that square, not the diagonal: {gr:?}"
+        );
+        let rn = runs("RN");
+        assert!(
+            rn.len() >= 2
+                && rn.iter().all(|p| {
+                    has(p, "kr") && has(p, "kn") && has(p, "np") && has(p, "rp") && !has(p, "ed") && !has(p, "pf")
+                }),
+            "RN is that square: {rn:?}"
+        );
+        let ag = runs("AG");
+        assert!(
+            ag.len() >= 2
+                && ag.iter().all(|p| {
+                    has(p, "ac") && has(p, "cg") && has(p, "mg") && has(p, "am") && !has(p, "cb") && !has(p, "ed")
+                }),
+            "AG is the rectangle, not a diagonal: {ag:?}"
+        );
+        let mq = runs("MQ");
+        assert!(
+            mq.len() >= 2
+                && mq.iter().all(|p| {
+                    has(p, "mg") && has(p, "gq") && has(p, "oq") && has(p, "mo") && !has(p, "gk") && !has(p, "ed")
+                }),
+            "MQ is that rectangle: {mq:?}"
+        );
+        let ql = runs("QL");
+        assert!(
+            ql.len() >= 2
+                && ql.iter().all(|p| {
+                    has(p, "qr") && has(p, "rl") && has(p, "hl") && has(p, "qh") && !has(p, "oq") && !has(p, "ed")
+                }),
+            "QL is that rectangle: {ql:?}"
+        );
+        let rf = runs("RF");
+        assert!(
+            rf.len() >= 2
+                && rf.iter().all(|p| {
+                    has(p, "rp") && has(p, "pf") && has(p, "lf") && has(p, "rl") && !has(p, "qr") && !has(p, "ed")
+                }),
+            "RF is that rectangle: {rf:?}"
+        );
+        let ak = runs("AK");
+        assert!(
+            ak.len() >= 2
+                && ak.iter().all(|p| {
+                    has(p, "ac")
+                        && has(p, "cb")
+                        && has(p, "bk")
+                        && has(p, "gk")
+                        && has(p, "mg")
+                        && has(p, "am")
+                        && !has(p, "cg")
+                        && !has(p, "ed")
+                        && !has(p, "bd")
+                }),
+            "AK is the rectangle contained by AB and BD, not a diagonal: {ak:?}"
+        );
+        let oh = runs("OH");
+        assert!(
+            oh.len() >= 2
+                && oh.iter().all(|p| {
+                    has(p, "oq") && has(p, "qh") && has(p, "eh") && has(p, "oe") && !has(p, "ed") && !has(p, "am") && !has(p, "cg")
+                }),
+            "OH is the square equal to the square on AC, not a diagonal: {oh:?}"
+        );
+        let cp = runs("CP");
+        assert!(
+            cp.len() >= 1
+                && cp.iter().all(|p| {
+                    has(p, "cb")
+                        && has(p, "bd")
+                        && has(p, "dn")
+                        && has(p, "np")
+                        && has(p, "rp")
+                        && has(p, "qr")
+                        && has(p, "gq")
+                        && has(p, "cg")
+                        && !has(p, "ed")
+                        && !has(p, "am")
+                        && !has(p, "eh")
+                }),
+            "CP is the parallelogram, not the diagonal: {cp:?}"
+        );
+        let ml = runs("ML");
+        assert!(
+            ml.len() >= 1
+                && ml.iter().all(|p| {
+                    has(p, "mg")
+                        && has(p, "gk")
+                        && has(p, "kr")
+                        && has(p, "rl")
+                        && has(p, "hl")
+                        && has(p, "eh")
+                        && has(p, "oe")
+                        && has(p, "mo")
+                        && !has(p, "ed")
+                        && !has(p, "ac")
+                        && !has(p, "bd")
+                }),
+            "ML is the parallelogram, not the diagonal: {ml:?}"
+        );
+        let aefd = runs("AEFD");
+        assert!(
+            aefd.len() >= 2
+                && aefd.iter().all(|p| {
+                    has(p, "ac")
+                        && has(p, "cb")
+                        && has(p, "bd")
+                        && has(p, "dn")
+                        && has(p, "np")
+                        && has(p, "pf")
+                        && has(p, "lf")
+                        && has(p, "hl")
+                        && has(p, "eh")
+                        && has(p, "oe")
+                        && has(p, "mo")
+                        && has(p, "am")
+                        && !has(p, "ed")
+                        && !has(p, "cg")
+                        && !has(p, "gq")
+                        && !has(p, "qh")
+                        && !has(p, "bk")
+                        && !has(p, "gk")
+                }),
+            "AEFD is the square, not the diagonal or the cuts: {aefd:?}"
+        );
+        let stu = runs("STU");
+        assert!(
+            stu.len() >= 4
+                && stu.iter().all(|p| {
+                    has(p, "S")
+                        && has(p, "T")
+                        && has(p, "U")
+                        && has(p, "ac")
+                        && has(p, "cb")
+                        && has(p, "bd")
+                        && has(p, "dn")
+                        && has(p, "np")
+                        && has(p, "pf")
+                        && has(p, "lf")
+                        && has(p, "hl")
+                        && has(p, "qh")
+                        && has(p, "oq")
+                        && has(p, "mo")
+                        && has(p, "am")
+                        && !has(p, "eh")
+                        && !has(p, "oe")
+                        && !has(p, "ed")
+                        && !has(p, "cg")
+                        && !has(p, "gq")
+                }),
+            "STU is the gnomon, not the angle or the square taken out: {stu:?}"
+        );
+        let ed = runs("ED");
+        assert!(ed.is_empty(), "the proof does not speak the diagonal: {ed:?}");
+        assert_eq!(display_letters("rectangle(CK)"), "CK");
+        assert_eq!(display_letters("gnomon(STU)"), "STU");
+        assert_eq!(display_letters("parallelogram(CP)"), "CP");
+        assert_eq!(display_letters("rectangle(OH)"), "OH");
+    }
+
+    #[test]
+    fn ii9_angles_and_sides_are_the_plate() {
+        // Fitzpatrick names the angles, and the sides the squares stand on.
+        // The angle at C is the right-angle ACE, not the whole pencil. The
+        // angle at D is the right-angle FDB. A triangle name is the outline,
+        // not the angle of the same letters. The plate draws no square.
+        let phrases = crate::content::get(2, 9).unwrap().phrases;
+        let script = compile(phrases, &crate::figure::book2_prop9(), Timing::default());
+        let runs = |word: &str| -> Vec<Vec<String>> {
+            script
+                .lines
+                .iter()
+                .flat_map(|l| l.tokens.iter())
+                .filter(|t| letter_key(&t.text) == word)
+                .map(|t| t.parts.clone())
+                .collect()
+        };
+        let has = |parts: &[String], id: &str| parts.iter().any(|p| p == id);
+        let shown: Vec<String> = script
+            .lines
+            .iter()
+            .flat_map(|l| l.tokens.iter())
+            .filter(|t| !t.cite)
+            .map(|t| display_letters(&t.text))
+            .collect();
+        let spoken = shown.join(" ");
+        assert!(spoken.contains("straight-line AB"), "AB is the given line: {spoken}");
+        assert!(spoken.contains("equally at C"), "C is the equal cut: {spoken}");
+        assert!(spoken.contains("unequally at D"), "D is the unequal cut: {spoken}");
+        assert!(spoken.contains("angle EAC"), "EAC is an angle: {spoken}");
+        assert!(spoken.contains("triangle AEC"), "AEC is the triangle: {spoken}");
+        assert!(spoken.contains("(angle) AEB"), "AEB is the right-angle: {spoken}");
+        assert!(spoken.contains("(angle) at C"), "the right-angle is at C: {spoken}");
+        assert!(spoken.contains("angle at B"), "the half right-angle is at B: {spoken}");
+        assert!(spoken.contains("angle at D"), "the right-angle is at D: {spoken}");
+        assert!(spoken.contains("squares on AD and DB"), "the close names both squares: {spoken}");
+        let ab = runs("AB");
+        assert!(
+            ab.len() >= 1 && ab.iter().all(|p| has(p, "ac") && has(p, "cd") && has(p, "db") && !has(p, "ea")),
+            "AB is the whole cut line: {ab:?}"
+        );
+        let ac = runs("AC");
+        assert!(
+            ac.len() >= 2 && ac.iter().all(|p| has(p, "ac") && !has(p, "cd") && !has(p, "ea")),
+            "AC is the half: {ac:?}"
+        );
+        let cb = runs("CB");
+        assert!(
+            cb.iter().all(|p| has(p, "cd") && has(p, "db") && !has(p, "ac")),
+            "CB is the other half: {cb:?}"
+        );
+        let ad = runs("AD");
+        assert!(
+            ad.len() >= 2 && ad.iter().all(|p| has(p, "ac") && has(p, "cd") && !has(p, "db") && !has(p, "af")),
+            "AD is the unequal piece, not the join: {ad:?}"
+        );
+        let db = runs("DB");
+        assert!(
+            db.len() >= 2 && db.iter().all(|p| has(p, "db") && !has(p, "cd") && !has(p, "df")),
+            "DB is the other unequal piece: {db:?}"
+        );
+        let cd = runs("CD");
+        assert!(
+            cd.len() >= 2 && cd.iter().all(|p| has(p, "cd") && !has(p, "ac") && !has(p, "db")),
+            "CD is the difference: {cd:?}"
+        );
+        let ce = runs("CE");
+        assert!(
+            ce.len() >= 2 && ce.iter().all(|p| has(p, "cg") && has(p, "ge") && !has(p, "ac")),
+            "CE is the upright: {ce:?}"
+        );
+        let ea = runs("EA");
+        assert!(
+            ea.len() >= 2 && ea.iter().all(|p| has(p, "ea") && !has(p, "eb") && !has(p, "af")),
+            "EA is the join: {ea:?}"
+        );
+        let eb = runs("EB");
+        assert!(
+            eb.len() >= 1 && eb.iter().all(|p| has(p, "ef") && has(p, "fb") && !has(p, "ea") && !has(p, "df")),
+            "EB is the join, split at F: {eb:?}"
+        );
+        let df = runs("DF");
+        assert!(
+            df.len() >= 2 && df.iter().all(|p| has(p, "df") && !has(p, "db") && !has(p, "gf")),
+            "DF is the parallel: {df:?}"
+        );
+        let fg = runs("FG");
+        assert!(
+            fg.iter().all(|p| has(p, "gf") && !has(p, "df") && !has(p, "ge")),
+            "FG is the parallel: {fg:?}"
+        );
+        let af = runs("AF");
+        assert!(
+            af.len() >= 2 && af.iter().all(|p| has(p, "af") && !has(p, "ac") && !has(p, "df")),
+            "AF is the join: {af:?}"
+        );
+        let eg = runs("EG");
+        assert!(
+            eg.len() >= 2 && eg.iter().all(|p| has(p, "ge") && !has(p, "cg") && !has(p, "gf")),
+            "EG is the piece of the upright: {eg:?}"
+        );
+        let gf = runs("GF");
+        assert!(
+            gf.len() >= 2 && gf.iter().all(|p| has(p, "gf") && !has(p, "ge") && !has(p, "df")),
+            "GF is the parallel, equal to CD: {gf:?}"
+        );
+        let ef = runs("EF");
+        assert!(
+            ef.len() >= 2 && ef.iter().all(|p| has(p, "ef") && !has(p, "fb") && !has(p, "ea") && !has(p, "df") && !has(p, "ge")),
+            "EF is the piece of EB: {ef:?}"
+        );
+        let eac = runs("EAC");
+        assert!(
+            eac.len() >= 2
+                && eac.iter().all(|p| has(p, "ea") && has(p, "ac") && !has(p, "af") && !has(p, "cg")),
+            "EAC is the angle, not the triangle: {eac:?}"
+        );
+        let aec = runs("AEC");
+        assert!(
+            aec.iter().any(|p| has(p, "ea") && has(p, "ac") && has(p, "cg") && has(p, "ge")),
+            "triangle AEC is the outline: {aec:?}"
+        );
+        assert!(
+            aec.iter().any(|p| has(p, "ea") && has(p, "ge") && !has(p, "ac")),
+            "angle AEC is the angle, not the triangle: {aec:?}"
+        );
+        let at_c = runs("C");
+        assert!(
+            at_c.iter().any(|p| has(p, "ac") && has(p, "cg") && has(p, "ge") && has(p, "E") && !has(p, "cd") && !has(p, "ea")),
+            "the angle at C is the right-angle ACE, through to E, not the pencil: {at_c:?}"
+        );
+        let aeb = runs("AEB");
+        assert!(
+            aeb.len() >= 1
+                && aeb.iter().all(|p| has(p, "ea") && has(p, "ef") && has(p, "fb") && !has(p, "af") && !has(p, "ge")),
+            "AEB is the right-angle: {aeb:?}"
+        );
+        let gef = runs("GEF");
+        assert!(
+            gef.len() >= 2
+                && gef.iter().all(|p| has(p, "ge") && has(p, "ef") && !has(p, "ea") && !has(p, "gf")),
+            "GEF is the half right-angle: {gef:?}"
+        );
+        let egf = runs("EGF");
+        assert!(
+            egf.len() >= 1
+                && egf.iter().all(|p| has(p, "ge") && has(p, "gf") && !has(p, "cg") && !has(p, "ef")),
+            "EGF is the right-angle: {egf:?}"
+        );
+        let efg = runs("EFG");
+        assert!(
+            efg.len() >= 1
+                && efg.iter().all(|p| has(p, "ef") && has(p, "gf") && !has(p, "df") && !has(p, "ge")),
+            "EFG is the angle, not a walk: {efg:?}"
+        );
+        let ecb = runs("ECB");
+        assert!(
+            ecb.len() >= 1
+                && ecb.iter().all(|p| has(p, "cg") && has(p, "ge") && has(p, "cd") && has(p, "db") && !has(p, "ea")),
+            "ECB is the angle: {ecb:?}"
+        );
+        let fdb = runs("FDB");
+        assert!(
+            fdb.len() >= 1
+                && fdb.iter().all(|p| has(p, "df") && has(p, "db") && !has(p, "cd") && !has(p, "ef")),
+            "FDB is the right-angle: {fdb:?}"
+        );
+        let at_d = runs("D");
+        assert!(
+            at_d.iter().any(|p| has(p, "cd") && has(p, "df") && !has(p, "db") && !has(p, "af")),
+            "the angle at D is ADF, the right-angle the squares stand on: {at_d:?}"
+        );
+        let bfd = runs("BFD");
+        assert!(
+            bfd.len() >= 1
+                && bfd.iter().all(|p| has(p, "fb") && has(p, "df") && !has(p, "ef") && !has(p, "gf") && !has(p, "db")),
+            "BFD is the angle: {bfd:?}"
+        );
+        let at_b = runs("B");
+        assert!(
+            at_b.iter().any(|p| has(p, "fb") && has(p, "db") && !has(p, "df")),
+            "the angle at B is the half right-angle EBC: {at_b:?}"
+        );
+        let ace = runs("ACE");
+        assert!(
+            ace.len() >= 1
+                && ace.iter().all(|p| has(p, "ac") && has(p, "cg") && has(p, "ge") && !has(p, "cd") && !has(p, "ea")),
+            "ACE is the right-angle, through to E: {ace:?}"
+        );
+        let aef = runs("AEF");
+        assert!(
+            aef.len() >= 1
+                && aef.iter().all(|p| has(p, "ea") && has(p, "ef") && !has(p, "af") && !has(p, "ge")),
+            "AEF is the right-angle AEB: {aef:?}"
+        );
+        assert_eq!(display_letters("angle(EAC)"), "EAC");
+        assert_eq!(display_letters("triangle(AEC)"), "AEC");
+        assert_eq!(display_letters("angle(AEB)"), "AEB");
+    }
+
+    #[test]
     fn i44_names_light_the_plate() {
         // BHG and GFE are angles, not the triangles the three letters span.
         // AG and ME are the parallelograms about the diagonal; LB and BF the

@@ -938,6 +938,19 @@ class Scene:
         self.dash = dash
         self.dotted_ring(center, r, open_deg)
 
+    def dotted_ring_span(self, center: str, r: float, open_deg: float, gap: float, dash: float) -> None:
+        # II.8's ring (PDF p. 58). The gap is 36.4°, not a quadrant, still
+        # centered lower-left. The card's step is the chord from the start
+        # to the via, so scale the plate fraction back to the radius.
+        c = self.at(center)
+        half = gap / 2.0
+        a = c.polar(r, open_deg - half)
+        b = c.polar(r, open_deg + half)
+        via = c.polar(r, open_deg + 180.0)
+        self.dotted.append((a, b, via))
+        chord = a.dist(via) or r
+        self.dash = dash * r / chord
+
     def bow(self, a: str, b: str, sag: float) -> None:
         pa, pb = self.at(a), self.at(b)
         mid = V2((pa.x + pb.x) / 2, (pa.y + pb.y) / 2)
@@ -1348,6 +1361,40 @@ def prepare(n: int, scene: Scene, book: int = 1) -> None:
         scene.pin("Ac2", pts[3])
         for u, v in SQUARE_QUIET2.get(n, ()):
             scene.join(u, v)
+    if book == 2 and n == 8:
+        # Square on AC, the remaining piece. The plate's square equal to it
+        # is OH, inside AEFD, standing on EH — not on AC. The enunciation's
+        # square stands on AC, so the card draws it on AC, below AB — a
+        # shadow, not a recolor of OH. Below, it sits in AK and in AEFD;
+        # the mixed fill is the overlap.
+        a, c = scene.at("A"), scene.at("C")
+        above = V2((a.x + c.x) / 2, a.y + abs(c.x - a.x))
+        pts = square_outward(a, c, above)
+        scene.pin("Ac1", pts[2])
+        scene.pin("Ac2", pts[3])
+        for u, v in SQUARE_QUIET2.get(n, ()):
+            scene.join(u, v)
+    if book == 2 and n == 9:
+        # The squares on the unequal pieces, and the squares on the half and
+        # the difference. The plate draws none of them. Each stands on its
+        # side, above AB — a shadow, not a square the plate draws. The
+        # letters sit below the line. A shadow there covers them, so the
+        # wash reads as the labels, not as the squares. Above, the square
+        # on AC sits in the square on AD, and the square on CD sits in both
+        # unequal squares; the mixed fill is the overlap.
+        for key, pn, qn in (
+            ("Ad", "A", "D"),
+            ("Db", "D", "B"),
+            ("Ac", "A", "C"),
+            ("Cd", "C", "D"),
+        ):
+            p, q = scene.at(pn), scene.at(qn)
+            below = V2((p.x + q.x) / 2, p.y - abs(q.x - p.x))
+            pts = square_outward(p, q, below)
+            scene.pin(f"{key}1", pts[2])
+            scene.pin(f"{key}2", pts[3])
+        for u, v in SQUARE_QUIET2.get(n, ()):
+            scene.join(u, v)
     # ANGLES is Book I. Keyed by proposition number only, so I.5's pies
     # would otherwise land on II.5: A, B, C, D, E all exist there, and the
     # wedges read as two pies on the square.
@@ -1643,8 +1690,9 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
 
     # A miss can cross a named side (EG across DF on I.8). The highlight is
     # drawn over the plate, so the unlit strokes go back on top and the
-    # crossing stays. Other cards have no crossing to restore.
-    if n == 8:
+    # crossing stays. Other cards have no crossing to restore. Book II.8
+    # shares the number; redrawing its cut pieces would cover the brick on AB.
+    if book == 1 and n == 8:
         cr.set_source_rgb(*rgb(ink))
         cr.set_line_width(3.2)
         cr.set_line_cap(cairo.LINE_CAP_ROUND)
@@ -1750,6 +1798,30 @@ WASHES4 = {
 # sides of the equality. One wash would say the square is the whole claim.
 # AB is the straight-line the enunciation cuts. C lies on it, so the named
 # line is the whole chord, not the piece.
+# II.8: four times the rectangle contained by the whole and one piece, plus
+# the square on the remaining piece, equals the square described on the whole
+# and that piece as one line. AEFD is that square — the second wash. The
+# left-hand side is rectangle AK (AB by BC, since BK equals BC) plus the
+# square on AC. The square on AC is not OH — OH is the plate's square, inside
+# AEFD, standing on EH — so the card draws a shadow standing on AC, below AB.
+# Below, it sits in AK and in AEFD; the mixed fill is the overlap. AK is
+# painted after AEFD, so the rectangle stays the first hue. The shadow is
+# last, and stays the first hue. Two hues are the two sides. One wash would
+# say the square is the whole claim. AB is the
+# straight-line the enunciation cuts. C lies on it, so the named line is the
+# whole chord, not the piece. BD is produced in the construction; the
+# enunciation does not name it.
+# II.9: the squares on the unequal pieces equal twice the square on the half
+# plus the square on the difference. The plate draws none of those squares —
+# CE, the joins, and the parallels are the proof — so the card draws each as
+# a shadow standing on its side, above AB. The letters sit below the line.
+# A shadow there covers them. The squares on AD and DB are one hue, the
+# left-hand sum. The squares on AC and CD are the other. Both sit inside the
+# square on AD — CD does not reach DB — so the mixed fill is that overlap.
+# Two hues are the two sides.
+# One wash would say the squares are one area. AB is the straight-line cut
+# into equal and unequal pieces. C and D lie on it, so the named line is the
+# whole chord, not the pieces.
 WASHES2 = {
     1: [("B", "C", "H", "G")],
     2: [("A", "B", "E", "D")],
@@ -1758,15 +1830,28 @@ WASHES2 = {
     5: [("C", "B", "F", "E"), ("A", "D", "H", "K"), ("C", "D", "Cd1", "Cd2")],
     6: [("C", "D", "F", "E"), ("A", "D", "M", "K"), ("C", "B", "Cb1", "Cb2")],
     7: [("A", "B", "E", "D"), ("A", "B", "F", "H"), ("C", "B", "F", "G"), ("A", "C", "Ac1", "Ac2")],
+    8: [("A", "D", "F", "E"), ("A", "B", "K", "M"), ("A", "C", "Ac1", "Ac2")],
+    9: [
+        ("A", "D", "Ad1", "Ad2"),
+        ("D", "B", "Db1", "Db2"),
+        ("A", "C", "Ac1", "Ac2"),
+        ("C", "D", "Cd1", "Cd2"),
+    ],
 }
 
 # Hue of each WASHES2 region. 0 is the pale wash, 1 the second. Absent: the
 # first region is pale and the rest are the second, as on II.5 and II.6.
 # II.7's square on BC sits inside the rectangle, so that square is painted
 # after the rectangle and stays the first hue. The shadow is last, so the
-# overlap mixes.
+# overlap mixes. II.8 paints the square first, then the rectangle. The
+# shadow stands below AB, in both, and stays the first hue. Painted last,
+# the overlap mixes.
 WASH_HUE2 = {
     7: [0, 1, 0, 1],
+    8: [1, 0, 0],
+    # The two unequal squares, then the half and the difference. The second
+    # pair is painted last, so it stays the second hue where the squares overlap.
+    9: [0, 0, 1, 1],
 }
 
 # Outer edges of the shadow square the enunciation names and the plate
@@ -1776,6 +1861,21 @@ SQUARE_QUIET2: dict[int, tuple[tuple[str, str], ...]] = {
     5: (("D", "Cd1"), ("Cd1", "Cd2"), ("Cd2", "C")),
     6: (("B", "Cb1"), ("Cb1", "Cb2"), ("Cb2", "C")),
     7: (("C", "Ac1"), ("Ac1", "Ac2"), ("Ac2", "A")),
+    8: (("C", "Ac1"), ("Ac1", "Ac2"), ("Ac2", "A")),
+    9: (
+        ("D", "Ad1"),
+        ("Ad1", "Ad2"),
+        ("Ad2", "A"),
+        ("B", "Db1"),
+        ("Db1", "Db2"),
+        ("Db2", "D"),
+        ("C", "Ac1"),
+        ("Ac1", "Ac2"),
+        ("Ac2", "A"),
+        ("D", "Cd1"),
+        ("Cd1", "Cd2"),
+        ("Cd2", "C"),
+    ),
 }
 
 # Named straight-lines, book by book. Book I is LINES. A produced ray is
@@ -1803,6 +1903,15 @@ LINES2: dict[int, list[tuple[str, str]]] = {
     # AB, the straight-line cut at random. The square on it is the wash. C
     # lies on AB, so the cut line is the whole chord, not the piece.
     7: [("A", "B")],
+    # AB, the straight-line cut at random. The square described on it and the
+    # piece is the wash. C lies on AB, so the cut line is the whole chord,
+    # not the piece. BD is produced in the proof; the enunciation does not
+    # name it.
+    8: [("A", "B")],
+    # AB, the straight-line cut into equal and unequal pieces. The squares
+    # on the pieces are the washes. C and D lie on AB, so the cut line is
+    # the whole chord, not the pieces. CE and the joins are the proof.
+    9: [("A", "B")],
 }
 LINE_ALT2: dict[int, list[tuple[str, str]]] = {}
 LINE_EXTRA2: dict[int, list[tuple[tuple[int, int, int], tuple[tuple[str, str], ...]]]] = {}
