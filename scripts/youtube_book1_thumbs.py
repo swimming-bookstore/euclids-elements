@@ -854,8 +854,10 @@ class Scene:
     def glyph(self, name: str, at: V2) -> None:
         # A plate capital whose center is not a heading from a vertex.
         # The center is the measured glyph, so the letter is not offset
-        # a second time.
-        self.pin(name, at)
+        # a second time. A point already placed (II.10's G, the join) stays
+        # the vertex; only the letter moves.
+        if name not in self.pts:
+            self.pin(name, at)
         self.labels[name] = (at, 90.0, 0.0)
 
     def highlight_arc(self, _a: str, _b: str, _center: str) -> None:
@@ -1395,6 +1397,31 @@ def prepare(n: int, scene: Scene, book: int = 1) -> None:
             scene.pin(f"{key}2", pts[3])
         for u, v in SQUARE_QUIET2.get(n, ()):
             scene.join(u, v)
+    if book == 2 and n == 10:
+        # The squares on the whole with the added line, and on the added
+        # line, and the squares on the half and on the half plus the added
+        # line. The plate draws none of them. Each stands on its side, above
+        # AB — a shadow, not a square the plate draws. A, B, and C sit below
+        # the line. A shadow there covers them. CD runs through B, so the
+        # square on CD contains the square on DB. DB is pinned here; the wash
+        # paints it last, so that square stays the first hue instead of
+        # disappearing into CD.
+        for key, pn, qn in (
+            ("Ad", "A", "D"),
+            ("Db", "D", "B"),
+            ("Ac", "A", "C"),
+            ("Cd", "C", "D"),
+        ):
+            p, q = scene.at(pn), scene.at(qn)
+            below = V2((p.x + q.x) / 2, p.y - abs(q.x - p.x))
+            pts = square_outward(p, q, below)
+            scene.pin(f"{key}1", pts[2])
+            scene.pin(f"{key}2", pts[3])
+        for u, v in SQUARE_QUIET2.get(n, ()):
+            scene.join(u, v)
+    # II.11 needs no shadow. The rectangle contained by AB and BH is HD, and
+    # the square on AH is FH. Both are already drawn, so the wash names the
+    # equality. A square standing off AB would be a square the proof does not use.
     # ANGLES is Book I. Keyed by proposition number only, so I.5's pies
     # would otherwise land on II.5: A, B, C, D, E all exist there, and the
     # wedges read as two pies on the square.
@@ -1822,6 +1849,21 @@ WASHES4 = {
 # One wash would say the squares are one area. AB is the straight-line cut
 # into equal and unequal pieces. C and D lie on it, so the named line is the
 # whole chord, not the pieces.
+# II.10: the square on the whole with the added line, plus the square on the
+# added line, equals twice the square on the half plus the square described
+# on the half and the added line as one line. The plate draws none of those
+# squares — CE, the joins, and the parallels are the proof — so the card
+# draws each as a shadow standing on its side, above AB. The letters of A,
+# B, and C sit below the line. A shadow there covers them. The squares on
+# AD and DB are one hue, the left-hand sum. The squares on AC and CD are
+# the other. CD runs through B, so the square on CD contains the square on
+# DB. DB is painted last, so it stays the first hue instead of disappearing
+# into CD — the way II.7's square on BC stays the first hue inside the
+# rectangle. CD still overlaps AD; the mixed fill is that overlap. Two
+# hues are the two sides. One wash would say the squares are one area. AB
+# is the straight-line cut in half. C lies on it, so the named line is the
+# whole chord, not the half. BD is the added line, drawn on, so it takes
+# the line too.
 WASHES2 = {
     1: [("B", "C", "H", "G")],
     2: [("A", "B", "E", "D")],
@@ -1837,6 +1879,16 @@ WASHES2 = {
         ("A", "C", "Ac1", "Ac2"),
         ("C", "D", "Cd1", "Cd2"),
     ],
+    10: [
+        ("A", "D", "Ad1", "Ad2"),
+        ("A", "C", "Ac1", "Ac2"),
+        ("C", "D", "Cd1", "Cd2"),
+        ("D", "B", "Db1", "Db2"),
+    ],
+    # The rectangle contained by AB and BH is HD. The square on the remaining
+    # piece AH is FH. Both are drawn. The square is the first hue; the
+    # rectangle is the second.
+    11: [("F", "A", "H", "G"), ("H", "B", "D", "K")],
 }
 
 # Hue of each WASHES2 region. 0 is the pale wash, 1 the second. Absent: the
@@ -1852,6 +1904,14 @@ WASH_HUE2 = {
     # The two unequal squares, then the half and the difference. The second
     # pair is painted last, so it stays the second hue where the squares overlap.
     9: [0, 0, 1, 1],
+    # The whole with the added line, then the half and the square on the half
+    # plus the added line. That second pair is painted over AD, so the overlap
+    # stays the second hue. The square on the added line is painted last: CD
+    # contains it, and it has to stay the first hue.
+    10: [0, 1, 1, 0],
+    # The square on the remaining piece, then the rectangle contained by the
+    # whole and the other piece. They share HK, so the boundary mixes.
+    11: [0, 1],
 }
 
 # Outer edges of the shadow square the enunciation names and the plate
@@ -1863,6 +1923,20 @@ SQUARE_QUIET2: dict[int, tuple[tuple[str, str], ...]] = {
     7: (("C", "Ac1"), ("Ac1", "Ac2"), ("Ac2", "A")),
     8: (("C", "Ac1"), ("Ac1", "Ac2"), ("Ac2", "A")),
     9: (
+        ("D", "Ad1"),
+        ("Ad1", "Ad2"),
+        ("Ad2", "A"),
+        ("B", "Db1"),
+        ("Db1", "Db2"),
+        ("Db2", "D"),
+        ("C", "Ac1"),
+        ("Ac1", "Ac2"),
+        ("Ac2", "A"),
+        ("D", "Cd1"),
+        ("Cd1", "Cd2"),
+        ("Cd2", "C"),
+    ),
+    10: (
         ("D", "Ad1"),
         ("Ad1", "Ad2"),
         ("Ad2", "A"),
@@ -1912,6 +1986,14 @@ LINES2: dict[int, list[tuple[str, str]]] = {
     # on the pieces are the washes. C and D lie on AB, so the cut line is
     # the whole chord, not the pieces. CE and the joins are the proof.
     9: [("A", "B")],
+    # AB, the straight-line cut in half, and BD, the line added straight-on.
+    # C lies on AB, so the cut line is the whole chord, not the half. The
+    # squares on the whole-with-the-added and on the added line are the washes.
+    10: [("A", "B"), ("B", "D")],
+    # AB, the given straight-line. H lies on it, so the cut line is the whole
+    # chord, not the pieces. The rectangle contained by AB and BH, and the
+    # square on AH, are the washes. BE and the square on AB are the construction.
+    11: [("A", "B")],
 }
 LINE_ALT2: dict[int, list[tuple[str, str]]] = {}
 LINE_EXTRA2: dict[int, list[tuple[tuple[int, int, int], tuple[tuple[str, str], ...]]]] = {}

@@ -555,3 +555,116 @@ pub fn book2_prop9() -> Diagram {
     d.dots(&["A", "B", "C", "D", "E", "F", "G"]);
     d
 }
+
+/// II.10 — Fitzpatrick English plate (Elements PDF p. 61).
+///
+/// AB is cut in half at C, and BD is added straight-on. CE is drawn from C
+/// at right-angles to AB and made equal to each of AC and CB, so ACE and
+/// BCE are isosceles right triangles. EA and EB are joined. EF is drawn
+/// through E, parallel to AD, and FD through D, parallel to CE. EB and FD
+/// are produced and meet at G. AG is joined.
+///
+/// One scale AB = 100. C is the midpoint. CE equals AC, so E sits 50 above
+/// C. BD is 0.287 of AB — the ink, not a round fraction. F is the row of E
+/// on the upright through D. G is EB produced to that upright. Vertex
+/// letters sit on the measured tip→glyph heading. G's letter is the
+/// measured glyph, not that heading: the heading lands in the angle.
+///
+/// The proof names the angles, the sides, and the squares on those sides.
+/// The plate draws no square, so a square name is not a boundary to light.
+pub fn book2_prop10() -> Diagram {
+    let mut d = Diagram::new();
+    let ab = 100.0;
+    let ac = ab / 2.0;
+    // PDF p. 61. BD is 44.2 pt on an AB of 154.2, so 0.2866 of AB.
+    let bd = ab * 44.2 / 154.2;
+    d.put("A", V2::new(0.0, 0.0), Place::Deg(-118.4));
+    d.level("C", "A", ac, Place::Deg(-94.6));
+    d.level("B", "A", ab, Place::Deg(-115.3));
+    d.level("D", "A", ab + bd, Place::Deg(-5.3));
+    d.plumb("E", "C", ac, Place::Deg(97.5));
+    d.corner("F", "D", "E", Place::Deg(50.8));
+    // G is EB produced to the upright through D. EB is the 45° from E, so
+    // the drop past B equals BD. The plate letter sits just outside the
+    // join, right and below — the measured glyph, not a heading from the
+    // join, which would land in the angle.
+    d.pin("G", V2::new(ab + bd, -bd));
+    // PDF p. 61. The glyph center is 7.0 pt right and 3.4 pt below the join,
+    // on an AB of 154.2 pt. A heading from the join lands in the angle.
+    let gx = ab * 7.0 / 154.2;
+    let gy = ab * 3.4 / 154.2;
+    d.glyph("G", V2::new(ab + bd + gx, -bd - gy));
+    d.chain(&["A", "C", "B", "D"]);
+    d.chain(&["C", "E"]);
+    d.chain(&["E", "F"]);
+    d.chain(&["F", "D", "G"]);
+    // B is EB × AB, and G is the produced end, so the join splits there.
+    // EB and BG are the pieces the angles name.
+    d.chain(&["E", "B", "G"]);
+    d.join("E", "A");
+    d.join("A", "G");
+    d.dots(&["A", "B", "C", "D", "E", "F", "G"]);
+    d
+}
+
+/// II.11 — Fitzpatrick English plate (Elements PDF p. 63, the right-hand figure).
+///
+/// AB is the given straight-line. Square ABDC is described on AB, so the
+/// square stands below the line. AC is cut in half at E. BE is joined. CA
+/// is drawn through to F, and EF is made equal to BE. Square FH is described
+/// on AF, and GH is drawn through to K.
+///
+/// One scale AB = 100. The plate square is 110.4 pt on a side, so AC equals
+/// AB. E is the midpoint of AC, and it lies on the left side. F and G are
+/// the top of the square on AF. AF/AB is 0.5833 — the ink, not a round
+/// fraction. H is AF to the right of A, on AB. K is that column on CD.
+///
+/// Vertex letters sit on the measured tip→glyph heading. H's letter is the
+/// measured glyph: the heading from the join lands on the stroke.
+///
+/// FH, FK, AD, AK, and HD are named by opposite corners. The plate draws no
+/// diagonal of those rectangles, so the spoken name is the boundary. FK is
+/// the rectangle contained by CF and FA: corners F, G, K, C. A, E, and H
+/// lie on those sides; they are not corners of the name.
+pub fn book2_prop11() -> Diagram {
+    let mut d = Diagram::new();
+    let ab = 100.0;
+    // PDF p. 63. The square is 110.4 pt on a side. AF is 64.4 pt, so 0.5833
+    // of AB. The golden cut is near 0.618; the plate is the shorter ink.
+    let af = ab * 64.4 / 110.4;
+    d.put("A", V2::new(0.0, 0.0), Place::Deg(176.9));
+    // H is the join. Its capital sits up and to the right, off both strokes.
+    // A heading from the join lands on AB, so the letter is the measured glyph.
+    d.pin("H", V2::new(af, 0.0));
+    d.level("B", "A", ab, Place::Deg(18.1));
+    d.plumb("F", "A", af, Place::Deg(99.5));
+    d.corner("G", "H", "F", Place::Deg(92.2));
+    d.plumb("E", "A", -ab / 2.0, Place::Deg(-178.9));
+    d.plumb("C", "A", -ab, Place::Deg(-93.8));
+    d.corner("K", "H", "C", Place::Deg(-96.2));
+    d.corner("D", "B", "C", Place::Deg(-72.5));
+    // PDF p. 63. The glyph center is 6.95 pt right and 6.65 pt above the
+    // join, on a square of 110.4 pt.
+    let hx = ab * 6.95 / 110.4;
+    let hy = ab * 6.65 / 110.4;
+    d.glyph("H", V2::new(af + hx, hy));
+    d.chain(&["A", "H", "B"]);
+    d.chain(&["C", "K", "D"]);
+    d.chain(&["F", "G"]);
+    d.chain(&["A", "E", "C"]);
+    d.chain(&["F", "A"]);
+    d.chain(&["G", "H", "K"]);
+    d.chain(&["B", "D"]);
+    // E is AC × BE, so the join splits there. AE and EB are the pieces the
+    // proof names.
+    d.chain(&["B", "E"]);
+    d.region("FH", &["F", "A", "H", "G"]);
+    // FK is the rectangle contained by CF and FA. The corners are F, G, K, C
+    // — not A, which only lies on CF. Order around the ink, not the diagonal.
+    d.region("FK", &["F", "G", "K", "C"]);
+    d.region("AD", &["A", "B", "D", "C"]);
+    d.region("AK", &["A", "H", "K", "C"]);
+    d.region("HD", &["H", "B", "D", "K"]);
+    d.dots(&["A", "B", "C", "D", "E", "F", "G", "H", "K"]);
+    d
+}
