@@ -645,7 +645,22 @@ impl Diagram {
         self.hit(word, true)
     }
 
+    /// "the opposite (angle) at C" (II.10). The letter is still the angle at
+    /// that point; "opposite" selects the other right-angle there, not the one
+    /// "the (angle) at C" already named.
+    pub fn highlight_opposite_angle(&self, word: &str) -> Vec<String> {
+        self.hit_opposite(word)
+    }
+
     fn hit(&self, word: &str, angle: bool) -> Vec<String> {
+        self.hit_kind(word, angle, false)
+    }
+
+    fn hit_opposite(&self, word: &str) -> Vec<String> {
+        self.hit_kind(word, true, true)
+    }
+
+    fn hit_kind(&self, word: &str, angle: bool, opposite: bool) -> Vec<String> {
         let key: String = word
             .chars()
             .filter(|c| c.is_ascii_alphabetic())
@@ -660,6 +675,7 @@ impl Diagram {
         }
         match letters.len() {
             // "the angle at *G*" is the angle, not the point (IV.11).
+            1 if angle && opposite => self.opposite_angle_at(letters[0]),
             1 if angle => self.angle_at(letters[0]),
             1 => self.single(letters[0], &key),
             2 => self.pair(letters[0], letters[1]),
@@ -679,6 +695,79 @@ impl Diagram {
             .find(|n| n.len() == 1 && n.starts_with(u))
     }
 
+    /// The other right-angle at `v`, the one "the opposite (angle)" names.
+    ///
+    /// II.10's C has two right-angles, ACE and DCE. "the (angle) at C" is ACE,
+    /// the pair that includes the first letter of the base. "the opposite
+    /// (angle) at C" is DCE, the right-angle of parallelogram CEFD: the other
+    /// pair, the one that does not include that first letter. A point with
+    /// only one right-angle keeps it.
+    fn opposite_angle_at(&self, v: &'static str) -> Vec<String> {
+        if self.named_id(v).is_some() {
+            return self.single(v, v);
+        }
+        let mut out = vec![v.to_string()];
+        if let Some(edges) = self.adj.get(v) {
+            if edges.len() > 2 {
+                if let Some(ids) = self.opposite_right_angle_at(v) {
+                    out.extend(self.ray_rest(v, &ids, false));
+                    out.extend(ids);
+                    let named = out.clone();
+                    out.retain(|id| id.len() != 1 || !self.passed_letter(v, id, &named));
+                    out.sort();
+                    out.dedup();
+                    return out;
+                }
+            }
+        }
+        self.angle_at(v)
+    }
+
+    /// The right-angle at `v` that is not the one `right_angle_at` names.
+    ///
+    /// II.10's C: ACE includes A, so the opposite angle is the other pair,
+    /// DCE. The ray through B is produced to D; the named end is D, not B.
+    fn opposite_right_angle_at(&self, v: &'static str) -> Option<Vec<String>> {
+        let edges = self.adj.get(v)?;
+        let mut hits: Vec<Vec<String>> = Vec::new();
+        for i in 0..edges.len() {
+            for j in (i + 1)..edges.len() {
+                let a = self.at(edges[i].to).sub(self.at(v));
+                let b = self.at(edges[j].to).sub(self.at(v));
+                let ang = a.dot(b) / (a.len() * b.len());
+                if ang.abs() > 0.02 {
+                    continue;
+                }
+                let ends = [edges[i].to, edges[j].to];
+                if self.on_one_line(v, ends[0], ends[1]) {
+                    continue;
+                }
+                hits.push(vec![
+                    edges[i].to.to_string(),
+                    edges[i].id.clone(),
+                    edges[j].to.to_string(),
+                    edges[j].id.clone(),
+                ]);
+            }
+        }
+        if hits.is_empty() {
+            return None;
+        }
+        if hits.len() == 1 {
+            return Some(hits.pop().unwrap());
+        }
+        // II.10's C: ACE includes A, so the opposite angle is the other pair.
+        if let Some(ids) = hits.iter().find(|ids| {
+            let ends: Vec<&str> = ids.iter().filter(|id| id.len() == 1).map(|s| s.as_str()).collect();
+            ends.len() == 2 && ends.iter().all(|e| *e != "A")
+        }) {
+            return Some(ids.clone());
+        }
+        // No pair excludes A. Keep the pair `right_angle_at` did not name.
+        let named = self.right_angle_at(v);
+        hits.into_iter().find(|ids| named.as_ref() != Some(ids))
+    }
+
     /// The angle at a single letter: every stroke that meets there.
     ///
     /// ∠G of triangle FGH is the two sides. A given mark (*D*, *E*) keeps its
@@ -696,8 +785,10 @@ impl Diagram {
                     // The named angle, not every letter on its rays. II.9's
                     // CE is C–G–E; G is a later construction point, so the
                     // right-angle at C is ACE — A, C, E and the ink between
-                    // them — not G.
-                    out.extend(self.ray_rest(v, &ids));
+                    // them — not G. II.11's AC is A–E–C; BE closes triangle
+                    // BAE, so the right-angle at A is BAE, not the square's
+                    // corner through to C.
+                    out.extend(self.ray_rest(v, &ids, true));
                     out.extend(ids);
                     // Keep the vertex and the ends the angle names. Drop a
                     // letter the ray only passes through.
@@ -780,7 +871,13 @@ impl Diagram {
     /// II.9's CE is drawn as C–G–E. The right-angle at C is ACE, so the
     /// upright the highlight names runs through G to E, not only as far as G.
     /// The intermediate letter is not part of the name.
-    fn ray_rest(&self, v: &'static str, ids: &[String]) -> Vec<String> {
+    ///
+    /// `triangle` stops the ray where a drawn hypotenuse meets it. II.11's
+    /// AC is A–E–C, and BE closes triangle BAE, so the angle at A is BAE —
+    /// the ray stops at E, and C is the letter the side only continues
+    /// through. The opposite angle does not take this stop: II.10's DCE
+    /// runs through B to D, and EB is not that angle's side.
+    fn ray_rest(&self, v: &'static str, ids: &[String], triangle: bool) -> Vec<String> {
         let mut extra = Vec::new();
         let ends: Vec<&str> = ids.iter().filter(|id| id.len() == 1).map(|s| s.as_str()).collect();
         for end in ends {
@@ -789,6 +886,20 @@ impl Diagram {
             };
             let mut cur = end;
             let dir = self.at(end).sub(self.at(v));
+            // The angle names this end. II.10's opposite angle at C is DCE:
+            // the base ray is produced through B, and D is the end the angle
+            // names, so the walk stops there. Past D the line is the
+            // production DG, which is not part of the angle. A drawn
+            // hypotenuse names a nearer end (II.11's E on AC).
+            let mut stop = self.named_ray_end(v, end);
+            if triangle {
+                if let Some(at) = self.hypotenuse_end(v, end, ids) {
+                    stop = at;
+                }
+            }
+            if cur == stop {
+                continue;
+            }
             loop {
                 let Some(nexts) = self.adj.get(cur) else {
                     break;
@@ -810,9 +921,116 @@ impl Diagram {
                 extra.push(e.to.to_string());
                 extra.push(e.id.clone());
                 cur = e.to;
+                if cur == stop {
+                    break;
+                }
             }
         }
         extra
+    }
+
+    /// The letter the angle names at the far end of the ray that leaves `v`
+    /// through `end`. II.10's base is A–C–B–D, so the ray through B is named
+    /// at D: D is the last point of the figure still on that ray. A ray with
+    /// no further point (II.9's C–A) is named at `end` itself.
+    fn named_ray_end(&self, v: &'static str, end: &str) -> String {
+        let mut cur = end;
+        let dir = self.at(end).sub(self.at(v));
+        let mut far = end.to_string();
+        loop {
+            let Some(nexts) = self.adj.get(cur) else {
+                break;
+            };
+            let step = nexts.iter().find(|e| {
+                e.to != v
+                    && self.at(e.to).sub(self.at(cur)).dot(dir) > 0.0
+                    && {
+                        let d = self.at(e.to).sub(self.at(cur));
+                        let cross = dir.x * d.y - dir.y * d.x;
+                        cross.abs() < 1e-3 * dir.len() * d.len()
+                    }
+            });
+            let Some(e) = step else {
+                break;
+            };
+            // A branch (B, where EB leaves the base) is not a further named
+            // end of this ray. The end is the last point that still lies on it.
+            if nexts.len() > 2 && cur != end {
+                break;
+            }
+            far = e.to.to_string();
+            cur = e.to;
+        }
+        far
+    }
+
+    /// Where a drawn hypotenuse meets the ray from `v` through `end`.
+    ///
+    /// II.11's right-angle at A is the angle of triangle BAE. BE joins B,
+    /// on the base ray, to E, on AC. The ray stops at E. A crossing that
+    /// does not meet the other ray (II.9's G, where FG leaves CE) is not
+    /// this end, so the walk continues to E and the angle stays ACE.
+    fn hypotenuse_end(&self, v: &'static str, end: &str, ids: &[String]) -> Option<String> {
+        let others: Vec<&str> = ids
+            .iter()
+            .filter(|s| s.len() == 1 && s.as_str() != end)
+            .map(|s| s.as_str())
+            .collect();
+        if others.is_empty() {
+            return None;
+        }
+        let mut cur = end;
+        let dir = self.at(end).sub(self.at(v));
+        for _ in 0..12 {
+            let nexts = self.adj.get(cur)?;
+            let closes = nexts.iter().any(|e| {
+                e.to != v && others.iter().any(|other| self.on_ray(v, other, e.to))
+            });
+            if closes {
+                return Some(cur.to_string());
+            }
+            let step = nexts.iter().find(|e| {
+                e.to != v && {
+                    let d = self.at(e.to).sub(self.at(cur));
+                    let cross = dir.x * d.y - dir.y * d.x;
+                    d.dot(dir) > 0.0 && cross.abs() < 1e-3 * dir.len() * d.len().max(1e-9)
+                }
+            });
+            let Some(e) = step else {
+                return None;
+            };
+            cur = e.to;
+        }
+        None
+    }
+
+    /// `point` lies on the drawn ray from `v` through `through`.
+    fn on_ray(&self, v: &'static str, through: &str, point: &str) -> bool {
+        if point == through {
+            return true;
+        }
+        let mut cur = through;
+        let dir = self.at(through).sub(self.at(v));
+        for _ in 0..12 {
+            let Some(nexts) = self.adj.get(cur) else {
+                return false;
+            };
+            let step = nexts.iter().find(|e| {
+                e.to != v && {
+                    let d = self.at(e.to).sub(self.at(cur));
+                    let cross = dir.x * d.y - dir.y * d.x;
+                    d.dot(dir) > 0.0 && cross.abs() < 1e-3 * dir.len() * d.len().max(1e-9)
+                }
+            });
+            let Some(e) = step else {
+                return false;
+            };
+            if e.to == point {
+                return true;
+            }
+            cur = e.to;
+        }
+        false
     }
 
     /// A letter the ray only passes through, between the vertex and a
@@ -925,6 +1143,9 @@ impl Diagram {
     }
 
     /// Boundary strokes of the parallelogram named by opposite corners `a`, `b`.
+    ///
+    /// A letter the side only passes through is not a corner of the name.
+    /// II.11's FK is rectangle FGKC: H lies on GK, and E and A lie on CF.
     fn region_sides(&self, a: &'static str, b: &'static str) -> Option<Vec<String>> {
         let want = sorted_letters(&format!("{a}{b}"));
         let region = self.regions.iter().find(|r| sorted_letters(&r.letters) == want)?;
@@ -936,9 +1157,27 @@ impl Diagram {
         for i in 0..n {
             out.extend(self.side(region.boundary[i], region.boundary[(i + 1) % n]));
         }
+        let corners = &region.boundary;
+        out.retain(|id| id.len() != 1 || !self.passed_corner(id, corners));
         out.sort();
         out.dedup();
         Some(out)
+    }
+
+    /// A letter lying strictly between two corners of a named figure.
+    fn passed_corner(&self, letter: &str, corners: &[&'static str]) -> bool {
+        if corners.iter().any(|c| *c == letter) {
+            return false;
+        }
+        let Some(p) = self.pts.get(letter) else {
+            return false;
+        };
+        let n = corners.len();
+        (0..n).any(|i| {
+            let a = self.at(corners[i]);
+            let b = self.at(corners[(i + 1) % n]);
+            (*p).on_seg(a, b, 1e-3) && p.dist(a) > 1e-3 && p.dist(b) > 1e-3
+        })
     }
 
     /// `pair`, plus a corner that only lies on a longer stroke (G on DC).
@@ -1176,6 +1415,14 @@ impl Diagram {
             ids.push(to.to_string());
             ids.push(id);
             if to == end {
+                break;
+            }
+            // A letter the ray only passes through is not the named end.
+            // II.10's FEG is F–E–G; B lies on E–G, and walking on through B
+            // lights the triangle the name is not. A bend (F–D–G, where D is
+            // not between F and G) is a different ray, and the walk continues.
+            if self.passed_letter(v, to, &[end.to_string()]) {
+                ids.retain(|id| id != to);
                 break;
             }
             cur = to;
@@ -4089,6 +4336,62 @@ mod tests {
         let eb = b.sub(e);
         let cross = ef.x * eb.y - ef.y * eb.x;
         assert!(cross.abs() < 0.05, "F lies on EB: {cross}");
+    }
+
+    #[test]
+    fn ii10_cut_is_the_plate() {
+        // PDF p. 61. C is the midpoint. CE equals AC, and it is plumb. BD is
+        // 0.287 of AB. F is the row of E on the upright through D. G is EB
+        // produced to that upright, so the drop past B equals BD.
+        let d = crate::figure::book2_prop10();
+        let a = d.at("A");
+        let b = d.at("B");
+        let c = d.at("C");
+        let e = d.at("E");
+        let side = a.dist(b);
+        assert!(((c.x - a.x) / side - 0.5).abs() < 0.001, "C is the midpoint");
+        assert!((e.y - c.y - c.x + a.x).abs() < 0.01, "CE equals AC");
+        assert!((e.x - c.x).abs() < 0.01, "CE is plumb");
+        let bd = d.at("D").x - b.x;
+        assert!((bd / side - 0.2866).abs() < 0.001, "BD is the plate length");
+        let f = d.at("F");
+        let g = d.at("G");
+        assert!((f.x - d.at("D").x).abs() < 0.01 && (f.y - e.y).abs() < 0.01, "F is the row of E");
+        assert!((g.x - d.at("D").x).abs() < 0.01, "G is on the upright through D");
+        assert!((b.y - g.y - bd).abs() < 0.01, "the drop past B equals BD");
+        let eb = b.sub(e);
+        let eg = g.sub(e);
+        let cross = eb.x * eg.y - eb.y * eg.x;
+        assert!(cross.abs() < 0.05, "G lies on EB produced: {cross}");
+    }
+
+    #[test]
+    fn ii11_cut_is_the_plate() {
+        // PDF p. 63. ABDC is the square on AB, below the line. E is the
+        // midpoint of AC, on the left side. AF is 0.5833 of AB. H is that
+        // length along AB. F and G are the top of the square on AF. K is
+        // the column of H on CD. BE joins B to E.
+        let d = crate::figure::book2_prop11();
+        let a = d.at("A");
+        let b = d.at("B");
+        let c = d.at("C");
+        let e = d.at("E");
+        let side = a.dist(b);
+        assert!((c.y - a.y + side).abs() < 0.01, "AC equals AB");
+        assert!((c.x - a.x).abs() < 0.01, "AC is plumb");
+        assert!((d.at("D").x - b.x).abs() < 0.01 && (d.at("D").y - c.y).abs() < 0.01, "D is the far corner");
+        assert!((e.x - a.x).abs() < 0.01, "E is on AC");
+        assert!((e.y - (a.y + c.y) / 2.0).abs() < 0.01, "E is the midpoint");
+        let af = d.at("F").y - a.y;
+        assert!((af / side - 0.5833).abs() < 0.001, "AF is the plate length");
+        assert!((d.at("F").x - a.x).abs() < 0.01, "AF is plumb");
+        let h = d.at("H");
+        assert!((h.x - a.x - af).abs() < 0.01 && (h.y - a.y).abs() < 0.01, "H is AF along AB");
+        assert!((d.at("G").x - h.x).abs() < 0.01 && (d.at("G").y - d.at("F").y).abs() < 0.01, "G is the top corner");
+        assert!((d.at("K").x - h.x).abs() < 0.01 && (d.at("K").y - c.y).abs() < 0.01, "K is the column of H");
+        let eb = b.sub(e);
+        let be = d.at("B").sub(e);
+        assert!((eb.x - be.x).abs() < 0.01, "BE joins B to E");
     }
 
     fn letter_offset(html: &str, id: &str) -> (f64, f64) {

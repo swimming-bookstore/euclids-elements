@@ -26,6 +26,10 @@ impl PartsMap for Diagram {
         self.highlight_angle(word)
     }
 
+    fn opposite_angle_parts(&self, word: &str) -> Vec<String> {
+        self.highlight_opposite_angle(word)
+    }
+
     fn circle_parts(&self, word: &str) -> Vec<String> {
         self.circle_highlight(word)
     }
