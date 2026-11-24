@@ -1197,6 +1197,25 @@ def rgb(c):
     return tuple(v / 255 for v in c)
 
 
+def paint_header(cr, book: int, n: int) -> None:
+    """Same two header lines on every card. Navy, the color every card uses.
+
+    Book II type is blue on the blue paper; there is no band behind it.
+    Book I stays navy on cream. Drawn after the figure: a wash painted
+    over this band would pale the title.
+    """
+    title = "Euclid's Elements"
+    subtitle = f"Book {book} Proposition {n}"
+    font(cr, 48, bold=True)
+    title_w = cr.text_extents(title).x_advance
+    sub_w = cr.text_extents(subtitle).x_advance
+    cr.set_source_rgb(*rgb(BLUE if book == 2 else NAVY))
+    cr.move_to((W - title_w) / 2, 132)
+    cr.show_text(title)
+    cr.move_to((W - sub_w) / 2, 188)
+    cr.show_text(subtitle)
+
+
 def ink_of(book: int) -> tuple[int, int, int]:
     # Book II strokes sit on blue paper, so the ink is blue, not the Book I black.
     return BLUE if book == 2 else INK
@@ -1476,20 +1495,6 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
     surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, W, H)
     cr = cairo.Context(surf)
     paint_ground(cr, book)
-
-    # Same two header lines on every card. Book II type is blue on the blue
-    # paper; there is no band behind it. Book I stays navy on cream.
-    title = "Euclid's Elements"
-    subtitle = f"Book {book} Proposition {n}"
-    size = 48
-    font(cr, size, bold=True)
-    title_w = cr.text_extents(title).x_advance
-    sub_w = cr.text_extents(subtitle).x_advance
-    cr.set_source_rgb(*rgb(BLUE if book == 2 else NAVY))
-    cr.move_to((W - title_w) / 2, 132)
-    cr.show_text(title)
-    cr.move_to((W - sub_w) / 2, 188)
-    cr.show_text(subtitle)
 
     letter = 32.0
     minx, miny, maxx, maxy = scene.bounds()
@@ -1774,6 +1779,16 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
         ext = cr.text_extents(name)
         cr.move_to(x - (ext.x_bearing + ext.width / 2), y - (ext.y_bearing + ext.height / 2))
         cr.show_text(name)
+
+    # The wash is painted after the first header, and a square the fit skips
+    # can run into that band. Repaint the paper, then the title, so the type
+    # stays navy — the color every other card uses — and a wash cannot pale it.
+    cr.save()
+    cr.rectangle(0, 0, W, 210)
+    cr.clip()
+    paint_ground(cr, book)
+    cr.restore()
+    paint_header(cr, book, n)
 
     surf.write_to_png(out)
 
