@@ -4052,4 +4052,254 @@ mod tests {
         assert_eq!(display_letters("rectangle(FH)"), "FH");
         assert_eq!(display_letters("rectangle(HD)"), "HD");
     }
+
+    #[test]
+    fn ii12_triangle_and_perpendicular_are_the_plate() {
+        // Fitzpatrick names the obtuse triangle, the obtuse angle, the sides,
+        // and the right-angle at D. The plate draws no square, so a square
+        // name is not a boundary to light. BAC is the obtuse angle, not the
+        // triangle. The angle at D is BDC: BD and DC through the cut at A.
+        let phrases = crate::content::get(2, 12).unwrap().phrases;
+        let script = compile(phrases, &crate::figure::book2_prop12(), Timing::default());
+        let runs = |word: &str| -> Vec<Vec<String>> {
+            script
+                .lines
+                .iter()
+                .flat_map(|l| l.tokens.iter())
+                .filter(|t| letter_key(&t.text) == word)
+                .map(|t| t.parts.clone())
+                .collect()
+        };
+        let has = |parts: &[String], id: &str| parts.iter().any(|p| p == id);
+        let shown: Vec<String> = script
+            .lines
+            .iter()
+            .flat_map(|l| l.tokens.iter())
+            .filter(|t| !t.cite)
+            .map(|t| display_letters(&t.text))
+            .collect();
+        let spoken = shown.join(" ");
+        assert!(
+            spoken.contains("ABC") && spoken.contains("obtuse-angled triangle"),
+            "ABC is the triangle: {spoken}"
+        );
+        assert!(spoken.contains("angle BAC"), "BAC is the obtuse angle: {spoken}");
+        assert!(spoken.contains("perpendicular to CA"), "CA is produced: {spoken}");
+        assert!(spoken.contains("square on BC"), "the square on BC is named: {spoken}");
+        assert!(spoken.contains("angle at D"), "the right-angle is at D: {spoken}");
+        assert_eq!(display_letters("triangle(ABC)"), "ABC");
+        assert_eq!(display_letters("angle(BAC)"), "BAC");
+        let abc = runs("ABC");
+        assert!(
+            abc.len() == 1
+                && abc.iter().all(|p| {
+                    has(p, "ba") && has(p, "ac") && has(p, "bc") && !has(p, "da") && !has(p, "bd")
+                }),
+            "ABC is the triangle, not the production: {abc:?}"
+        );
+        let bac = runs("BAC");
+        assert!(
+            bac.len() >= 1
+                && bac.iter().all(|p| {
+                    has(p, "ba") && has(p, "ac") && !has(p, "bc") && !has(p, "da") && !has(p, "bd")
+                }),
+            "BAC is the obtuse angle, not the triangle: {bac:?}"
+        );
+        let bd = runs("BD");
+        assert!(
+            bd.len() >= 1 && bd.iter().all(|p| has(p, "bd") && !has(p, "ba") && !has(p, "da")),
+            "BD is the perpendicular: {bd:?}"
+        );
+        let ca = runs("CA");
+        assert!(
+            ca.len() >= 1 && ca.iter().all(|p| has(p, "ac") && !has(p, "da") && !has(p, "bc")),
+            "CA is the side, not the production: {ca:?}"
+        );
+        let bc = runs("BC");
+        assert!(
+            bc.len() >= 1 && bc.iter().all(|p| has(p, "bc") && !has(p, "ba") && !has(p, "bd")),
+            "BC is the side subtending the obtuse angle: {bc:?}"
+        );
+        let ba = runs("BA");
+        assert!(
+            ba.len() >= 1 && ba.iter().all(|p| has(p, "ba") && !has(p, "bc") && !has(p, "bd")),
+            "BA is the side containing the obtuse angle: {ba:?}"
+        );
+        let ac = runs("AC");
+        assert!(
+            ac.len() >= 1 && ac.iter().all(|p| has(p, "ac") && !has(p, "da") && !has(p, "bc")),
+            "AC is the side, not the production: {ac:?}"
+        );
+        let cd = runs("CD");
+        assert!(
+            cd.len() >= 1
+                && cd.iter().all(|p| has(p, "da") && has(p, "ac") && !has(p, "bd") && !has(p, "ba")),
+            "CD is the whole with the production: {cd:?}"
+        );
+        let dc = runs("DC");
+        assert!(
+            dc.len() >= 1 && dc.iter().all(|p| has(p, "da") && has(p, "ac") && !has(p, "bd")),
+            "DC is the whole with the production: {dc:?}"
+        );
+        let ad = runs("AD");
+        assert!(
+            ad.len() >= 2 && ad.iter().all(|p| has(p, "da") && !has(p, "ac") && !has(p, "bd")),
+            "AD is the piece cut off outside: {ad:?}"
+        );
+        let db = runs("DB");
+        assert!(
+            db.len() >= 2 && db.iter().all(|p| has(p, "bd") && !has(p, "ba") && !has(p, "da")),
+            "DB is the perpendicular: {db:?}"
+        );
+        let cb = runs("CB");
+        assert!(
+            cb.len() >= 1 && cb.iter().all(|p| has(p, "bc") && !has(p, "ba") && !has(p, "ac")),
+            "CB is the side subtending the obtuse angle: {cb:?}"
+        );
+        let ab = runs("AB");
+        assert!(
+            ab.len() >= 2 && ab.iter().all(|p| has(p, "ba") && !has(p, "bc") && !has(p, "bd")),
+            "AB is the side: {ab:?}"
+        );
+        let at_d = runs("D");
+        assert!(
+            at_d.iter().any(|p| {
+                has(p, "da")
+                    && has(p, "ac")
+                    && has(p, "bd")
+                    && has(p, "B")
+                    && has(p, "C")
+                    && !has(p, "A")
+                    && !has(p, "ba")
+                    && !has(p, "bc")
+            }),
+            "the angle at D is BDC, the right-angle on DC: {at_d:?}"
+        );
+    }
+
+    #[test]
+    fn ii13_triangle_and_perpendicular_are_the_plate() {
+        // Fitzpatrick names the acute triangle, the acute angle at B, the
+        // sides, and the right-angle at D. The plate draws no square, so a
+        // square name is not a boundary to light. The angle at B is ABC,
+        // through the foot D. The angle at D is the right-angle on BC.
+        let phrases = crate::content::get(2, 13).unwrap().phrases;
+        let script = compile(phrases, &crate::figure::book2_prop13(), Timing::default());
+        let runs = |word: &str| -> Vec<Vec<String>> {
+            script
+                .lines
+                .iter()
+                .flat_map(|l| l.tokens.iter())
+                .filter(|t| letter_key(&t.text) == word)
+                .map(|t| t.parts.clone())
+                .collect()
+        };
+        let has = |parts: &[String], id: &str| parts.iter().any(|p| p == id);
+        let shown: Vec<String> = script
+            .lines
+            .iter()
+            .flat_map(|l| l.tokens.iter())
+            .filter(|t| !t.cite)
+            .map(|t| display_letters(&t.text))
+            .collect();
+        let spoken = shown.join(" ");
+        assert!(
+            spoken.contains("ABC") && spoken.contains("acute-angled triangle"),
+            "ABC is the triangle: {spoken}"
+        );
+        assert!(spoken.contains("angle at (point) B"), "the acute angle is at B: {spoken}");
+        assert!(spoken.contains("perpendicular to BC"), "AD falls on BC: {spoken}");
+        assert!(spoken.contains("square on AC"), "the square on AC is named: {spoken}");
+        assert!(spoken.contains("angle at (point) D"), "the right-angle is at D: {spoken}");
+        assert_eq!(display_letters("triangle(ABC)"), "ABC");
+        let abc = runs("ABC");
+        assert!(
+            abc.len() == 1
+                && abc.iter().all(|p| {
+                    has(p, "ab") && has(p, "bd") && has(p, "dc") && has(p, "ac") && !has(p, "ad")
+                }),
+            "ABC is the triangle, through the cut: {abc:?}"
+        );
+        let ad = runs("AD");
+        assert!(
+            ad.len() >= 1 && ad.iter().all(|p| has(p, "ad") && !has(p, "ab") && !has(p, "bd")),
+            "AD is the perpendicular: {ad:?}"
+        );
+        let bc = runs("BC");
+        assert!(
+            bc.len() >= 1
+                && bc.iter().all(|p| has(p, "bd") && has(p, "dc") && !has(p, "ab") && !has(p, "ad")),
+            "BC is the base, through D: {bc:?}"
+        );
+        let ac = runs("AC");
+        assert!(
+            ac.len() >= 2 && ac.iter().all(|p| has(p, "ac") && !has(p, "ad") && !has(p, "dc")),
+            "AC is the side subtending the acute angle: {ac:?}"
+        );
+        let cb = runs("CB");
+        assert!(
+            cb.len() >= 2
+                && cb.iter().all(|p| has(p, "bd") && has(p, "dc") && !has(p, "ab") && !has(p, "ad")),
+            "CB is the base: {cb:?}"
+        );
+        let ba = runs("BA");
+        assert!(
+            ba.len() >= 2 && ba.iter().all(|p| has(p, "ab") && !has(p, "bd") && !has(p, "ac")),
+            "BA is the side containing the acute angle: {ba:?}"
+        );
+        let bd = runs("BD");
+        assert!(
+            bd.len() >= 2
+                && bd.iter().all(|p| {
+                    has(p, "bd") && !has(p, "dc") && !has(p, "ab") && !has(p, "ad")
+                }),
+            "BD is the piece cut off inside: {bd:?}"
+        );
+        let dc = runs("DC");
+        assert!(
+            dc.len() >= 2
+                && dc.iter().all(|p| {
+                    has(p, "dc") && !has(p, "bd") && !has(p, "ad") && !has(p, "ac")
+                }),
+            "DC is the other piece: {dc:?}"
+        );
+        let da = runs("DA");
+        assert!(
+            da.len() >= 2 && da.iter().all(|p| has(p, "ad") && !has(p, "ab") && !has(p, "bd")),
+            "DA is the perpendicular: {da:?}"
+        );
+        let ab = runs("AB");
+        assert!(
+            ab.len() >= 1 && ab.iter().all(|p| has(p, "ab") && !has(p, "bd") && !has(p, "ac")),
+            "AB is the side: {ab:?}"
+        );
+        let at_b = runs("B");
+        assert!(
+            at_b.iter().any(|p| {
+                has(p, "ab")
+                    && has(p, "bd")
+                    && has(p, "dc")
+                    && has(p, "A")
+                    && has(p, "C")
+                    && !has(p, "ad")
+                    && !has(p, "ac")
+                    && !has(p, "D")
+            }),
+            "the angle at B is ABC, through to C, not the foot: {at_b:?}"
+        );
+        let at_d = runs("D");
+        assert!(
+            at_d.iter().any(|p| {
+                has(p, "ad")
+                    && has(p, "bd")
+                    && has(p, "dc")
+                    && has(p, "A")
+                    && has(p, "B")
+                    && has(p, "C")
+                    && !has(p, "ab")
+                    && !has(p, "ac")
+            }),
+            "the angle at D is the right-angle on BC: {at_d:?}"
+        );
+    }
 }

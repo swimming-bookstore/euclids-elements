@@ -1004,6 +1004,10 @@ class Scene:
         # The capital is the plate glyph, not an offset from the vertex.
         self.labels[name] = (glyph, 90.0, 0.0)
 
+    def angle_far(self, _vertex: str, _end: str) -> None:
+        # The demo lights the longer ray. The card washes the squares.
+        return
+
     def region(self, _name: str, _boundary: list) -> None:
         # Opposite-corner names (I.43's EH, BK). The card washes the
         # complements; it does not redraw the plate.
@@ -1422,6 +1426,23 @@ def prepare(n: int, scene: Scene, book: int = 1) -> None:
     # II.11 needs no shadow. The rectangle contained by AB and BH is HD, and
     # the square on AH is FH. Both are already drawn, so the wash names the
     # equality. A square standing off AB would be a square the proof does not use.
+    if book == 2 and n in (12, 13):
+        # The plate draws the triangle and the perpendicular, not the squares.
+        # Each square stands on the side the enunciation names, outside the
+        # triangle, so a square inside would cover the triangle. The side it
+        # stands on is already a plate stroke, so the outer edges stay quiet.
+        for key, pn, qn, away in (
+            ("Bc", "B", "C", "A"),
+            ("Ba", "B", "A", "C"),
+            ("Ac", "A", "C", "B"),
+        ):
+            pts = square_outward(scene.at(pn), scene.at(qn), scene.at(away))
+            scene.pin(f"{key}1", pts[2])
+            scene.pin(f"{key}2", pts[3])
+            scene.fit_skip.add(f"{key}1")
+            scene.fit_skip.add(f"{key}2")
+        for u, v in SQUARE_QUIET2.get(n, ()):
+            scene.join(u, v)
     # ANGLES is Book I. Keyed by proposition number only, so I.5's pies
     # would otherwise land on II.5: A, B, C, D, E all exist there, and the
     # wedges read as two pies on the square.
@@ -1889,6 +1910,12 @@ WASHES2 = {
     # piece AH is FH. Both are drawn. The square is the first hue; the
     # rectangle is the second.
     11: [("F", "A", "H", "G"), ("H", "B", "D", "K")],
+    # The square on the side subtending the obtuse angle, then the squares
+    # on the two sides containing it. The plate draws none of them.
+    12: [("B", "C", "Bc1", "Bc2"), ("B", "A", "Ba1", "Ba2"), ("A", "C", "Ac1", "Ac2")],
+    # The square on the side subtending the acute angle, then the squares
+    # on the two sides containing it. The plate draws none of them.
+    13: [("A", "C", "Ac1", "Ac2"), ("B", "C", "Bc1", "Bc2"), ("B", "A", "Ba1", "Ba2")],
 }
 
 # Hue of each WASHES2 region. 0 is the pale wash, 1 the second. Absent: the
@@ -1912,6 +1939,11 @@ WASH_HUE2 = {
     # The square on the remaining piece, then the rectangle contained by the
     # whole and the other piece. They share HK, so the boundary mixes.
     11: [0, 1],
+    # The square on the side subtending the angle is the first hue. The two
+    # squares on the sides containing it are the second. Painted over the
+    # first where they meet, so the overlap stays the second hue.
+    12: [0, 1, 1],
+    13: [0, 1, 1],
 }
 
 # Outer edges of the shadow square the enunciation names and the plate
@@ -1949,6 +1981,28 @@ SQUARE_QUIET2: dict[int, tuple[tuple[str, str], ...]] = {
         ("D", "Cd1"),
         ("Cd1", "Cd2"),
         ("Cd2", "C"),
+    ),
+    12: (
+        ("C", "Bc1"),
+        ("Bc1", "Bc2"),
+        ("Bc2", "B"),
+        ("A", "Ba1"),
+        ("Ba1", "Ba2"),
+        ("Ba2", "B"),
+        ("C", "Ac1"),
+        ("Ac1", "Ac2"),
+        ("Ac2", "A"),
+    ),
+    13: (
+        ("C", "Ac1"),
+        ("Ac1", "Ac2"),
+        ("Ac2", "A"),
+        ("C", "Bc1"),
+        ("Bc1", "Bc2"),
+        ("Bc2", "B"),
+        ("A", "Ba1"),
+        ("Ba1", "Ba2"),
+        ("Ba2", "B"),
     ),
 }
 
@@ -1994,6 +2048,12 @@ LINES2: dict[int, list[tuple[str, str]]] = {
     # chord, not the pieces. The rectangle contained by AB and BH, and the
     # square on AH, are the washes. BE and the square on AB are the construction.
     11: [("A", "B")],
+    # The three sides of the obtuse triangle. The squares stand on them.
+    # CA is produced to D; the production is the proof, not the side.
+    12: [("B", "C"), ("B", "A"), ("A", "C")],
+    # The three sides of the acute triangle. The squares stand on them.
+    # D is the foot, so BC is the whole base, not the pieces.
+    13: [("A", "C"), ("C", "B"), ("B", "A")],
 }
 LINE_ALT2: dict[int, list[tuple[str, str]]] = {}
 LINE_EXTRA2: dict[int, list[tuple[tuple[int, int, int], tuple[tuple[str, str], ...]]]] = {}
