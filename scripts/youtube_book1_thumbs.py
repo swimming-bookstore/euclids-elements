@@ -1439,8 +1439,14 @@ def prepare(n: int, scene: Scene, book: int = 1) -> None:
             pts = square_outward(scene.at(pn), scene.at(qn), scene.at(away))
             scene.pin(f"{key}1", pts[2])
             scene.pin(f"{key}2", pts[3])
-            scene.fit_skip.add(f"{key}1")
-            scene.fit_skip.add(f"{key}2")
+            # II.12's square on BC reaches the header if the corners are
+            # skipped, and the wash pales the title. The title stays navy,
+            # the color every other card uses, so those corners stay in the
+            # fit. II.13's squares clear the header, so skipping them keeps
+            # the triangle at the plate size.
+            if n == 13:
+                scene.fit_skip.add(f"{key}1")
+                scene.fit_skip.add(f"{key}2")
         for u, v in SQUARE_QUIET2.get(n, ()):
             scene.join(u, v)
     # ANGLES is Book I. Keyed by proposition number only, so I.5's pies
