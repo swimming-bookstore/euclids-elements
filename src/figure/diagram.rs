@@ -57,6 +57,11 @@ pub struct Diagram {
     /// II.13's angle at B is ABC, and BC is B–D–C. The letter in between
     /// is the cut, not the end of the ray.
     angle_far: Vec<(&'static str, &'static str)>,
+    /// A letter the proof calls an angle, whose light is the point.
+    ///
+    /// II.13: "the angle at (point) D is a right-angle" names the angle.
+    /// The light is the point D, not the two rays.
+    point_only: Vec<&'static str>,
 }
 
 impl Diagram {
@@ -71,6 +76,7 @@ impl Diagram {
             regions: Vec::new(),
             polys: Vec::new(),
             angle_far: Vec::new(),
+            point_only: Vec::new(),
         }
     }
 
@@ -397,6 +403,12 @@ impl Diagram {
     /// not the end of the ray.
     pub fn angle_far(&mut self, vertex: &'static str, end: &'static str) -> &mut Self {
         self.angle_far.push((vertex, end));
+        self
+    }
+
+    /// "the angle at (point) D" still names the angle. Light the point.
+    pub fn point_only(&mut self, name: &'static str) -> &mut Self {
+        self.point_only.push(name);
         self
     }
 
@@ -793,6 +805,9 @@ impl Diagram {
     /// more than two strokes meet (II.9's C and D) is the right-angle the
     /// proof names, not the whole pencil: the two rays of that right-angle.
     fn angle_at(&self, v: &'static str) -> Vec<String> {
+        if self.point_only.contains(&v) {
+            return vec![v.to_string()];
+        }
         if self.named_id(v).is_some() {
             return self.single(v, v);
         }
