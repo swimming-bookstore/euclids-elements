@@ -1,7 +1,7 @@
 use super::{s, Proposition};
 use crate::figure::{
-    book2_prop1, book2_prop2, book2_prop3, book2_prop4, book2_prop5, book2_prop6, book2_prop7,
-    book2_prop8, book2_prop9, book2_prop10, book2_prop11,
+    book2_prop1, book2_prop10, book2_prop11, book2_prop12, book2_prop13, book2_prop2, book2_prop3,
+    book2_prop4, book2_prop5, book2_prop6, book2_prop7, book2_prop8, book2_prop9,
 };
 
 pub const PROP_1: Proposition = Proposition {
@@ -367,4 +367,51 @@ pub const PROP_11: Proposition = Proposition {
     ],
 };
 
-pub const PROPOSITIONS: &[Proposition] = &[PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6, PROP_7, PROP_8, PROP_9, PROP_10, PROP_11];
+pub const PROP_12: Proposition = Proposition {
+    book: 2,
+    number: 12,
+    enunciation: "In obtuse-angled triangles, the square on the side subtending the obtuse angle is greater than the (sum of the) squares on the sides containing the obtuse angle by twice the (rectangle) contained by one of the sides around the obtuse angle, to which a perpendicular (straight-line) falls, and the (straight-line) cut off outside (the triangle) by the perpendicular (straight-line) towards the obtuse angle.",
+    figure: book2_prop12,
+    phrases: &[
+        s(1, "Let *triangle(ABC)* be an obtuse-angled triangle, having the angle *angle(BAC)* obtuse."),
+        s(1, "And let *BD* be drawn from point *B*, perpendicular to *CA* produced.{[Prop. 1.12]}"),
+        s(1, "I say that the square on *BC* is greater than the (sum of the) squares on *BA* and *AC*, by twice the rectangle contained by *CA* and *AD*."),
+        s(2, "For since the straight-line *CD* has been cut, at random, at point *A*, the (square) on *DC* is thus equal to the (sum of the) squares on *CA* and *AD*, and twice the rectangle contained by *CA* and *AD*.{[Prop. 2.4]}"),
+        s(2, "Let the (square) on *DB* have been added to both."),
+        s(2, "Thus, the (sum of the squares) on *CD* and *DB* is equal to the (sum of the) squares on *CA*, *AD*, and *DB*, and twice the [rectangle contained] by *CA* and *AD*."),
+        s(2, "But, the (square) on *CB* is equal to the (sum of the squares) on *CD* and *DB*."),
+        s(2, "For the angle at *D* (is) a right-angle.{[Prop. 1.47]}"),
+        s(2, "And the (square) on *AB* (is) equal to the (sum of the squares) on *AD* and *DB*.{[Prop. 1.47]}"),
+        s(2, "Thus, the square on *CB* is equal to the (sum of the) squares on *CA* and *AB*, and twice the rectangle contained by *CA* and *AD*."),
+        s(2, "So the square on *CB* is greater than the (sum of the) squares on *CA* and *AB* by twice the rectangle contained by *CA* and *AD*."),
+        s(3, "Thus, in obtuse-angled triangles, the square on the side subtending the obtuse angle is greater than the (sum of the) squares on the sides containing the obtuse angle by twice the (rectangle) contained by one of the sides around the obtuse angle, to which a perpendicular (straight-line) falls, and the (straight-line) cut off outside (the triangle) by the perpendicular (straight-line) towards the obtuse angle."),
+        s(3, "(Which is) the very thing it was required to show."),
+    ],
+};
+
+pub const PROP_13: Proposition = Proposition {
+    book: 2,
+    number: 13,
+    enunciation: "In acute-angled triangles, the square on the side subtending the acute angle is less than the (sum of the) squares on the sides containing the acute angle by twice the (rectangle) contained by one of the sides around the acute angle, to which a perpendicular (straight-line) falls, and the (straight-line) cut off inside (the triangle) by the perpendicular (straight-line) towards the acute angle.",
+    figure: book2_prop13,
+    phrases: &[
+        s(1, "Let *triangle(ABC)* be an acute-angled triangle, having the angle at (point) *B* acute."),
+        s(1, "And let *AD* have been drawn from point *A*, perpendicular to *BC*.{[Prop. 1.12]}"),
+        s(1, "I say that the square on *AC* is less than the (sum of the) squares on *CB* and *BA*, by twice the rectangle contained by *CB* and *BD*."),
+        s(2, "For since the straight-line *CB* has been cut, at random, at (point) *D*, the (sum of the) squares on *CB* and *BD* is thus equal to twice the rectangle contained by *CB* and *BD*, and the square on *DC*.{[Prop. 2.7]}"),
+        s(2, "Let the square on *DA* have been added to both."),
+        s(2, "Thus, the (sum of the) squares on *CB*, *BD*, and *DA* is equal to twice the rectangle contained by *CB* and *BD*, and the (sum of the) squares on *AD* and *DC*."),
+        s(2, "But, the (square) on *AB* (is) equal to the (sum of the squares) on *BD* and *DA*."),
+        s(2, "For the angle at (point) *D* is a right-angle.{[Prop. 1.47]}"),
+        s(2, "And the (square) on *AC* (is) equal to the (sum of the squares) on *AD* and *DC*.{[Prop. 1.47]}"),
+        s(2, "Thus, the (sum of the squares) on *CB* and *BA* is equal to the (square) on *AC*, and twice the (rectangle contained) by *CB* and *BD*."),
+        s(2, "So the (square) on *AC* alone is less than the (sum of the) squares on *CB* and *BA* by twice the rectangle contained by *CB* and *BD*."),
+        s(3, "Thus, in acute-angled triangles, the square on the side subtending the acute angle is less than the (sum of the) squares on the sides containing the acute angle by twice the (rectangle) contained by one of the sides around the acute angle, to which a perpendicular (straight-line) falls, and the (straight-line) cut off inside (the triangle) by the perpendicular (straight-line) towards the acute angle."),
+        s(3, "(Which is) the very thing it was required to show."),
+    ],
+};
+
+pub const PROPOSITIONS: &[Proposition] = &[
+    PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6, PROP_7, PROP_8, PROP_9, PROP_10, PROP_11,
+    PROP_12, PROP_13,
+];

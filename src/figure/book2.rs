@@ -668,3 +668,78 @@ pub fn book2_prop11() -> Diagram {
     d.dots(&["A", "B", "C", "D", "E", "F", "G", "H", "K"]);
     d
 }
+
+/// II.12 — Fitzpatrick English plate (Elements PDF p. 64).
+///
+/// ABC is obtuse-angled at A. CA is produced through A to D, and BD is drawn
+/// from B perpendicular to that production, so the angle at D is the
+/// right-angle the squares stand on. The plate draws the triangle and the
+/// perpendicular. It draws no square.
+///
+/// One scale BC = 100. The plate is not isosceles: BD/BC = 0.4472, and D
+/// lies outside the triangle, 0.2485 of BC to the left of A. CA produced is
+/// the base, level. BD is plumb, so the angle at D is a right-angle. Vertex
+/// letters sit on the measured tip→glyph heading.
+pub fn book2_prop12() -> Diagram {
+    let mut d = Diagram::new();
+    // PDF p. 64, the English figure. The path is C–A–B, closed, then B–D–A.
+    // BC is the hypotenuse, 225.674 pt. BD is plumb and DC is level, so the
+    // angle at D is a right-angle. A is where BA meets DC, 56.069 pt from D.
+    let bc = 100.0;
+    let bd = bc * 100.924 / 225.674;
+    let da = bc * 56.069 / 225.674;
+    let dc = bc * 201.849 / 225.674;
+    d.put("D", V2::new(0.0, 0.0), Place::Deg(-91.5));
+    d.level("A", "D", da, Place::Deg(-75.9));
+    d.level("C", "D", dc, Place::Deg(-76.2));
+    d.plumb("B", "D", bd, Place::Deg(96.5));
+    // CA is produced through A, so the base splits there. DA and AC are the
+    // pieces the rectangle names. An unsplit stroke would walk those names
+    // across the cut.
+    d.chain(&["D", "A", "C"]);
+    d.join("B", "A");
+    d.join("B", "C");
+    d.join("B", "D");
+    // The angle at D is the right-angle contained by BD and DC. DC runs
+    // through the cut at A, so the ray does not stop there.
+    d.angle_far("D", "C");
+    d.dots(&["A", "B", "C", "D"]);
+    d
+}
+
+/// II.13 — Fitzpatrick English plate (Elements PDF p. 65).
+///
+/// ABC is acute-angled, and the angle at B is the acute angle the enunciation
+/// names. AD is drawn from A perpendicular to BC, so D falls inside BC and
+/// the angle at D is the right-angle the squares stand on. The plate draws
+/// the triangle and the perpendicular. It draws no square.
+///
+/// One scale BC = 100. The plate is not isosceles: angle ABC is 59.74° and
+/// angle ACB is 62.49°, so BD/BC = 0.5283. AD is plumb and BC is level, so
+/// the angle at D is a right-angle. Vertex letters sit on the measured
+/// tip→glyph heading.
+pub fn book2_prop13() -> Diagram {
+    let mut d = Diagram::new();
+    // PDF p. 65, the English figure. The path is B–C–A, closed, then A–D.
+    // BC is the base, 131.041 pt. AD is plumb, so the angle at D is a
+    // right-angle. D is the foot, 69.230 pt from B.
+    let bc = 100.0;
+    let bd = bc * 69.230 / 131.041;
+    let ad = bc * 118.679 / 131.041;
+    d.put("B", V2::new(0.0, 0.0), Place::Deg(-96.0));
+    d.level("D", "B", bd, Place::Deg(-80.3));
+    d.level("C", "B", bc, Place::Deg(-60.5));
+    d.plumb("A", "D", ad, Place::Deg(86.7));
+    // BC is cut at D, so BD and DC are the pieces the rectangle names. An
+    // unsplit stroke would walk those names across the cut.
+    d.chain(&["B", "D", "C"]);
+    d.join("A", "B");
+    d.join("A", "C");
+    d.join("A", "D");
+    // The angle at B is ABC, and BC runs through the foot D. The angle at
+    // D is BDA, the right-angle the squares stand on: AD against BD, not
+    // the base continued through to C.
+    d.angle_far("B", "C");
+    d.dots(&["A", "B", "C", "D"]);
+    d
+}

@@ -52,6 +52,11 @@ pub struct Diagram {
     arms: Vec<Arm>,
     regions: Vec<Region>,
     polys: Vec<Poly>,
+    /// A vertex whose angle names a ray past the first letter on it.
+    /// II.12's angle at D is the right-angle on DC, and DC is D–A–C.
+    /// II.13's angle at B is ABC, and BC is B–D–C. The letter in between
+    /// is the cut, not the end of the ray.
+    angle_far: Vec<(&'static str, &'static str)>,
 }
 
 impl Diagram {
@@ -65,6 +70,7 @@ impl Diagram {
             arms: Vec::new(),
             regions: Vec::new(),
             polys: Vec::new(),
+            angle_far: Vec::new(),
         }
     }
 
@@ -379,6 +385,18 @@ impl Diagram {
             let p = self.at(name);
             self.fig.dot(*name, p);
         }
+        self
+    }
+
+    /// The angle at `vertex` names the ray through to `end`.
+    ///
+    /// The plate cuts that ray at a letter, and the two strokes meeting at
+    /// the vertex would otherwise stop there. II.12's angle at D is the
+    /// right-angle contained by BD and DC, and DC runs through A. II.13's
+    /// angle at B is ABC, and BC runs through D. The letter in between is
+    /// not the end of the ray.
+    pub fn angle_far(&mut self, vertex: &'static str, end: &'static str) -> &mut Self {
+        self.angle_far.push((vertex, end));
         self
     }
 
@@ -790,6 +808,9 @@ impl Diagram {
                     // corner through to C.
                     out.extend(self.ray_rest(v, &ids, true));
                     out.extend(ids);
+                    for (_, end) in self.angle_far.iter().filter(|(at, _)| *at == v) {
+                        out.extend(self.ray_to(v, end));
+                    }
                     // Keep the vertex and the ends the angle names. Drop a
                     // letter the ray only passes through.
                     let named = out.clone();
@@ -804,6 +825,11 @@ impl Diagram {
                 out.push(e.id.clone());
             }
         }
+        for (_, end) in self.angle_far.iter().filter(|(at, _)| *at == v) {
+            out.extend(self.ray_to(v, end));
+        }
+        let named = out.clone();
+        out.retain(|id| id.len() != 1 || !self.passed_letter(v, id, &named));
         out.sort();
         out.dedup();
         out
@@ -864,6 +890,57 @@ impl Diagram {
                 ends.len() == 2 && !self.on_one_line(v, ends[0], ends[1])
             })
             .map(|(_, ids)| ids)
+    }
+
+    /// The letters of the straight stroke from `v` through to `end`.
+    ///
+    /// The angle names that end. A letter the stroke only passes is not
+    /// part of the name, so the caller drops it.
+    fn ray_to(&self, v: &'static str, end: &'static str) -> Vec<String> {
+        let mut out = vec![end.to_string()];
+        let Some(edges) = self.adj.get(v) else {
+            return out;
+        };
+        let want = self.at(end).sub(self.at(v));
+        let Some(first) = edges
+            .iter()
+            .filter(|e| {
+                let d = self.at(e.to).sub(self.at(v));
+                let cross = want.x * d.y - want.y * d.x;
+                d.dot(want) > 0.0 && cross.abs() < 1e-3 * want.len() * d.len()
+            })
+            .min_by(|a, b| {
+                self.at(a.to)
+                    .dist(self.at(v))
+                    .partial_cmp(&self.at(b.to).dist(self.at(v)))
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            })
+        else {
+            return out;
+        };
+        out.push(first.to.to_string());
+        out.push(first.id.clone());
+        let mut cur = first.to;
+        let dir = self.at(first.to).sub(self.at(v));
+        while cur != end {
+            let Some(nexts) = self.adj.get(cur) else {
+                break;
+            };
+            let step = nexts.iter().find(|e| {
+                e.to != v && {
+                    let d = self.at(e.to).sub(self.at(cur));
+                    let cross = dir.x * d.y - dir.y * d.x;
+                    d.dot(dir) > 0.0 && cross.abs() < 1e-3 * dir.len() * d.len()
+                }
+            });
+            let Some(e) = step else {
+                break;
+            };
+            out.push(e.to.to_string());
+            out.push(e.id.clone());
+            cur = e.to;
+        }
+        out
     }
 
     /// The rest of a right-angle ray past the first segment.
@@ -4392,6 +4469,64 @@ mod tests {
         let eb = b.sub(e);
         let be = d.at("B").sub(e);
         assert!((eb.x - be.x).abs() < 0.01, "BE joins B to E");
+    }
+
+    #[test]
+    fn ii12_obtuse_is_the_plate() {
+        // PDF p. 64. BC is the side subtending the obtuse angle. BD is plumb
+        // and DC is level, so the angle at D is a right-angle. D lies outside
+        // the triangle. A is the cut on DC, 0.2485 of BC from D. BD is 0.4472
+        // of BC. The plate is not isosceles.
+        let d = crate::figure::book2_prop12();
+        let b = d.at("B");
+        let c = d.at("C");
+        let a = d.at("A");
+        let foot = d.at("D");
+        let bc = b.dist(c);
+        assert!((foot.x - 0.0).abs() < 0.01 && (foot.y - 0.0).abs() < 0.01, "D is the origin");
+        assert!((a.y - foot.y).abs() < 0.01 && (c.y - foot.y).abs() < 0.01, "DC is level");
+        assert!((b.x - foot.x).abs() < 0.01, "BD is plumb");
+        assert!(((b.y - foot.y) / bc - 0.4472).abs() < 0.001, "BD is the plate length");
+        assert!(((a.x - foot.x) / bc - 0.2485).abs() < 0.001, "A is the plate cut");
+        assert!(a.x < c.x && foot.x < a.x, "D lies outside, on CA produced");
+        let ad = a.sub(foot);
+        let bd = b.sub(foot);
+        let cross = ad.x * bd.y - ad.y * bd.x;
+        let dot = ad.dot(bd);
+        assert!(cross.abs() > 1.0 && dot.abs() < 0.05, "the angle at D is a right-angle");
+    }
+
+    #[test]
+    fn ii13_acute_is_the_plate() {
+        // PDF p. 65. BC is the base. AD is plumb, so the angle at D is a
+        // right-angle. D falls inside BC. BD is 0.5283 of BC. The plate is
+        // not isosceles: angle ABC is 59.74° and angle ACB is 62.49°.
+        let d = crate::figure::book2_prop13();
+        let b = d.at("B");
+        let c = d.at("C");
+        let a = d.at("A");
+        let foot = d.at("D");
+        let bc = b.dist(c);
+        assert!((c.y - b.y).abs() < 0.01 && (foot.y - b.y).abs() < 0.01, "BC is level");
+        assert!((a.x - foot.x).abs() < 0.01, "AD is plumb");
+        assert!(b.x < foot.x && foot.x < c.x, "D falls inside BC");
+        assert!(((foot.x - b.x) / bc - 0.5283).abs() < 0.001, "BD is the plate length");
+        assert!(((a.y - foot.y) / bc - 0.9057).abs() < 0.001, "AD is the plate height");
+        let ad = a.sub(foot);
+        let bd = b.sub(foot);
+        assert!(ad.dot(bd).abs() < 0.05, "the angle at D is a right-angle");
+        let abc = angle_at(&d, "A", "B", "C");
+        let acb = angle_at(&d, "A", "C", "B");
+        assert!(
+            (abc.to_degrees() - 59.74).abs() < 0.1,
+            "angle ABC from the plate, got {}",
+            abc.to_degrees()
+        );
+        assert!(
+            (acb.to_degrees() - 62.49).abs() < 0.1,
+            "angle ACB from the plate, got {}",
+            acb.to_degrees()
+        );
     }
 
     fn letter_offset(html: &str, id: &str) -> (f64, f64) {
