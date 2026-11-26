@@ -1458,14 +1458,13 @@ def prepare(n: int, scene: Scene, book: int = 1) -> None:
             pts = square_outward(scene.at(pn), scene.at(qn), scene.at(away))
             scene.pin(f"{key}1", pts[2])
             scene.pin(f"{key}2", pts[3])
-            # II.12's square on BC reaches the header if the corners are
-            # skipped, and the wash pales the title. The title stays navy,
-            # the color every other card uses, so those corners stay in the
-            # fit. II.13's squares clear the header, so skipping them keeps
-            # the triangle at the plate size.
-            if n == 13:
-                scene.fit_skip.add(f"{key}1")
-                scene.fit_skip.add(f"{key}2")
+            # The plate is the triangle. Counting the outer corners would
+            # shrink it. II.12's square on BC runs up through the header;
+            # the title is painted after the figure, in front of that
+            # square, so the square can extend out. II.13's squares already
+            # clear the header.
+            scene.fit_skip.add(f"{key}1")
+            scene.fit_skip.add(f"{key}2")
         for u, v in SQUARE_QUIET2.get(n, ()):
             scene.join(u, v)
     # ANGLES is Book I. Keyed by proposition number only, so I.5's pies
@@ -1780,14 +1779,9 @@ def render(n: int, scene: Scene, out: Path, book: int = 1, washes=None) -> None:
         cr.move_to(x - (ext.x_bearing + ext.width / 2), y - (ext.y_bearing + ext.height / 2))
         cr.show_text(name)
 
-    # The wash is painted after the first header, and a square the fit skips
-    # can run into that band. Repaint the paper, then the title, so the type
-    # stays navy — the color every other card uses — and a wash cannot pale it.
-    cr.save()
-    cr.rectangle(0, 0, W, 210)
-    cr.clip()
-    paint_ground(cr, book)
-    cr.restore()
+    # A square the fit skips can run through the header. The title is painted
+    # after the figure, in front of that square, so the wash can show to the
+    # top and the type stays navy — the color every other card uses.
     paint_header(cr, book, n)
 
     surf.write_to_png(out)
