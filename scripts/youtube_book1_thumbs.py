@@ -1008,6 +1008,11 @@ class Scene:
         # The demo lights the longer ray. The card washes the squares.
         return
 
+    def point_only(self, _name: str) -> None:
+        # "the angle at (point) D" lights the point in the demo. The card
+        # washes the squares, so the point stays a letter.
+        return
+
     def region(self, _name: str, _boundary: list) -> None:
         # Opposite-corner names (I.43's EH, BK). The card washes the
         # complements; it does not redraw the plate.
@@ -1459,10 +1464,10 @@ def prepare(n: int, scene: Scene, book: int = 1) -> None:
             scene.pin(f"{key}1", pts[2])
             scene.pin(f"{key}2", pts[3])
             # The plate is the triangle. Counting the outer corners would
-            # shrink it. II.12's square on BC runs up through the header;
-            # the title is painted after the figure, in front of that
-            # square, so the square can extend out. II.13's squares already
-            # clear the header.
+            # shrink it. II.12's square on BC, and II.13's square on AC,
+            # run up through the header. The title is painted after the
+            # figure, in front of that square, so the square can extend
+            # out.
             scene.fit_skip.add(f"{key}1")
             scene.fit_skip.add(f"{key}2")
         for u, v in SQUARE_QUIET2.get(n, ()):
