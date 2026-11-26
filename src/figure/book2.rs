@@ -736,10 +736,10 @@ pub fn book2_prop13() -> Diagram {
     d.join("A", "B");
     d.join("A", "C");
     d.join("A", "D");
-    // The angle at B is ABC, and BC runs through the foot D. "the angle
-    // at (point) D" names the right-angle; the light is the point.
+    // The angle at B is ABC, and BC runs through the foot D. The angle at
+    // D is BDA, the right-angle the squares stand on: AD against BD, not
+    // the base continued through to C.
     d.angle_far("B", "C");
-    d.point_only("D");
     d.dots(&["A", "B", "C", "D"]);
     d
 }

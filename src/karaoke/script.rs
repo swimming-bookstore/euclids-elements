@@ -4182,7 +4182,7 @@ mod tests {
         // Fitzpatrick names the acute triangle, the acute angle at B, the
         // sides, and the right-angle at D. The plate draws no square, so a
         // square name is not a boundary to light. The angle at B is ABC,
-        // through the foot D. "the angle at (point) D" lights the point.
+        // through the foot D. The angle at D is BDA, not the base through C.
         let phrases = crate::content::get(2, 13).unwrap().phrases;
         let script = compile(phrases, &crate::figure::book2_prop13(), Timing::default());
         let runs = |word: &str| -> Vec<Vec<String>> {
@@ -4289,8 +4289,22 @@ mod tests {
         );
         let at_d = runs("D");
         assert!(
-            at_d.len() >= 2 && at_d.iter().all(|p| p.len() == 1 && has(p, "D")),
-            "D, including the right-angle sentence, is the point: {at_d:?}"
+            at_d.iter().any(|p| p.len() == 1 && has(p, "D")),
+            "the cut at D is the point: {at_d:?}"
+        );
+        assert!(
+            at_d.iter().any(|p| {
+                has(p, "ad")
+                    && has(p, "bd")
+                    && has(p, "A")
+                    && has(p, "B")
+                    && has(p, "D")
+                    && !has(p, "dc")
+                    && !has(p, "C")
+                    && !has(p, "ab")
+                    && !has(p, "ac")
+            }),
+            "the angle at D is BDA, the right-angle the squares stand on: {at_d:?}"
         );
     }
 }
