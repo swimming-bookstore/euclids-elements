@@ -4307,4 +4307,162 @@ mod tests {
             "the angle at D is BDA, the right-angle the squares stand on: {at_d:?}"
         );
     }
+
+    #[test]
+    fn ii14_square_and_semicircle_are_the_plate() {
+        // Fitzpatrick names the given figure A, the parallelogram BD, the
+        // diameter and its pieces, the semi-circle BHF, and the side EH the
+        // square stands on. BD is the rectangle, not a diagonal. BHF is the
+        // semi-circle outline B–H–F–E–B, not the triangle and not the arc
+        // alone. The angle at E is not spoken; the cuts at G and E are points.
+        let phrases = crate::content::get(2, 14).unwrap().phrases;
+        let script = compile(phrases, &crate::figure::book2_prop14(), Timing::default());
+        let runs = |word: &str| -> Vec<Vec<String>> {
+            script
+                .lines
+                .iter()
+                .flat_map(|l| l.tokens.iter())
+                .filter(|t| t.italic && letter_key(&t.text) == word)
+                .map(|t| t.parts.clone())
+                .collect()
+        };
+        let has = |parts: &[String], id: &str| parts.iter().any(|p| p == id);
+        let shown: Vec<String> = script
+            .lines
+            .iter()
+            .flat_map(|l| l.tokens.iter())
+            .filter(|t| !t.cite)
+            .map(|t| display_letters(&t.text))
+            .collect();
+        let spoken = shown.join(" ");
+        assert!(
+            spoken.contains("rectilinear figure A"),
+            "A is the given figure: {spoken}"
+        );
+        assert!(spoken.contains("parallelogram BD"), "BD is the parallelogram: {spoken}");
+        assert!(spoken.contains("semi-circle BHF"), "BHF is the semi-circle: {spoken}");
+        assert!(spoken.contains("square on EH"), "the square stands on EH: {spoken}");
+        assert!(spoken.contains("in half at (point) G"), "G is the midpoint: {spoken}");
+        assert_eq!(display_letters("parallelogram(BD)"), "BD");
+        assert_eq!(display_letters("circle(BHF)"), "BHF");
+        let a = runs("A");
+        assert!(
+            a.len() >= 4 && a.iter().all(|p| has(p, "seg-a") && has(p, "A") && !has(p, "bc")),
+            "A is the quadrilateral, not a point of the construction: {a:?}"
+        );
+        let bd = runs("BD");
+        assert!(
+            bd.len() >= 4
+                && bd.iter().all(|p| {
+                    has(p, "bg")
+                        && has(p, "ge")
+                        && has(p, "de")
+                        && has(p, "cd")
+                        && has(p, "bc")
+                        && has(p, "B")
+                        && has(p, "E")
+                        && has(p, "D")
+                        && has(p, "C")
+                        && !has(p, "G")
+                        && !has(p, "eh")
+                        && !has(p, "gh")
+                        && !has(p, "H")
+                }),
+            "BD is the parallelogram, not the diagonal or the production: {bd:?}"
+        );
+        let bhf = runs("BHF");
+        assert!(
+            bhf.len() == 1
+                && bhf.iter().all(|p| {
+                    has(p, "arc-bf")
+                        && has(p, "B")
+                        && has(p, "H")
+                        && has(p, "F")
+                        && has(p, "E")
+                        && has(p, "bg")
+                        && has(p, "ge")
+                        && has(p, "ef")
+                        && !has(p, "G")
+                        && !has(p, "gh")
+                        && !has(p, "eh")
+                        && !has(p, "de")
+                }),
+            "BHF is the semi-circle outline B–H–F–E–B, not the triangle: {bhf:?}"
+        );
+        let bf = runs("BF");
+        assert!(
+            bf.len() >= 1
+                && bf.iter().all(|p| {
+                    has(p, "bg") && has(p, "ge") && has(p, "ef") && !has(p, "arc-bf") && !has(p, "gh")
+                }),
+            "BF is the diameter, through the cuts: {bf:?}"
+        );
+        let be = runs("BE");
+        assert!(
+            be.len() >= 2
+                && be.iter().all(|p| has(p, "bg") && has(p, "ge") && !has(p, "ef") && !has(p, "G")),
+            "BE is the greater piece: {be:?}"
+        );
+        let ef = runs("EF");
+        assert!(
+            ef.len() >= 2 && ef.iter().all(|p| has(p, "ef") && !has(p, "ge") && !has(p, "bg")),
+            "EF is the added piece: {ef:?}"
+        );
+        let ed = runs("ED");
+        assert!(
+            ed.len() >= 2 && ed.iter().all(|p| has(p, "de") && !has(p, "eh") && !has(p, "cd")),
+            "ED is the side, not the production: {ed:?}"
+        );
+        let de = runs("DE");
+        assert!(
+            de.len() >= 1 && de.iter().all(|p| has(p, "de") && !has(p, "eh") && !has(p, "H")),
+            "DE is the side produced, not the production: {de:?}"
+        );
+        let eh = runs("EH");
+        assert!(
+            eh.len() >= 2 && eh.iter().all(|p| has(p, "eh") && !has(p, "de") && !has(p, "gh")),
+            "EH is the side the square stands on: {eh:?}"
+        );
+        let he = runs("HE");
+        assert!(
+            he.len() >= 1 && he.iter().all(|p| has(p, "eh") && !has(p, "de") && !has(p, "gh")),
+            "HE is the side the square stands on: {he:?}"
+        );
+        let gh = runs("GH");
+        assert!(
+            gh.len() >= 2 && gh.iter().all(|p| has(p, "gh") && !has(p, "eh") && !has(p, "ge")),
+            "GH is the radius: {gh:?}"
+        );
+        let gb = runs("GB");
+        assert!(
+            gb.len() >= 1 && gb.iter().all(|p| has(p, "bg") && !has(p, "ge") && !has(p, "gh")),
+            "GB is the radius along the diameter: {gb:?}"
+        );
+        let gf = runs("GF");
+        assert!(
+            gf.len() >= 2
+                && gf.iter().all(|p| has(p, "ge") && has(p, "ef") && !has(p, "bg") && !has(p, "E")),
+            "GF is the other radius, through E: {gf:?}"
+        );
+        let eg = runs("EG");
+        assert!(
+            eg.len() >= 1 && eg.iter().all(|p| has(p, "ge") && !has(p, "bg") && !has(p, "ef")),
+            "EG is the difference of the pieces: {eg:?}"
+        );
+        let ge = runs("GE");
+        assert!(
+            ge.len() >= 2 && ge.iter().all(|p| has(p, "ge") && !has(p, "bg") && !has(p, "ef")),
+            "GE is the difference of the pieces: {ge:?}"
+        );
+        let at_g = runs("G");
+        assert!(
+            at_g.iter().any(|p| p.len() == 1 && has(p, "G")),
+            "the cut at G is the point: {at_g:?}"
+        );
+        let at_e = runs("E");
+        assert!(
+            at_e.iter().any(|p| p.len() == 1 && has(p, "E")),
+            "the cut at E is the point: {at_e:?}"
+        );
+    }
 }

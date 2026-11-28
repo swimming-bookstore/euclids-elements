@@ -630,6 +630,22 @@ impl Diagram {
         self.arc(a, b, mid.add(n.mul(sag)))
     }
 
+    /// Semicircle on the diameter `a`–`b`, named `letters`.
+    ///
+    /// `sag` is the sagitta, signed like `bow`. II.14's semi-circle BHF stands
+    /// on BF, above the diameter, so the sag is the radius. `*circle(BHF)*`
+    /// lights the closed outline — arc B–H–F, then the diameter back through
+    /// E — not the triangle the three letters would walk, and not the radius.
+    pub fn semicircle(&mut self, letters: &'static str, a: &str, b: &str, sag: f64) -> &mut Self {
+        self.bow(a, b, sag);
+        let id = format!("arc-{}{}", a.to_ascii_lowercase(), b.to_ascii_lowercase());
+        self.circles.push(Circ {
+            id,
+            letters: letters.to_ascii_uppercase(),
+        });
+        self
+    }
+
     pub fn clip(&mut self, min: V2, max: V2) -> &mut Self {
         self.fig.clip_box(min, max);
         self
@@ -1272,12 +1288,19 @@ impl Diagram {
 
     fn triple(&self, a: &'static str, b: &'static str, c: &'static str, key: &str) -> Vec<String> {
         if let Some(circ) = self.named_circle(key) {
-            return vec![
-                circ,
+            let mut out = vec![
+                circ.clone(),
                 a.to_string(),
                 b.to_string(),
                 c.to_string(),
             ];
+            // A semi-circle name is the closed outline, not the arc alone.
+            if circ.starts_with("arc-") {
+                out.extend(self.semicircle_outline(&circ));
+                out.sort();
+                out.dedup();
+            }
+            return out;
         }
         // A three-letter name that is a registered figure (II.5's gnomon NOP),
         // not the triangle the letters would otherwise walk.
@@ -1337,18 +1360,59 @@ impl Diagram {
     }
 
     /// `*circle(ABCDE)*` lights the named circle, not the pentagon.
+    ///
+    /// A semi-circle is the closed outline. II.14's `*circle(BHF)*` is
+    /// B–H–F along the arc, then F–E–B along the diameter. The center on
+    /// that diameter is not a corner of the outline.
     pub fn circle_highlight(&self, word: &str) -> Vec<String> {
         let key = letter_key(word);
         if let Some(id) = self.named_circle(&key) {
-            let mut out = vec![id];
+            let mut out = vec![id.clone()];
             for ch in key.chars() {
                 if let Some(name) = self.letter(ch) {
                     out.push(name.to_string());
                 }
             }
+            if id.starts_with("arc-") {
+                out.extend(self.semicircle_outline(&id));
+                out.sort();
+                out.dedup();
+            }
             return out;
         }
         self.highlight(word)
+    }
+
+    /// Diameter of a semi-circle, the straight side of its outline.
+    ///
+    /// The arc id is `arc-` plus the two diameter ends. Every letter on that
+    /// diameter is a corner the outline walks through, except the center:
+    /// the midpoint. II.14's walk is B–H–F–E–B, so E is included and G,
+    /// the center, is not.
+    fn semicircle_outline(&self, arc_id: &str) -> Vec<String> {
+        let Some(ends) = arc_id.strip_prefix("arc-") else {
+            return Vec::new();
+        };
+        let chars: Vec<char> = ends.chars().collect();
+        if chars.len() != 2 {
+            return Vec::new();
+        }
+        let (Some(a), Some(b)) = (self.letter(chars[0]), self.letter(chars[1])) else {
+            return Vec::new();
+        };
+        let mut out = self.straight(a, b).unwrap_or_default();
+        let pa = self.at(a);
+        let pb = self.at(b);
+        let mid = pa.add(pb.sub(pa).mul(0.5));
+        for (name, p) in &self.pts {
+            if name.len() != 1 || *name == a || *name == b {
+                continue;
+            }
+            if p.on_seg(pa, pb, 1e-3) && p.dist(mid) > 1e-2 {
+                out.push((*name).to_string());
+            }
+        }
+        out
     }
 
     /// `*arc(ABCD)*` lights the circumference in letter order.
@@ -4527,6 +4591,36 @@ mod tests {
             "angle ACB from the plate, got {}",
             acb.to_degrees()
         );
+    }
+
+    #[test]
+    fn ii14_square_construction_is_the_plate() {
+        // PDF p. 66. BF is the diameter. G is the midpoint. BE is 0.6875 of
+        // BF and ED is 0.3125, so EF equals ED. The upright is plumb, so the
+        // angle at E is a right-angle. H is that upright on the semi-circle:
+        // GH equals the radius. A is the quadrilateral to the left.
+        let d = crate::figure::book2_prop14();
+        let b = d.at("B");
+        let f = d.at("F");
+        let g = d.at("G");
+        let e = d.at("E");
+        let h = d.at("H");
+        let bf = b.dist(f);
+        assert!((bf - 100.0).abs() < 0.01, "BF is the scale");
+        assert!((g.x - 50.0).abs() < 0.01 && (g.y - b.y).abs() < 0.01, "G is the midpoint");
+        assert!((e.x - 68.75).abs() < 0.01 && (e.y - b.y).abs() < 0.01, "E is the plate cut");
+        assert!((f.x - b.x - 100.0).abs() < 0.01, "F is the produced end");
+        assert!((d.at("C").x - b.x).abs() < 0.01, "BC is plumb");
+        assert!((d.at("D").x - e.x).abs() < 0.01 && (d.at("D").y - d.at("C").y).abs() < 0.01, "D is the far corner");
+        assert!(((b.y - d.at("C").y) / bf - 0.3125).abs() < 0.001, "ED is the plate height");
+        assert!((f.x - e.x - (b.y - d.at("D").y)).abs() < 0.01, "EF equals ED");
+        assert!((h.x - e.x).abs() < 0.01 && h.y > e.y, "EH is the upright produced");
+        let ge = e.sub(g);
+        let gh = h.sub(g);
+        assert!((gh.len() - 50.0).abs() < 0.001, "GH is the radius, got {}", gh.len());
+        assert!(ge.dot(h.sub(e)).abs() < 0.05, "the angle at E is a right-angle");
+        let a = d.at("A");
+        assert!(a.x < b.x && a.y > b.y, "A sits inside the quadrilateral, left of B");
     }
 
     fn letter_offset(html: &str, id: &str) -> (f64, f64) {
