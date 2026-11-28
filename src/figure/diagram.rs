@@ -634,8 +634,10 @@ impl Diagram {
     ///
     /// `sag` is the sagitta, signed like `bow`. II.14's semi-circle BHF stands
     /// on BF, above the diameter, so the sag is the radius. `*circle(BHF)*`
-    /// lights the closed outline — arc B–H–F, then the diameter back through
-    /// E — not the triangle the three letters would walk, and not the radius.
+    /// lights the closed outline — arc B–H–F, then the diameter back — not
+    /// the triangle the three letters would walk, and not the radius. A cut
+    /// on that diameter (E) is not a corner of the outline, so the point
+    /// stays unlit.
     pub fn semicircle(&mut self, letters: &'static str, a: &str, b: &str, sag: f64) -> &mut Self {
         self.bow(a, b, sag);
         let id = format!("arc-{}{}", a.to_ascii_lowercase(), b.to_ascii_lowercase());
@@ -1295,6 +1297,8 @@ impl Diagram {
                 c.to_string(),
             ];
             // A semi-circle name is the closed outline, not the arc alone.
+            // A cut on the diameter (E on BHF) is not a corner of that
+            // outline, so the point is not added with the chord.
             if circ.starts_with("arc-") {
                 out.extend(self.semicircle_outline(&circ));
                 out.sort();
@@ -1362,8 +1366,8 @@ impl Diagram {
     /// `*circle(ABCDE)*` lights the named circle, not the pentagon.
     ///
     /// A semi-circle is the closed outline. II.14's `*circle(BHF)*` is
-    /// B–H–F along the arc, then F–E–B along the diameter. The center on
-    /// that diameter is not a corner of the outline.
+    /// B–H–F along the arc, then the diameter back. The center, and any
+    /// other cut on that diameter, is not a corner of the outline.
     pub fn circle_highlight(&self, word: &str) -> Vec<String> {
         let key = letter_key(word);
         if let Some(id) = self.named_circle(&key) {
@@ -1385,10 +1389,9 @@ impl Diagram {
 
     /// Diameter of a semi-circle, the straight side of its outline.
     ///
-    /// The arc id is `arc-` plus the two diameter ends. Every letter on that
-    /// diameter is a corner the outline walks through, except the center:
-    /// the midpoint. II.14's walk is B–H–F–E–B, so E is included and G,
-    /// the center, is not.
+    /// The arc id is `arc-` plus the two diameter ends. The outline is that
+    /// diameter, the whole chord, not the triangle of the spoken letters.
+    /// A cut on the diameter is not a corner, so the point is not named.
     fn semicircle_outline(&self, arc_id: &str) -> Vec<String> {
         let Some(ends) = arc_id.strip_prefix("arc-") else {
             return Vec::new();
@@ -1400,19 +1403,7 @@ impl Diagram {
         let (Some(a), Some(b)) = (self.letter(chars[0]), self.letter(chars[1])) else {
             return Vec::new();
         };
-        let mut out = self.straight(a, b).unwrap_or_default();
-        let pa = self.at(a);
-        let pb = self.at(b);
-        let mid = pa.add(pb.sub(pa).mul(0.5));
-        for (name, p) in &self.pts {
-            if name.len() != 1 || *name == a || *name == b {
-                continue;
-            }
-            if p.on_seg(pa, pb, 1e-3) && p.dist(mid) > 1e-2 {
-                out.push((*name).to_string());
-            }
-        }
-        out
+        self.straight(a, b).unwrap_or_default()
     }
 
     /// `*arc(ABCD)*` lights the circumference in letter order.

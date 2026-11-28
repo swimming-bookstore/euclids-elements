@@ -4313,8 +4313,10 @@ mod tests {
         // Fitzpatrick names the given figure A, the parallelogram BD, the
         // diameter and its pieces, the semi-circle BHF, and the side EH the
         // square stands on. BD is the rectangle, not a diagonal. BHF is the
-        // semi-circle outline B–H–F–E–B, not the triangle and not the arc
-        // alone. The angle at E is not spoken; the cuts at G and E are points.
+        // semi-circle outline, the arc and the diameter, not the triangle
+        // and not the arc alone. E lies on that diameter, but the point is
+        // a cut, not a corner of the outline. The angle at E is not spoken;
+        // the cuts at G and E are points.
         let phrases = crate::content::get(2, 14).unwrap().phrases;
         let script = compile(phrases, &crate::figure::book2_prop14(), Timing::default());
         let runs = |word: &str| -> Vec<Vec<String>> {
@@ -4378,16 +4380,16 @@ mod tests {
                         && has(p, "B")
                         && has(p, "H")
                         && has(p, "F")
-                        && has(p, "E")
                         && has(p, "bg")
                         && has(p, "ge")
                         && has(p, "ef")
+                        && !has(p, "E")
                         && !has(p, "G")
                         && !has(p, "gh")
                         && !has(p, "eh")
                         && !has(p, "de")
                 }),
-            "BHF is the semi-circle outline B–H–F–E–B, not the triangle: {bhf:?}"
+            "BHF is the semi-circle outline, not the triangle and not the cut at E: {bhf:?}"
         );
         let bf = runs("BF");
         assert!(
