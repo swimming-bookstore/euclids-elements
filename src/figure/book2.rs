@@ -784,8 +784,9 @@ pub fn book2_prop14() -> Diagram {
     d.chain(&["D", "E", "H"]);
     d.join("G", "H");
     // Semi-circle BHF, above the diameter. The radius is GB. The name lights
-    // the closed outline B–H–F–E–B: the arc, then the diameter back through
-    // E. Not the triangle the three letters would walk, and not the radius.
+    // the closed outline: the arc B–H–F, then the diameter back. E lies on
+    // that diameter, but it is a cut, not a corner, so the point stays
+    // unlit. Not the triangle the three letters would walk, and not the radius.
     d.semicircle("BHF", "B", "F", 50.0);
     // Given rectilinear figure A. The plate draws the quadrilateral. The
     // capital sits inside it, so A is the glyph, and the outline is what *A*
