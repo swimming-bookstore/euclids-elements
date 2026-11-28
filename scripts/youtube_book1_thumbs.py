@@ -1478,18 +1478,12 @@ def prepare(n: int, scene: Scene, book: int = 1) -> None:
         for u, v in SQUARE_QUIET2.get(n, ()):
             scene.join(u, v)
     if book == 2 and n == 14:
-        # Case 1: BE equal to ED, so the parallelogram on BE is already the
-        # square. The plate draws BE greater, so the card stands that square
-        # on BE, downward, on the side of the parallelogram and away from
-        # the semi-circle. The side it stands on is already a plate stroke,
-        # so the outer edges stay quiet.
-        pts = square_outward(scene.at("B"), scene.at("E"), scene.at("H"))
-        scene.pin("Be1", pts[2])
-        scene.pin("Be2", pts[3])
-        # The square on EH, the square the other case produces. The plate
-        # draws the side, not the square. Away from G, so it stands outside
-        # the semi-circle instead of covering the radius. The side it stands
-        # on is already a plate stroke, so the outer edges stay quiet.
+        # The other case produces the square on EH. The plate draws the side,
+        # not the square. Away from G, so it stands outside the semi-circle
+        # instead of covering the radius. The side it stands on is already a
+        # plate stroke, so the outer edges stay quiet. Case 1 is the
+        # parallelogram BD the plate already draws — the wash is that
+        # rectangle, not a square stood off BE, and not a second D.
         pts = square_outward(scene.at("E"), scene.at("H"), scene.at("G"))
         scene.pin("Eh1", pts[2])
         scene.pin("Eh2", pts[3])
@@ -1959,13 +1953,12 @@ WASHES2 = {
     # The square on the side subtending the acute angle, then the squares
     # on the two sides containing it. The plate draws none of them.
     13: [("A", "C", "Ac1", "Ac2"), ("B", "C", "Bc1", "Bc2"), ("B", "A", "Ba1", "Ba2")],
-    # Case 1 is the square on BE: when BE equals ED, that square is the
-    # parallelogram, equal to A. The plate draws BE greater, so the card
-    # stands the square on BE. The other case produces the square on EH,
-    # also equal to A. The plate draws A, and the side EH, not either
-    # square. One hue: the figure and both squares are the same area.
-    # Two hues would say they differ. BD is the construction.
-    14: [("A0", "A1", "A2", "A3"), ("B", "E", "Be1", "Be2"), ("E", "H", "Eh1", "Eh2")],
+    # A, the parallelogram BD, and the square on EH are the same area. BD
+    # is the rectangle the plate draws — the wash is that rectangle, not a
+    # square stood off BE. The other case produces the square on EH. The
+    # plate draws A, and the side EH, not that square. One hue: two hues
+    # would say they differ.
+    14: [("A0", "A1", "A2", "A3"), ("B", "E", "D", "C"), ("E", "H", "Eh1", "Eh2")],
 }
 
 # Hue of each WASHES2 region. 0 is the pale wash, 1 the second. Absent: the
@@ -1994,7 +1987,7 @@ WASH_HUE2 = {
     # first where they meet, so the overlap stays the second hue.
     12: [0, 1, 1],
     13: [0, 1, 1],
-    # A, the square on BE, and the square on EH are the same area.
+    # A, the parallelogram BD, and the square on EH are the same area.
     14: [0, 0, 0],
 }
 
@@ -2057,9 +2050,6 @@ SQUARE_QUIET2: dict[int, tuple[tuple[str, str], ...]] = {
         ("Ba2", "B"),
     ),
     14: (
-        ("E", "Be1"),
-        ("Be1", "Be2"),
-        ("Be2", "B"),
         ("H", "Eh1"),
         ("Eh1", "Eh2"),
         ("Eh2", "E"),
