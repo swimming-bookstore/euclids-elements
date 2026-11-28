@@ -1,6 +1,6 @@
 use super::{s, Proposition};
 use crate::figure::{
-    book2_prop1, book2_prop10, book2_prop11, book2_prop12, book2_prop13, book2_prop2, book2_prop3,
+    book2_prop1, book2_prop10, book2_prop11, book2_prop12, book2_prop13, book2_prop14, book2_prop2, book2_prop3,
     book2_prop4, book2_prop5, book2_prop6, book2_prop7, book2_prop8, book2_prop9,
 };
 
@@ -411,7 +411,40 @@ pub const PROP_13: Proposition = Proposition {
     ],
 };
 
+pub const PROP_14: Proposition = Proposition {
+    book: 2,
+    number: 14,
+    enunciation: "To construct a square equal to a given rectilinear figure.",
+    figure: book2_prop14,
+    phrases: &[
+        s(1, "Let *A* be the given rectilinear figure."),
+        s(1, "So it is required to construct a square equal to the rectilinear figure *A*."),
+        s(2, "For let the right-angled parallelogram *parallelogram(BD)*, equal to the rectilinear figure *A*, have been constructed.{[Prop. 1.45]}"),
+        s(2, "Therefore, if *BE* is equal to *ED* then that (which) was prescribed has taken place."),
+        s(2, "For the square *parallelogram(BD)*, equal to the rectilinear figure *A*, has been constructed."),
+        s(2, "And if not, then one of the (straight-lines) *BE* or *ED* is greater (than the other)."),
+        s(2, "Let *BE* be greater, and let it have been produced to *F*, and let *EF* be made equal to *ED*.{[Prop. 1.3]}"),
+        s(2, "And let *BF* have been cut in half at (point) *G*.{[Prop. 1.10]}"),
+        s(2, "And, with center *G*, and radius one of the (straight-lines) *GB* or *GF*, let the semi-circle *circle(BHF)* have been drawn."),
+        s(2, "And let *DE* have been produced to *H*, and let *GH* have been joined."),
+        s(3, "Therefore, since the straight-line *BF* has been cut—equally at *G*, and unequally at *E*—the rectangle contained by *BE* and *EF*, plus the square on *EG*, is thus equal to the square on *GF*.{[Prop. 2.5]}"),
+        s(3, "And *GF* (is) equal to *GH*."),
+        s(3, "Thus, the (rectangle contained) by *BE* and *EF*, plus the (square) on *GE*, is equal to the (square) on *GH*."),
+        s(3, "And the (sum of the) squares on *HE* and *EG* is equal to the (square) on *GH*.{[Prop. 1.47]}"),
+        s(3, "Thus, the (rectangle contained) by *BE* and *EF*, plus the (square) on *GE*, is equal to the (sum of the squares) on *HE* and *EG*."),
+        s(3, "Let the square on *GE* have been taken from both."),
+        s(3, "Thus, the remaining rectangle contained by *BE* and *EF* is equal to the square on *EH*."),
+        s(3, "But, *parallelogram(BD)* is the (rectangle contained) by *BE* and *EF*."),
+        s(3, "For *EF* (is) equal to *ED*."),
+        s(3, "Thus, the parallelogram *parallelogram(BD)* is equal to the square on *HE*."),
+        s(3, "And *parallelogram(BD)* (is) equal to the rectilinear figure *A*."),
+        s(3, "Thus, the rectilinear figure *A* is also equal to the square (which) can be described on *EH*."),
+        s(4, "Thus, a square—(namely), that (which) can be described on *EH*—has been constructed, equal to the given rectilinear figure *A*."),
+        s(4, "(Which is) the very thing it was required to do."),
+    ],
+};
+
 pub const PROPOSITIONS: &[Proposition] = &[
     PROP_1, PROP_2, PROP_3, PROP_4, PROP_5, PROP_6, PROP_7, PROP_8, PROP_9, PROP_10, PROP_11,
-    PROP_12, PROP_13,
+    PROP_12, PROP_13, PROP_14,
 ];

@@ -961,6 +961,11 @@ class Scene:
         via = V2(mid.x + nx / nlen * sag, mid.y + ny / nlen * sag)
         self.arc_list.append((pa, pb, via))
 
+    def semicircle(self, _letters: str, a: str, b: str, sag: float) -> None:
+        # II.14's semi-circle BHF. The card draws the arc; the wash is the
+        # square the construction produces, not the circumference.
+        self.bow(a, b, sag)
+
     def dots(self, names: list[str]) -> None:
         for name in names:
             self.dot_pts.append(self.at(name))
@@ -1472,6 +1477,16 @@ def prepare(n: int, scene: Scene, book: int = 1) -> None:
             scene.fit_skip.add(f"{key}2")
         for u, v in SQUARE_QUIET2.get(n, ()):
             scene.join(u, v)
+    if book == 2 and n == 14:
+        # The square on EH, the square the construction produces. The plate
+        # draws the side, not the square. Away from G, so it stands outside
+        # the semi-circle instead of covering the radius. The side it stands
+        # on is already a plate stroke, so the outer edges stay quiet.
+        pts = square_outward(scene.at("E"), scene.at("H"), scene.at("G"))
+        scene.pin("Eh1", pts[2])
+        scene.pin("Eh2", pts[3])
+        for u, v in SQUARE_QUIET2.get(n, ()):
+            scene.join(u, v)
     # ANGLES is Book I. Keyed by proposition number only, so I.5's pies
     # would otherwise land on II.5: A, B, C, D, E all exist there, and the
     # wedges read as two pies on the square.
@@ -1936,6 +1951,11 @@ WASHES2 = {
     # The square on the side subtending the acute angle, then the squares
     # on the two sides containing it. The plate draws none of them.
     13: [("A", "C", "Ac1", "Ac2"), ("B", "C", "Bc1", "Bc2"), ("B", "A", "Ba1", "Ba2")],
+    # The given rectilinear figure, and the square on EH equal to it. The
+    # plate draws A, and the side EH, not the square. One hue: they are equal.
+    # Two hues would say the square and the figure differ. BD is the
+    # construction, the parallelogram equal to both, not a third area.
+    14: [("A0", "A1", "A2", "A3"), ("E", "H", "Eh1", "Eh2")],
 }
 
 # Hue of each WASHES2 region. 0 is the pale wash, 1 the second. Absent: the
@@ -1964,6 +1984,8 @@ WASH_HUE2 = {
     # first where they meet, so the overlap stays the second hue.
     12: [0, 1, 1],
     13: [0, 1, 1],
+    # A and the square on EH are the same area. Both stay the first hue.
+    14: [0, 0],
 }
 
 # Outer edges of the shadow square the enunciation names and the plate
@@ -2024,6 +2046,7 @@ SQUARE_QUIET2: dict[int, tuple[tuple[str, str], ...]] = {
         ("Ba1", "Ba2"),
         ("Ba2", "B"),
     ),
+    14: (("H", "Eh1"), ("Eh1", "Eh2"), ("Eh2", "E")),
 }
 
 # Named straight-lines, book by book. Book I is LINES. A produced ray is

@@ -743,3 +743,66 @@ pub fn book2_prop13() -> Diagram {
     d.dots(&["A", "B", "C", "D"]);
     d
 }
+
+/// II.14 — Fitzpatrick English plate (Elements PDF p. 66).
+///
+/// Construct a square equal to a given rectilinear figure. A is that figure:
+/// the quadrilateral to the left, capital inside. BD is the right-angled
+/// parallelogram equal to A (Prop. 1.45). BE is greater than ED, so BE is
+/// produced to F and EF is made equal to ED. G cuts BF in half. The
+/// semi-circle BHF has center G and radius GB. DE is produced to H on that
+/// semi-circle, and GH is joined. The plate draws the side EH, not the
+/// square on it.
+///
+/// One scale BF = 100. The content stream is the construction: G is the
+/// midpoint, BE = 68.75, ED = EF = 31.25, and the upright is plumb, so the
+/// angle at E is a right-angle. H is that upright meeting the semi-circle.
+/// Vertex letters sit on the measured tip→glyph heading. A's capital is the
+/// plate glyph, inside the quadrilateral, not a heading from a corner.
+pub fn book2_prop14() -> Diagram {
+    let mut d = Diagram::new();
+    // PDF p. 66. BF is the diameter, 154.15 pt. BE/BF = 0.6875 and ED/BF =
+    // 0.3125, so EF equals ED. The upright through E is plumb.
+    let be = 68.75;
+    let ed = 31.25;
+    // H is DE produced to the semi-circle. GE is 18.75, the radius is 50.
+    let eh = 46.35124054;
+    d.put("B", V2::new(0.0, 0.0), Place::Deg(-176.5));
+    d.level("G", "B", 50.0, Place::Deg(-81.7));
+    d.level("E", "B", be, Place::Deg(52.6));
+    d.level("F", "B", 100.0, Place::Deg(19.3));
+    d.plumb("C", "B", -ed, Place::Deg(-176.3));
+    d.corner("D", "E", "C", Place::Deg(-2.8));
+    d.plumb("H", "E", eh, Place::Deg(59.4));
+    // BF is cut at G and at E. BG, GE, and EF are the pieces the proof names.
+    // An unsplit stroke would walk those names across the cuts.
+    d.chain(&["B", "G", "E", "F"]);
+    // Parallelogram BD, and DE produced through E to H. The upright splits
+    // at E, so DE is the side and EH is the production.
+    d.join("B", "C");
+    d.join("C", "D");
+    d.chain(&["D", "E", "H"]);
+    d.join("G", "H");
+    // Semi-circle BHF, above the diameter. The radius is GB. The name lights
+    // the closed outline B–H–F–E–B: the arc, then the diameter back through
+    // E. Not the triangle the three letters would walk, and not the radius.
+    d.semicircle("BHF", "B", "F", 50.0);
+    // Given rectilinear figure A. The plate draws the quadrilateral. The
+    // capital sits inside it, so A is the glyph, and the outline is what *A*
+    // lights. The corners are not lettered.
+    d.pin("A0", V2::new(-48.4378, 31.2521));
+    d.pin("A1", V2::new(-34.3765, 57.8136));
+    d.pin("A2", V2::new(6.2489, 57.8136));
+    d.pin("A3", V2::new(-18.7517, 15.6248));
+    d.named_outline("A", &["A0", "A1", "A2", "A3"]);
+    d.pin("A", V2::new(-26.92, 40.40));
+    d.glyph("A", V2::new(-26.92, 40.40));
+    // BD is the parallelogram, named by opposite corners. The plate draws no
+    // diagonal. The upright continues to H; that production is not a side.
+    d.region("BD", &["B", "E", "D", "C"]);
+    // The angle at E is HE against BE, the right-angle the squares stand on.
+    // BE runs back through G, so the ray does not stop at the midpoint.
+    d.angle_far("E", "B");
+    d.dots(&["B", "C", "D", "E", "F", "G", "H"]);
+    d
+}
